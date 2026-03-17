@@ -1,41 +1,48 @@
 const API_BASE_URL = "http://localhost:8080";
-const TOKEN_KEY = "gestor_tintas_token";
 
-export async function loginRequest({ email, senha }) {
-  let response;
+export function getStoredToken() {
+  return localStorage.getItem("token");
+}
 
-  try {
-    response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, senha }),
-    });
-  } catch {
-    throw new Error(
-      "Não foi possível conectar com a API. Verifique se o backend está rodando e se o CORS está liberado."
-    );
-  }
+export function storeToken(token) {
+  localStorage.setItem("token", token);
+}
+
+export function removeToken() {
+  localStorage.removeItem("token");
+}
+
+function buildErrorMessage(data, response) {
+  if (data?.detail) return data.detail;
+  if (data?.title) return data.title;
+  if (data?.message) return data.message;
+  if (typeof data === "string" && data.trim()) return data;
+  return `Erro na requisição: ${response.status}`;
+}
+
+export async function loginRequest(credentials) {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: credentials.email,
+      senha: credentials.senha,
+    }),
+  });
 
   let data = null;
-
   try {
     data = await response.json();
   } catch {
     data = null;
   }
 
-  if (!response.ok) {
-    const message =
-      data?.detail ||
-      data?.message ||
-      data?.error ||
-      (response.status === 401
-        ? "Credenciais inválidas. Verifique e-mail e senha."
-        : "Não foi possível realizar o login.");
+  console.log("LOGIN RESPONSE:", data);
 
-    const error = new Error(message);
+  if (!response.ok) {
+    const error = new Error(buildErrorMessage(data, response));
     error.status = response.status;
     throw error;
   }
@@ -43,20 +50,11 @@ export async function loginRequest({ email, senha }) {
   return data;
 }
 
-export function getStoredToken() {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function storeToken(token) {
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function removeToken() {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-export async function authFetch(path, options = {}) {
+export async function authenticatedRequest(path, options = {}) {
   const token = getStoredToken();
+
+  console.log("AUTH REQUEST:", `${API_BASE_URL}${path}`);
+  console.log("TOKEN:", token);
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -67,5 +65,53 @@ export async function authFetch(path, options = {}) {
     },
   });
 
-  return response;
+  let data = null;
+  const contentType = response.headers.get("content-type") || "";
+
+  try {
+    if (contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+  } catch {
+    data = null;
+  }
+
+  console.log("AUTH STATUS:", response.status);
+  console.log("AUTH DATA:", data);
+
+  if (!response.ok) {
+    const error = new Error(buildErrorMessage(data, response));
+    error.status = response.status;
+    throw error;
+  }
+
+  return data;
+}
+
+export function getUsuarios() {
+  return authenticatedRequest("/api/usuarios", {
+    method: "GET",
+  });
+}
+
+export function createUsuario(payload) {
+  return authenticatedRequest("/api/usuarios", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateUsuario(email, payload) {
+  return authenticatedRequest(`/api/usuarios/email/${encodeURIComponent(email)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteUsuario(email) {
+  return authenticatedRequest(`/api/usuarios/email/${encodeURIComponent(email)}`, {
+    method: "DELETE",
+  });
 }

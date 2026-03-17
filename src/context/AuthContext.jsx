@@ -27,7 +27,12 @@ export function AuthProvider({ children }) {
 
     try {
       const response = await loginRequest(credentials);
+
+      console.log("TOKEN RECEBIDO:", response?.token);
+
+      storeToken(response.token);
       setToken(response.token);
+
       return response;
     } finally {
       setLoading(false);
@@ -35,6 +40,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
+    removeToken();
     setToken(null);
   }
 
