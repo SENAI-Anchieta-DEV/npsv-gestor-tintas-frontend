@@ -77,13 +77,12 @@ export default function LoginPage() {
 
     try {
       await login(form);
-
       setShowSuccessPopup(true);
 
       setTimeout(() => {
         setShowSuccessPopup(false);
         navigate(destination, { replace: true });
-      }, 1200);
+      }, 1000);
     } catch (error) {
       if (error.status === 401) {
         setErrorMessage("Credenciais inválidas. Tente novamente.");
@@ -98,11 +97,11 @@ export default function LoginPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "#F5F7FB",
+        bgcolor: "#F5F7FB",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        p: { xs: 1.5, md: 2 },
+        p: 2,
       }}
     >
       <Box
@@ -129,14 +128,7 @@ export default function LoginPage() {
           }}
         >
           <Box>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                mb: { xs: 4, md: 4.5 },
-              }}
-            >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4.5 }}>
               <Box
                 sx={{
                   width: 52,
@@ -147,21 +139,13 @@ export default function LoginPage() {
                   placeItems: "center",
                   color: "#fff",
                   fontSize: 24,
-                  flexShrink: 0,
                 }}
               >
                 🎨
               </Box>
 
               <Box>
-                <Typography
-                  sx={{
-                    fontSize: 24,
-                    fontWeight: 800,
-                    color: "#0B1739",
-                    lineHeight: 1.1,
-                  }}
-                >
+                <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#0B1739", lineHeight: 1.1 }}>
                   Gestor Tintas
                 </Typography>
                 <Typography sx={{ color: "#6B7280", fontSize: 14 }}>
@@ -170,7 +154,7 @@ export default function LoginPage() {
               </Box>
             </Box>
 
-            <Box sx={{ mb: { xs: 4, md: 4 } }}>
+            <Box sx={{ mb: 4 }}>
               <Typography
                 sx={{
                   fontSize: { xs: 30, sm: 36, md: 44 },
@@ -183,10 +167,7 @@ export default function LoginPage() {
               >
                 Gestão inteligente
                 <br />
-                para{" "}
-                <Box component="span" sx={{ color: "#2E33FF" }}>
-                  tintas e produção
-                </Box>
+                para <Box component="span" sx={{ color: "#2E33FF" }}>tintas e produção</Box>
               </Typography>
 
               <Typography
@@ -218,7 +199,6 @@ export default function LoginPage() {
                   borderRadius: "22px",
                   p: 2,
                   border: "1px solid #E5E7EB",
-                  boxShadow: "none",
                   backgroundColor: "#FFFFFFCC",
                 }}
               >
@@ -238,24 +218,11 @@ export default function LoginPage() {
                   {feature.icon}
                 </Box>
 
-                <Typography
-                  sx={{
-                    fontWeight: 800,
-                    color: "#0B1739",
-                    mb: 0.6,
-                    fontSize: 15,
-                  }}
-                >
+                <Typography sx={{ fontWeight: 800, color: "#0B1739", mb: 0.6, fontSize: 15 }}>
                   {feature.title}
                 </Typography>
 
-                <Typography
-                  sx={{
-                    color: "#6B7280",
-                    fontSize: 13.5,
-                    lineHeight: 1.65,
-                  }}
-                >
+                <Typography sx={{ color: "#6B7280", fontSize: 13.5, lineHeight: 1.65 }}>
                   {feature.text}
                 </Typography>
               </Card>
@@ -284,68 +251,34 @@ export default function LoginPage() {
             }}
           >
             <Box sx={{ mb: 3 }}>
-              <Typography
-                sx={{
-                  fontSize: 30,
-                  fontWeight: 800,
-                  color: "#0B1739",
-                  mb: 1,
-                  lineHeight: 1.1,
-                }}
-              >
+              <Typography sx={{ fontSize: 30, fontWeight: 800, color: "#0B1739", mb: 1 }}>
                 Entrar
               </Typography>
 
-              <Typography
-                sx={{
-                  color: "#6B7280",
-                  fontSize: 15,
-                  lineHeight: 1.8,
-                }}
-              >
+              <Typography sx={{ color: "#6B7280", fontSize: 15, lineHeight: 1.8 }}>
                 Faça login para acessar as funcionalidades protegidas do sistema.
               </Typography>
             </Box>
 
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 2.2,
-              }}
-            >
+            <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.2 }}>
               <TextField
                 label="E-mail"
                 name="email"
                 type="email"
-                placeholder="Digite seu e-mail"
                 value={form.email}
                 onChange={handleChange}
-                autoComplete="email"
                 fullWidth
-                InputProps={{
-                  sx: {
-                    borderRadius: "16px",
-                  },
-                }}
+                InputProps={{ sx: { borderRadius: "16px" } }}
               />
 
               <TextField
                 label="Senha"
                 name="senha"
                 type="password"
-                placeholder="Digite sua senha"
                 value={form.senha}
                 onChange={handleChange}
-                autoComplete="current-password"
                 fullWidth
-                InputProps={{
-                  sx: {
-                    borderRadius: "16px",
-                  },
-                }}
+                InputProps={{ sx: { borderRadius: "16px" } }}
               />
 
               {errorMessage ? (
@@ -370,11 +303,7 @@ export default function LoginPage() {
                   },
                 }}
               >
-                {loading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Entrar"
-                )}
+                {loading ? <CircularProgress size={24} color="inherit" /> : "Entrar"}
               </Button>
             </Box>
           </Card>
@@ -387,7 +316,7 @@ export default function LoginPage() {
         onClose={() => setShowSuccessPopup(false)}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert severity="success" variant="filled" sx={{ borderRadius: "14px" }}>
+        <Alert severity="success" variant="filled">
           Login realizado com sucesso.
         </Alert>
       </Snackbar>

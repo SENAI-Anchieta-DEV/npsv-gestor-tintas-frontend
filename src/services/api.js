@@ -39,8 +39,6 @@ export async function loginRequest(credentials) {
     data = null;
   }
 
-  console.log("LOGIN RESPONSE:", data);
-
   if (!response.ok) {
     const error = new Error(buildErrorMessage(data, response));
     error.status = response.status;
@@ -52,9 +50,6 @@ export async function loginRequest(credentials) {
 
 export async function authenticatedRequest(path, options = {}) {
   const token = getStoredToken();
-
-  console.log("AUTH REQUEST:", `${API_BASE_URL}${path}`);
-  console.log("TOKEN:", token);
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -77,9 +72,6 @@ export async function authenticatedRequest(path, options = {}) {
   } catch {
     data = null;
   }
-
-  console.log("AUTH STATUS:", response.status);
-  console.log("AUTH DATA:", data);
 
   if (!response.ok) {
     const error = new Error(buildErrorMessage(data, response));
