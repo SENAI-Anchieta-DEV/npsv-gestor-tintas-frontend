@@ -14,7 +14,6 @@ import {
   InputAdornment,
   MenuItem,
   Paper,
-  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -33,6 +32,8 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import EngineeringOutlinedIcon from "@mui/icons-material/EngineeringOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import AdminLayout from "../../components/layout/AdminLayout";
+import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
+import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   createUsuario,
   deleteUsuario,
@@ -122,6 +123,8 @@ function formatDate(value) {
 }
 
 export default function UsersPage() {
+  const { showSnackbar } = useAppSnackbar();
+
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -131,11 +134,6 @@ export default function UsersPage() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    severity: "success",
-    message: "",
-  });
 
   async function loadUsers() {
     setLoading(true);
@@ -145,7 +143,7 @@ export default function UsersPage() {
       const data = await getUsuarios();
       setUsuarios(Array.isArray(data) ? data : []);
     } catch (error) {
-      setErrorMessage(error.message || "Erro ao carregar usuários.");
+      setErrorMessage(getProblemDetailMessage(error));
     } finally {
       setLoading(false);
     }
@@ -218,11 +216,7 @@ export default function UsersPage() {
     event.preventDefault();
 
     if (!validate()) {
-      setSnackbar({
-        open: true,
-        severity: "error",
-        message: "Revise os campos obrigatórios.",
-      });
+      showSnackbar("Revise os campos obrigatórios.", "error");
       return;
     }
 
@@ -242,22 +236,17 @@ export default function UsersPage() {
         await createUsuario(payload);
       }
 
-      setSnackbar({
-        open: true,
-        severity: "success",
-        message: editingUser
+      showSnackbar(
+        editingUser
           ? "Usuário atualizado com sucesso."
           : "Usuário cadastrado com sucesso.",
-      });
+        "success"
+      );
 
       closeDialog();
       await loadUsers();
     } catch (error) {
-      setSnackbar({
-        open: true,
-        severity: "error",
-        message: error.message || "Erro ao salvar usuário.",
-      });
+      showSnackbar(getProblemDetailMessage(error), "error");
     } finally {
       setSaving(false);
     }
@@ -269,18 +258,10 @@ export default function UsersPage() {
 
     try {
       await deleteUsuario(user.email);
-      setSnackbar({
-        open: true,
-        severity: "success",
-        message: "Usuário inativado com sucesso.",
-      });
+      showSnackbar("Usuário inativado com sucesso.", "success");
       await loadUsers();
     } catch (error) {
-      setSnackbar({
-        open: true,
-        severity: "error",
-        message: error.message || "Erro ao inativar usuário.",
-      });
+      showSnackbar(getProblemDetailMessage(error), "error");
     }
   }
 
@@ -562,6 +543,7 @@ export default function UsersPage() {
             </Box>
           </>
         )}
+
       </Paper>
 
       <Paper
@@ -666,6 +648,7 @@ export default function UsersPage() {
                 name="nome"
                 value={form.nome}
                 onChange={handleChange}
+                required
                 error={Boolean(fieldErrors.nome)}
                 helperText={fieldErrors.nome}
                 fullWidth
@@ -677,6 +660,7 @@ export default function UsersPage() {
                 type="email"
                 value={form.email}
                 onChange={handleChange}
+                required
                 error={Boolean(fieldErrors.email)}
                 helperText={fieldErrors.email}
                 disabled={Boolean(editingUser)}
@@ -689,6 +673,7 @@ export default function UsersPage() {
                 type="password"
                 value={form.senha}
                 onChange={handleChange}
+                required={!editingUser}
                 error={Boolean(fieldErrors.senha)}
                 helperText={fieldErrors.senha}
                 fullWidth
@@ -700,6 +685,7 @@ export default function UsersPage() {
                 name="role"
                 value={form.role}
                 onChange={handleChange}
+                required
                 error={Boolean(fieldErrors.role)}
                 helperText={fieldErrors.role}
                 fullWidth
@@ -723,21 +709,6 @@ export default function UsersPage() {
           </DialogActions>
         </Box>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3200}
-        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          variant="filled"
-          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </AdminLayout>
   );
 }
