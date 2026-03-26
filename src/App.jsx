@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/login/LoginPage";
 import HomePage from "./pages/home/HomePage";
 import UsersPage from "./pages/users/UsersPage";
+import CategoriesPage from "./pages/categories/CategoriesPage";
+import ProductsPage from "./pages/products/ProductsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -23,6 +25,24 @@ export default function App() {
         element={
           <ProtectedRoute>
             <UsersPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/categorias-produtos"
+        element={
+          <ProtectedRoute>
+            <CategoriesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/produtos"
+        element={
+          <ProtectedRoute>
+            <ProductsPage />
           </ProtectedRoute>
         }
       />

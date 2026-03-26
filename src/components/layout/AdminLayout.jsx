@@ -10,6 +10,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
@@ -31,6 +32,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 const menuItems = [
   { label: "Dashboard", path: "/", icon: <DashboardOutlinedIcon /> },
+  { label: "Categorias", path: "/categorias-produtos", icon: <CategoryOutlinedIcon /> },
   { label: "Produtos", path: "/produtos", icon: <Inventory2OutlinedIcon /> },
   { label: "Fórmulas", path: "/formulas", icon: <ScienceOutlinedIcon /> },
   { label: "Estoque", path: "/estoque", icon: <WarehouseOutlinedIcon /> },
