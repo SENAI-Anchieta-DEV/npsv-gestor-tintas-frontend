@@ -1,146 +1,204 @@
+import { useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Avatar,
   Box,
-  Divider,
   IconButton,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   Stack,
   Typography,
 } from "@mui/material";
-import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import WarehouseOutlinedIcon from "@mui/icons-material/WarehouseOutlined";
 import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
-import PointOfSaleOutlinedIcon from "@mui/icons-material/PointOfSaleOutlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
-import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
-import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import WaterDropOutlinedIcon from "@mui/icons-material/WaterDropOutlined";
+import OpacityOutlinedIcon from "@mui/icons-material/OpacityOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
-import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
-import { useLocation, useNavigate } from "react-router-dom";
 
 const menuItems = [
   { label: "Dashboard", path: "/", icon: <DashboardOutlinedIcon /> },
-  { label: "Categorias", path: "/categorias-produtos", icon: <CategoryOutlinedIcon /> },
   { label: "Produtos", path: "/produtos", icon: <Inventory2OutlinedIcon /> },
   { label: "Fórmulas", path: "/formulas", icon: <ScienceOutlinedIcon /> },
   { label: "Estoque", path: "/estoque", icon: <WarehouseOutlinedIcon /> },
-  { label: "Aba da Máquina", path: "/maquina", icon: <PrecisionManufacturingOutlinedIcon /> },
-  { label: "Histórico Produção", path: "/historico", icon: <HistoryOutlinedIcon /> },
+  { label: "Aba da Máquina", path: "/aba-maquina", icon: <PrecisionManufacturingOutlinedIcon /> },
+  { label: "Histórico Produção", path: "/historico-producao", icon: <HistoryOutlinedIcon /> },
   { label: "Vendas", path: "/vendas", icon: <ShoppingCartOutlinedIcon /> },
-  { label: "Clientes", path: "/clientes", icon: <PeopleOutlineIcon /> },
-  { label: "Fornecedores", path: "/fornecedores", icon: <BusinessOutlinedIcon /> },
+  { label: "Clientes", path: "/clientes", icon: <PeopleOutlineOutlinedIcon /> },
+  { label: "Fornecedores", path: "/fornecedores", icon: <LocalShippingOutlinedIcon /> },
   { label: "Pedidos", path: "/pedidos", icon: <ReceiptLongOutlinedIcon /> },
-  { label: "Usuários", path: "/usuarios", icon: <ManageAccountsOutlinedIcon /> },
+  { label: "Usuários", path: "/usuarios", icon: <GroupOutlinedIcon /> },
   { label: "Relatórios", path: "/relatorios", icon: <BarChartOutlinedIcon /> },
   { label: "Configurações", path: "/configuracoes", icon: <SettingsOutlinedIcon /> },
 ];
 
+function formatCurrentDate() {
+  try {
+    return new Date().toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
+}
+
 export default function AdminLayout({ children }) {
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const currentDate = useMemo(() => formatCurrentDate(), []);
+
+  function isActive(path) {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+
+    return location.pathname.startsWith(path);
+  }
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", bgcolor: "#F5F7FB" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: "#F5F7FB",
+        display: "flex",
+      }}
+    >
       <Box
         sx={{
-          width: 254,
-          bgcolor: "#102567",
+          width: 232,
+          minHeight: "100vh",
+          background: "#0F1E63",
           color: "#fff",
-          display: { xs: "none", md: "flex" },
+          display: "flex",
           flexDirection: "column",
+          justifyContent: "space-between",
           borderRight: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        <Box sx={{ px: 3, py: 3, display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Avatar
+        <Box>
+          <Box
+            sx={{
+              px: 2.5,
+              py: 3,
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box
+                sx={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: "14px",
+                  background: "linear-gradient(135deg, #4F46E5, #3B82F6)",
+                  display: "grid",
+                  placeItems: "center",
+                  color: "#fff",
+                }}
+              >
+                <OpacityOutlinedIcon />
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>
+                  Gestor Tintas
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.78)" }}>
+                  v0.4 MVP
+                </Typography>
+              </Box>
+            </Stack>
+          </Box>
+
+          <Stack spacing={0.5} sx={{ px: 1.8, py: 2 }}>
+            {menuItems.map((item) => {
+              const active = isActive(item.path);
+
+              return (
+                <Box
+                  key={item.label}
+                  onClick={() => navigate(item.path)}
+                  sx={{
+                    height: 42,
+                    px: 1.6,
+                    borderRadius: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    cursor: "pointer",
+                    color: active ? "#FFFFFF" : "rgba(255,255,255,0.88)",
+                    background: active
+                      ? "linear-gradient(135deg, #4F46E5, #4338CA)"
+                      : "transparent",
+                    boxShadow: active
+                      ? "0 8px 18px rgba(79, 70, 229, 0.28)"
+                      : "none",
+                    "&:hover": {
+                      background: active
+                        ? "linear-gradient(135deg, #4F46E5, #4338CA)"
+                        : "rgba(255,255,255,0.06)",
+                    },
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "grid",
+                      placeItems: "center",
+                      color: "inherit",
+                    }}
+                  >
+                    {item.icon}
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      fontSize: 14,
+                      fontWeight: active ? 700 : 600,
+                      color: "inherit",
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Stack>
+        </Box>
+
+        <Box
+          sx={{
+            px: 2.5,
+            py: 2.5,
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            textAlign: "center",
+          }}
+        >
+          <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.72)", mb: 1.8 }}>
+            Tema: Claro
+          </Typography>
+
+          <IconButton
             sx={{
               width: 40,
               height: 40,
-              bgcolor: "#3F5FFF",
-              borderRadius: "14px",
-            }}
-          >
-            <WaterDropOutlinedIcon />
-          </Avatar>
-
-          <Box>
-            <Typography sx={{ fontWeight: 800, fontSize: 16, lineHeight: 1.1 }}>
-              Gestor Tintas
-            </Typography>
-            <Typography sx={{ fontSize: 13, opacity: 0.9 }}>v0.4 MVP</Typography>
-          </Box>
-        </Box>
-
-        <Divider sx={{ borderColor: "rgba(255,255,255,0.08)" }} />
-
-        <List sx={{ px: 1.8, py: 2, flex: 1 }}>
-          {menuItems.map((item) => {
-            const active = location.pathname === item.path;
-
-            return (
-              <ListItemButton
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                sx={{
-                  mb: 0.8,
-                  borderRadius: "16px",
-                  px: 1.8,
-                  py: 1.25,
-                  color: "#fff",
-                  bgcolor: active ? "linear-gradient(135deg,#4F46E5,#4338CA)" : "transparent",
-                  background: active ? "linear-gradient(135deg,#4F46E5,#4338CA)" : "transparent",
-                  "&:hover": {
-                    background: active
-                      ? "linear-gradient(135deg,#4F46E5,#4338CA)"
-                      : "rgba(255,255,255,0.06)",
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ color: "#fff", minWidth: 36 }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontSize: 14,
-                    fontWeight: active ? 700 : 600,
-                  }}
-                />
-              </ListItemButton>
-            );
-          })}
-        </List>
-
-        <Divider sx={{ borderColor: "rgba(255,255,255,0.08)" }} />
-
-        <Box sx={{ p: 2.5, textAlign: "center" }}>
-          <Typography sx={{ fontSize: 13, opacity: 0.9, mb: 1.5 }}>
-            Tema: Claro
-          </Typography>
-          <IconButton
-            sx={{
-              width: 44,
-              height: 44,
-              bgcolor: "#17327F",
+              backgroundColor: "rgba(255,255,255,0.08)",
               color: "#fff",
               "&:hover": {
-                bgcolor: "#1C3B92",
+                backgroundColor: "rgba(255,255,255,0.14)",
               },
             }}
           >
-            <DarkModeOutlinedIcon />
+            <DarkModeOutlinedIcon fontSize="small" />
           </IconButton>
         </Box>
       </Box>
@@ -150,42 +208,36 @@ export default function AdminLayout({ children }) {
           sx={{
             height: 62,
             px: 3,
+            borderBottom: "1px solid #E5E7EB",
+            backgroundColor: "#FFFFFF",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderBottom: "1px solid #E5E7EB",
-            bgcolor: "#FFFFFF",
           }}
         >
-          <Typography sx={{ fontWeight: 800, fontSize: 18, color: "#0B1739" }}>
+          <Typography
+            sx={{
+              fontSize: 18,
+              fontWeight: 800,
+              color: "#0B1739",
+            }}
+          >
             Sistema de Gestão de Tintas
           </Typography>
 
-          <Typography sx={{ color: "#6B7280", fontSize: 14 }}>
-            {new Date().toLocaleDateString("pt-BR", {
-              weekday: "long",
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            })}
+          <Typography
+            sx={{
+              fontSize: 14,
+              color: "#6B7280",
+              textTransform: "capitalize",
+            }}
+          >
+            {currentDate}
           </Typography>
         </Box>
 
-        <Box sx={{ p: 3 }}>{children}</Box>
-
-        <Box sx={{ position: "fixed", bottom: 18, right: 18 }}>
-          <IconButton
-            sx={{
-              width: 34,
-              height: 34,
-              bgcolor: "#FFFFFF",
-              border: "1px solid #E5E7EB",
-              color: "#6B7280",
-              boxShadow: "0 4px 14px rgba(15,23,42,0.08)",
-            }}
-          >
-            <HelpOutlineOutlinedIcon sx={{ fontSize: 18 }} />
-          </IconButton>
+        <Box sx={{ p: 3 }}>
+          {children}
         </Box>
       </Box>
     </Box>

@@ -13,10 +13,22 @@ export function removeToken() {
 }
 
 function buildErrorMessage(data, response) {
+  if (data?.errors) {
+    const firstKey = Object.keys(data.errors)[0];
+    if (
+      firstKey &&
+      Array.isArray(data.errors[firstKey]) &&
+      data.errors[firstKey][0]
+    ) {
+      return data.errors[firstKey][0];
+    }
+  }
+
   if (data?.detail) return data.detail;
   if (data?.title) return data.title;
   if (data?.message) return data.message;
   if (typeof data === "string" && data.trim()) return data;
+
   return `Erro na requisição: ${response.status}`;
 }
 
@@ -42,6 +54,7 @@ export async function loginRequest(credentials) {
   if (!response.ok) {
     const error = new Error(buildErrorMessage(data, response));
     error.status = response.status;
+    error.data = data;
     throw error;
   }
 
@@ -76,11 +89,20 @@ export async function authenticatedRequest(path, options = {}) {
   if (!response.ok) {
     const error = new Error(buildErrorMessage(data, response));
     error.status = response.status;
+    error.data = data;
     throw error;
   }
 
   return data;
 }
+
+/* ===================== AUTH ===================== */
+
+export function logout() {
+  removeToken();
+}
+
+/* ===================== USUÁRIOS ===================== */
 
 export function getUsuarios() {
   return authenticatedRequest("/api/usuarios", {
@@ -108,31 +130,7 @@ export function deleteUsuario(email) {
   });
 }
 
-export function getProdutos() {
-  return authenticatedRequest("/api/produtos", {
-    method: "GET",
-  });
-}
-
-export function createProduto(payload) {
-  return authenticatedRequest("/api/produtos", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateProduto(id, payload) {
-  return authenticatedRequest(`/api/produtos/${encodeURIComponent(id)}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deleteProduto(id) {
-  return authenticatedRequest(`/api/produtos/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-  });
-}
+/* ===================== CATEGORIAS DE PRODUTO ===================== */
 
 export function getCategoriasProdutos() {
   return authenticatedRequest("/api/categorias-produtos", {
@@ -157,5 +155,73 @@ export function updateCategoriaProduto(id, payload) {
 export function deleteCategoriaProduto(id) {
   return authenticatedRequest(`/api/categorias-produtos/${encodeURIComponent(id)}`, {
     method: "DELETE",
+  });
+}
+
+/* ===================== PRODUTOS ===================== */
+
+export function getProdutos() {
+  return authenticatedRequest("/api/produtos", {
+    method: "GET",
+  });
+}
+
+export function getProdutoById(id) {
+  return authenticatedRequest(`/api/produtos/${encodeURIComponent(id)}`, {
+    method: "GET",
+  });
+}
+
+export function createProduto(payload) {
+  return authenticatedRequest("/api/produtos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateProduto(id, payload) {
+  return authenticatedRequest(`/api/produtos/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteProduto(id) {
+  return authenticatedRequest(`/api/produtos/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+/* ===================== VENDAS ===================== */
+
+export function getVendas() {
+  return authenticatedRequest("/api/vendas", {
+    method: "GET",
+  });
+}
+
+export function getVendaById(id) {
+  return authenticatedRequest(`/api/vendas/id/${encodeURIComponent(id)}`, {
+    method: "GET",
+  });
+}
+
+export function getVendasByVendedor(vendedorId) {
+  return authenticatedRequest(`/api/vendas/vendedor/${encodeURIComponent(vendedorId)}`, {
+    method: "GET",
+  });
+}
+
+/* ===================== PRODUÇÕES ===================== */
+
+export function getProducoes() {
+  return authenticatedRequest("/api/producoes", {
+    method: "GET",
+  });
+}
+
+export function getProducaoById(id) {
+  return authenticatedRequest(`/api/producoes/${encodeURIComponent(id)}`, {
+    method: "GET",
   });
 }
