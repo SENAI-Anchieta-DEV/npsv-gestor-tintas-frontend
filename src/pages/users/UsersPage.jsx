@@ -3,36 +3,21 @@ import {
   Alert,
   Avatar,
   Box,
-  Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
   IconButton,
-  InputAdornment,
   MenuItem,
   Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
   Typography,
-  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import EngineeringOutlinedIcon from "@mui/icons-material/EngineeringOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+
 import AdminLayout from "../../components/layout/AdminLayout";
-import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
+import { useAppSnackbar } from "../../components/feedback/AppSnackProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   createUsuario,
@@ -40,6 +25,13 @@ import {
   getUsuarios,
   updateUsuario,
 } from "../../services/api";
+
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppSearchField from "../../components/common/AppSearchField";
+import AppTextField from "../../components/common/AppTextField";
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Administrador" },
@@ -128,12 +120,12 @@ export default function UsersPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [saving, setSaving] = useState(false);
 
   async function loadUsers() {
     setLoading(true);
@@ -203,9 +195,16 @@ export default function UsersPage() {
     const errors = {};
 
     if (!form.nome.trim()) errors.nome = "Informe o nome.";
-    if (!form.email.trim()) errors.email = "Informe o e-mail.";
-    else if (!/\S+@\S+\.\S+/.test(form.email)) errors.email = "E-mail inválido.";
-    if (!editingUser && !form.senha.trim()) errors.senha = "Informe a senha.";
+    if (!form.email.trim()) {
+      errors.email = "Informe o e-mail.";
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      errors.email = "Informe um e-mail válido.";
+    }
+
+    if (!editingUser && !form.senha.trim()) {
+      errors.senha = "Informe a senha.";
+    }
+
     if (!form.role) errors.role = "Selecione o perfil.";
 
     setFieldErrors(errors);
@@ -232,16 +231,11 @@ export default function UsersPage() {
 
       if (editingUser) {
         await updateUsuario(editingUser.email, payload);
+        showSnackbar("Usuário atualizado com sucesso.", "success");
       } else {
         await createUsuario(payload);
+        showSnackbar("Usuário cadastrado com sucesso.", "success");
       }
-
-      showSnackbar(
-        editingUser
-          ? "Usuário atualizado com sucesso."
-          : "Usuário cadastrado com sucesso.",
-        "success"
-      );
 
       closeDialog();
       await loadUsers();
@@ -253,17 +247,91 @@ export default function UsersPage() {
   }
 
   async function handleDelete(user) {
-    const confirmed = window.confirm(`Deseja inativar o usuário "${user.nome}"?`);
+    const confirmed = window.confirm(`Deseja excluir o usuário "${user.nome}"?`);
     if (!confirmed) return;
 
     try {
       await deleteUsuario(user.email);
-      showSnackbar("Usuário inativado com sucesso.", "success");
+      showSnackbar("Usuário excluído com sucesso.", "success");
       await loadUsers();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
     }
   }
+
+  const columns = [
+    {
+      key: "usuario",
+      label: "Usuário",
+      render: (user, index) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Avatar sx={{ background: getAvatarColor(index) }}>
+            {String(user.nome || "U").charAt(0).toUpperCase()}
+          </Avatar>
+
+          <Box>
+            <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+              {user.nome || "-"}
+            </Typography>
+            <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
+              {user.email || "-"}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      key: "perfil",
+      label: "Perfil",
+      render: (user) => (
+        <Chip
+          icon={
+            user.role === "ADMIN" ? (
+              <ShieldOutlinedIcon />
+            ) : user.role === "COLORISTA" ? (
+              <EngineeringOutlinedIcon />
+            ) : (
+              <StorefrontOutlinedIcon />
+            )
+          }
+          label={getRoleLabel(user.role)}
+          size="small"
+          sx={{ ...getRoleChipStyles(user.role), fontWeight: 700 }}
+        />
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (user) => (
+        <Chip
+          label={user.ativo ? "Ativo" : "Inativo"}
+          size="small"
+          sx={{ ...getStatusChipStyles(user.ativo), fontWeight: 700 }}
+        />
+      ),
+    },
+    {
+      key: "cadastro",
+      label: "Criado em",
+      render: (user) => formatDate(user.dataCriacao || user.criadoEm),
+    },
+    {
+      key: "acoes",
+      label: "Ações",
+      render: (user) => (
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          <IconButton onClick={() => openEdit(user)}>
+            <EditOutlinedIcon fontSize="small" />
+          </IconButton>
+
+          <IconButton onClick={() => handleDelete(user)}>
+            <MoreHorizIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
 
   return (
     <AdminLayout>
@@ -275,440 +343,104 @@ export default function UsersPage() {
           overflow: "hidden",
         }}
       >
-        <Box sx={{ px: 3, py: 3 }}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            spacing={2}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: "#0B1739",
-                  mb: 0.5,
-                }}
-              >
-                Gestão de Usuários
-              </Typography>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-                Gerencie usuários e permissões de acesso
-              </Typography>
-            </Box>
+        <AppPageHeader
+          title="Usuários"
+          subtitle="Cadastre, edite e gerencie usuários do sistema"
+          actionLabel="Novo Usuário"
+          actionIcon={<AddIcon />}
+          onAction={openCreate}
+        />
 
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={openCreate}
-              sx={{
-                borderRadius: "14px",
-                px: 2.2,
-                py: 1.1,
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #4F46E5, #4338CA)",
-                boxShadow: "0 8px 20px rgba(79, 70, 229, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #4338CA, #3730A3)",
-                },
-              }}
-            >
-              Novo Usuário
-            </Button>
-          </Stack>
-        </Box>
+        <AppSearchField
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Pesquisar por nome ou e-mail..."
+        />
 
-        <Divider />
-
-        <Box sx={{ px: 2.5, py: 2 }}>
-          <TextField
-            fullWidth
-            placeholder="Pesquisar por nome ou e-mail..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#9CA3AF" }} />
-                </InputAdornment>
-              ),
-              sx: {
-                height: 44,
-                borderRadius: "12px",
-                backgroundColor: "#FFFFFF",
-              },
-            }}
-          />
-        </Box>
-
-        <Divider />
+        {errorMessage ? (
+          <Box sx={{ px: 2.5, pb: 2 }}>
+            <Alert severity="error" sx={{ borderRadius: "14px" }}>
+              {errorMessage}
+            </Alert>
+          </Box>
+        ) : null}
 
         {loading ? (
-          <Box
-            sx={{
-              minHeight: 220,
-              display: "grid",
-              placeItems: "center",
-              px: 3,
-              py: 4,
-            }}
-          >
-            <Stack alignItems="center" spacing={2}>
-              <CircularProgress />
-              <Typography color="text.secondary">
-                Carregando usuários...
-              </Typography>
-            </Stack>
-          </Box>
-        ) : errorMessage ? (
-          <Box sx={{ p: 3 }}>
-            <Alert severity="error">{errorMessage}</Alert>
-          </Box>
+          <AppLoading message="Carregando usuários..." />
         ) : (
-          <>
-            <Table>
-              <TableHead>
-                <TableRow
-                  sx={{
-                    "& th": {
-                      fontSize: 14,
-                      color: "#6B7280",
-                      fontWeight: 700,
-                      backgroundColor: "#FFFFFF",
-                    },
-                  }}
-                >
-                  <TableCell>Usuário</TableCell>
-                  <TableCell>E-mail</TableCell>
-                  <TableCell>Perfil</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Data de Cadastro</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {filteredUsers.map((user, index) => (
-                  <TableRow
-                    key={user.email || index}
-                    hover
-                    sx={{
-                      "& td": {
-                        borderColor: "#E5E7EB",
-                        py: 1.4,
-                      },
-                    }}
-                  >
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Avatar
-                          sx={{
-                            width: 40,
-                            height: 40,
-                            fontWeight: 800,
-                            background: getAvatarColor(index),
-                          }}
-                        >
-                          {String(user.nome || "?").charAt(0).toUpperCase()}
-                        </Avatar>
-
-                        <Box>
-                          <Typography
-                            sx={{
-                              fontWeight: 700,
-                              color: "#111827",
-                              fontSize: 15,
-                            }}
-                          >
-                            {user.nome}
-                          </Typography>
-                          <Typography sx={{ fontSize: 13, color: "#6B7280" }}>
-                            {getRoleLabel(user.role)}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {user.email}
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        label={getRoleLabel(user.role)}
-                        sx={{
-                          height: 28,
-                          fontWeight: 700,
-                          borderRadius: "999px",
-                          ...getRoleChipStyles(user.role),
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        label={user.ativo ? "Ativo" : "Inativo"}
-                        sx={{
-                          height: 28,
-                          fontWeight: 700,
-                          borderRadius: "999px",
-                          ...getStatusChipStyles(user.ativo),
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {formatDate(user.dataCadastro)}
-                    </TableCell>
-
-                    <TableCell align="right">
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        justifyContent="flex-end"
-                        alignItems="center"
-                      >
-                        <Button
-                          variant="outlined"
-                          startIcon={<EditOutlinedIcon fontSize="small" />}
-                          onClick={() => openEdit(user)}
-                          sx={{
-                            borderRadius: "12px",
-                            textTransform: "none",
-                            color: "#111827",
-                            borderColor: "#D1D5DB",
-                            fontWeight: 600,
-                            px: 1.8,
-                            minWidth: "auto",
-                          }}
-                        >
-                          Editar
-                        </Button>
-
-                        <IconButton
-                          sx={{ color: "#6B7280" }}
-                          onClick={() => handleDelete(user)}
-                        >
-                          <MoreHorizIcon />
-                        </IconButton>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            <Divider />
-
-            <Box
-              sx={{
-                px: 2.5,
-                py: 2,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 2,
-              }}
-            >
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-                Exibindo {filteredUsers.length} usuários cadastrados
-              </Typography>
-
-              <Stack direction="row" spacing={1}>
-                <Button
-                  variant="outlined"
-                  sx={{
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    borderColor: "#D1D5DB",
-                    color: "#111827",
-                  }}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  variant="outlined"
-                  sx={{
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    borderColor: "#D1D5DB",
-                    color: "#111827",
-                  }}
-                >
-                  Próximo
-                </Button>
-              </Stack>
-            </Box>
-          </>
+          <AppDataTable
+            columns={columns}
+            rows={filteredUsers.map((item) => ({
+              ...item,
+              key: item.email,
+            }))}
+            emptyMessage="Nenhum usuário encontrado com os filtros informados."
+          />
         )}
-
       </Paper>
 
-      <Paper
-        sx={{
-          mt: 3,
-          borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)",
-          p: 3,
-        }}
+      <AppFormDialog
+        open={dialogOpen}
+        title={editingUser ? "Editar usuário" : "Novo usuário"}
+        onClose={closeDialog}
+        onSubmit={handleSubmit}
+        loading={saving}
+        submitLabel={editingUser ? "Salvar alterações" : "Cadastrar usuário"}
       >
-        <Typography
-          sx={{
-            fontSize: 18,
-            fontWeight: 800,
-            color: "#0B1739",
-            mb: 3,
-          }}
+        <AppTextField
+          name="nome"
+          label="Nome"
+          required
+          value={form.nome}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.nome)}
+          helperText={fieldErrors.nome}
+        />
+
+        <AppTextField
+          name="email"
+          label="E-mail"
+          type="email"
+          required
+          value={form.email}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.email)}
+          helperText={fieldErrors.email}
+        />
+
+        <AppTextField
+          name="senha"
+          label={editingUser ? "Nova senha" : "Senha"}
+          type="password"
+          required={!editingUser}
+          value={form.senha}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.senha)}
+          helperText={
+            fieldErrors.senha ||
+            (editingUser
+              ? "Preencha apenas se desejar alterar a senha."
+              : " ")
+          }
+        />
+
+        <AppTextField
+          select
+          name="role"
+          label="Perfil"
+          required
+          value={form.role}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.role)}
+          helperText={fieldErrors.role}
         >
-          Perfis de Acesso
-        </Typography>
-
-        <Stack direction={{ xs: "column", lg: "row" }} spacing={2}>
-          <Paper
-            variant="outlined"
-            sx={{
-              flex: 1,
-              p: 2.5,
-              borderRadius: "16px",
-              borderColor: "#E5E7EB",
-              backgroundColor: "#F8FAFF",
-            }}
-          >
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-              <ShieldOutlinedIcon sx={{ color: "#4F46E5" }} />
-              <Typography sx={{ fontWeight: 800, color: "#4F46E5", fontSize: 16 }}>
-                Administrador
-              </Typography>
-            </Stack>
-            <Typography sx={{ fontSize: 14, color: "#6B7280", lineHeight: 1.7 }}>
-              Acesso total ao sistema. Pode gerenciar usuários, produtos,
-              fórmulas, estoque e relatórios.
-            </Typography>
-          </Paper>
-
-          <Paper
-            variant="outlined"
-            sx={{
-              flex: 1,
-              p: 2.5,
-              borderRadius: "16px",
-              borderColor: "#E5E7EB",
-              backgroundColor: "#F8FBFF",
-            }}
-          >
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-              <EngineeringOutlinedIcon sx={{ color: "#3B82F6" }} />
-              <Typography sx={{ fontWeight: 800, color: "#3B82F6", fontSize: 16 }}>
-                Colorista
-              </Typography>
-            </Stack>
-            <Typography sx={{ fontSize: 14, color: "#6B7280", lineHeight: 1.7 }}>
-              Acesso à Aba da Máquina e histórico de produção. Pode realizar
-              misturas de tintas.
-            </Typography>
-          </Paper>
-
-          <Paper
-            variant="outlined"
-            sx={{
-              flex: 1,
-              p: 2.5,
-              borderRadius: "16px",
-              borderColor: "#E5E7EB",
-              backgroundColor: "#FFFCF5",
-            }}
-          >
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-              <StorefrontOutlinedIcon sx={{ color: "#F59E0B" }} />
-              <Typography sx={{ fontWeight: 800, color: "#F59E0B", fontSize: 16 }}>
-                Vendedor
-              </Typography>
-            </Stack>
-            <Typography sx={{ fontSize: 14, color: "#6B7280", lineHeight: 1.7 }}>
-              Acesso à consulta de produtos e pré-venda. Pode verificar estoque
-              e iniciar vendas.
-            </Typography>
-          </Paper>
-        </Stack>
-      </Paper>
-
-      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          {editingUser ? "Editar usuário" : "Novo usuário"}
-        </DialogTitle>
-
-        <Box component="form" onSubmit={handleSubmit}>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
-                label="Nome"
-                name="nome"
-                value={form.nome}
-                onChange={handleChange}
-                required
-                error={Boolean(fieldErrors.nome)}
-                helperText={fieldErrors.nome}
-                fullWidth
-              />
-
-              <TextField
-                label="E-mail"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                error={Boolean(fieldErrors.email)}
-                helperText={fieldErrors.email}
-                disabled={Boolean(editingUser)}
-                fullWidth
-              />
-
-              <TextField
-                label={editingUser ? "Nova senha (opcional)" : "Senha"}
-                name="senha"
-                type="password"
-                value={form.senha}
-                onChange={handleChange}
-                required={!editingUser}
-                error={Boolean(fieldErrors.senha)}
-                helperText={fieldErrors.senha}
-                fullWidth
-              />
-
-              <TextField
-                select
-                label="Perfil"
-                name="role"
-                value={form.role}
-                onChange={handleChange}
-                required
-                error={Boolean(fieldErrors.role)}
-                helperText={fieldErrors.role}
-                fullWidth
-              >
-                {ROLE_OPTIONS.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Stack>
-          </DialogContent>
-
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={closeDialog} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="contained" disabled={saving}>
-              {saving ? "Salvando..." : editingUser ? "Salvar alterações" : "Cadastrar"}
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
+          {ROLE_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </AppTextField>
+      </AppFormDialog>
     </AdminLayout>
   );
 }
