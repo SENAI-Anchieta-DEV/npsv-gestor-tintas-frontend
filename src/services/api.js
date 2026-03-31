@@ -109,3 +109,55 @@ export function deleteUsuario(email) {
     method: "DELETE",
   });
 }
+
+export function getProdutos() {
+  return authenticatedRequest("/api/produtos", {
+    method: "GET",
+  });
+}
+
+export function createProduto(payload) {
+  return authenticatedRequest("/api/produtos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateProduto(id, payload) {
+  return authenticatedRequest(`/api/produtos/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteProduto(id) {
+  return authenticatedRequest(`/api/produtos/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export function getCategoriasProdutos() {
+  return authenticatedRequest("/api/categorias-produtos", {
+    method: "GET",
+  });
+}
+
+export function createCategoriaProduto(payload) {
+  return authenticatedRequest("/api/categorias-produtos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateCategoriaProduto(id, payload) {
+  return authenticatedRequest(`/api/categorias-produtos/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCategoriaProduto(id) {
+  return authenticatedRequest(`/api/categorias-produtos/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}

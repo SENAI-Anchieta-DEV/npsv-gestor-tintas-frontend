@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Box, Button, Card, CircularProgress, Typography } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
-import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
+import { useAppSnackbar } from "../../components/feedback/AppSnackProvider";
 import AppTextField from "../../components/common/AppTextField";
-import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
+import { getProblemDetailMessage } from "../../lib/problemDetail";
 
 const features = [
   {
