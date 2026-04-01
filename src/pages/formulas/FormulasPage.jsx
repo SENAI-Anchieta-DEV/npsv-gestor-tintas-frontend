@@ -30,7 +30,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import AdminLayout from "../../components/layout/AdminLayout";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
-import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
+import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   createFormula,
   deleteFormula,
