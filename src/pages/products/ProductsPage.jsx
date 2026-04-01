@@ -1,37 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  CircularProgress,
-} from "@mui/material";
+import { Alert, Box, Chip, IconButton, MenuItem, Paper, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import AdminLayout from "../../components/layout/AdminLayout";
-import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
-import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
+import { useAppSnackbar } from "../../components/feedback/AppSnackProvider";
+import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   createProduto,
   deleteProduto,
@@ -39,6 +14,12 @@ import {
   getProdutos,
   updateProduto,
 } from "../../services/api";
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppSearchField from "../../components/common/AppSearchField";
+import AppTextField from "../../components/common/AppTextField";
 
 const UNIDADE_OPTIONS = [
   { value: "UN", label: "UN" },
@@ -72,16 +53,11 @@ function normalizeProduto(item) {
 }
 
 function formatMoney(value) {
-  const number = Number(value || 0);
-  return number.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+  return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 export default function ProductsPage() {
   const { showSnackbar } = useAppSnackbar();
-
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +65,6 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("TODAS");
   const [errorMessage, setErrorMessage] = useState("");
-
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM);
@@ -101,8 +76,7 @@ export default function ProductsPage() {
 
     try {
       const data = await getProdutos();
-      const normalized = Array.isArray(data) ? data.map(normalizeProduto) : [];
-      setProdutos(normalized);
+      setProdutos(Array.isArray(data) ? data.map(normalizeProduto) : []);
     } catch (error) {
       setErrorMessage(getProblemDetailMessage(error));
     } finally {
@@ -128,17 +102,16 @@ export default function ProductsPage() {
     const term = search.trim().toLowerCase();
 
     return produtos.filter((produto) => {
-      const matchCategoria =
-        categoriaFiltro === "TODAS"
-          ? true
-          : String(produto.categoria?.id || "") === String(categoriaFiltro);
-
       const matchSearch =
         !term ||
         String(produto.descricao || "").toLowerCase().includes(term) ||
-        String(produto.codigoBarras || "").toLowerCase().includes(term);
+        String(produto.codigoBarras || "").toLowerCase().includes(term) ||
+        String(produto.categoria?.nome || "").toLowerCase().includes(term);
 
-      return matchCategoria && matchSearch;
+      const matchCategoria =
+        categoriaFiltro === "TODAS" || String(produto.categoria?.id) === String(categoriaFiltro);
+
+      return matchSearch && matchCategoria;
     });
   }, [produtos, search, categoriaFiltro]);
 
@@ -174,50 +147,23 @@ export default function ProductsPage() {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
   function validate() {
     const errors = {};
 
-    if (!form.codigoBarras.trim()) {
-      errors.codigoBarras = "Informe o código de barras.";
-    }
-
-    if (!form.descricao.trim()) {
-      errors.descricao = "Informe a descrição.";
-    }
-
-    if (form.quantidadeEstoque === "") {
-      errors.quantidadeEstoque = "Informe a quantidade em estoque.";
-    } else if (Number(form.quantidadeEstoque) < 0) {
-      errors.quantidadeEstoque =
-        "A quantidade em estoque deve ser maior ou igual a zero.";
-    }
-
-    if (form.precoCusto === "") {
-      errors.precoCusto = "Informe o preço de custo.";
-    } else if (Number(form.precoCusto) <= 0) {
-      errors.precoCusto = "O preço de custo deve ser maior que zero.";
-    }
-
-    if (form.precoVenda === "") {
-      errors.precoVenda = "Informe o preço de venda.";
-    } else if (Number(form.precoVenda) <= 0) {
-      errors.precoVenda = "O preço de venda deve ser maior que zero.";
-    }
-
-    if (!form.unidadeMedida) {
-      errors.unidadeMedida = "Selecione a unidade de medida.";
-    }
-
-    if (!form.categoriaId) {
-      errors.categoriaId = "Selecione a categoria.";
-    }
+    if (!form.codigoBarras.trim()) errors.codigoBarras = "Informe o código de barras.";
+    if (!form.descricao.trim()) errors.descricao = "Informe a descrição.";
+    if (form.quantidadeEstoque === "") errors.quantidadeEstoque = "Informe a quantidade em estoque.";
+    else if (Number(form.quantidadeEstoque) < 0) errors.quantidadeEstoque = "A quantidade deve ser maior ou igual a zero.";
+    if (form.precoCusto === "") errors.precoCusto = "Informe o preço de custo.";
+    else if (Number(form.precoCusto) <= 0) errors.precoCusto = "O preço de custo deve ser maior que zero.";
+    if (form.precoVenda === "") errors.precoVenda = "Informe o preço de venda.";
+    else if (Number(form.precoVenda) <= 0) errors.precoVenda = "O preço de venda deve ser maior que zero.";
+    if (!form.unidadeMedida) errors.unidadeMedida = "Selecione a unidade de medida.";
+    if (!form.categoriaId) errors.categoriaId = "Selecione a categoria.";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -232,7 +178,6 @@ export default function ProductsPage() {
     }
 
     setSaving(true);
-
     try {
       const payload = {
         codigoBarras: form.codigoBarras.trim(),
@@ -262,11 +207,7 @@ export default function ProductsPage() {
   }
 
   async function handleDelete(produto) {
-    const confirmed = window.confirm(
-      `Deseja excluir o produto "${produto.descricao}"?`
-    );
-
-    if (!confirmed) return;
+    if (!window.confirm(`Deseja excluir o produto \"${produto.descricao}\"?`)) return;
 
     try {
       await deleteProduto(produto.id);
@@ -277,412 +218,204 @@ export default function ProductsPage() {
     }
   }
 
+  const columns = [
+    {
+      key: "produto",
+      label: "Produto",
+      render: (produto) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "#EEF2FF", color: "#4F46E5" }}>
+            <Inventory2OutlinedIcon fontSize="small" />
+          </Box>
+          <Box>
+            <Typography sx={{ fontWeight: 700, color: "text.primary" }}>{produto.descricao}</Typography>
+            <Typography sx={{ color: "text.secondary", fontSize: 13 }}>{produto.codigoBarras}</Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      key: "categoria",
+      label: "Categoria",
+      render: (produto) => <Typography>{produto.categoria?.nome || "-"}</Typography>,
+    },
+    {
+      key: "estoque",
+      label: "Estoque",
+      render: (produto) => <Chip label={`${produto.quantidadeEstoque} ${produto.unidadeMedida}`} size="small" sx={{ fontWeight: 700 }} />,
+    },
+    {
+      key: "precoCusto",
+      label: "Preço de custo",
+      render: (produto) => formatMoney(produto.precoCusto),
+    },
+    {
+      key: "precoVenda",
+      label: "Preço de venda",
+      render: (produto) => formatMoney(produto.precoVenda),
+    },
+    {
+      key: "acoes",
+      label: "Ações",
+      render: (produto) => (
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          <IconButton onClick={() => openEdit(produto)}>
+            <EditOutlinedIcon fontSize="small" />
+          </IconButton>
+          <IconButton onClick={() => handleDelete(produto)}>
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
+
   return (
     <AdminLayout>
-      <Paper
-        sx={{
-          borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)",
-          overflow: "hidden",
-        }}
-      >
-        <Box sx={{ px: 3, py: 3 }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
-            alignItems={{ xs: "stretch", md: "center" }}
-            spacing={2}
+      <Paper sx={{ borderRadius: "20px", border: "1px solid #E5E7EB", boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)", overflow: "hidden" }}>
+        <AppPageHeader
+          title="Gerenciar Produtos"
+          subtitle="Cadastre, edite e exclua produtos e insumos"
+          actionLabel="Novo Produto"
+          actionIcon={<AddIcon />}
+          onAction={openCreate}
+        />
+
+        <AppSearchField
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Pesquisar por descrição, código de barras ou categoria..."
+        />
+
+        <Box sx={{ px: 2.5, pb: 2 }}>
+          <AppTextField
+            select
+            label="Filtrar por categoria"
+            value={categoriaFiltro}
+            onChange={(e) => setCategoriaFiltro(e.target.value)}
+            helperText=" "
           >
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: "#0B1739",
-                  mb: 0.5,
-                }}
-              >
-                Gerenciar Produtos
-              </Typography>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-                Cadastre, edite e exclua produtos e insumos
-              </Typography>
-            </Box>
-
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={openCreate}
-              sx={{
-                borderRadius: "14px",
-                px: 2.2,
-                py: 1.1,
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #4F46E5, #4338CA)",
-                boxShadow: "0 8px 20px rgba(79, 70, 229, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #4338CA, #3730A3)",
-                },
-              }}
-            >
-              Novo Produto
-            </Button>
-          </Stack>
+            <MenuItem value="TODAS">Todas</MenuItem>
+            {categorias.map((categoria) => (
+              <MenuItem key={categoria.id} value={String(categoria.id)}>
+                {categoria.nome}
+              </MenuItem>
+            ))}
+          </AppTextField>
         </Box>
 
-        <Divider />
-
-        <Box sx={{ px: 2.5, py: 2 }}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-            <TextField
-              fullWidth
-              placeholder="Pesquisar por descrição ou código de barras..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#9CA3AF" }} />
-                  </InputAdornment>
-                ),
-                sx: {
-                  height: 44,
-                  borderRadius: "12px",
-                  backgroundColor: "#FFFFFF",
-                },
-              }}
-            />
-
-            <TextField
-              select
-              value={categoriaFiltro}
-              onChange={(e) => setCategoriaFiltro(e.target.value)}
-              sx={{ minWidth: 260 }}
-            >
-              <MenuItem value="TODAS">Todas as categorias</MenuItem>
-              {categorias.map((categoria) => (
-                <MenuItem key={categoria.id} value={categoria.id}>
-                  {categoria.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Stack>
-        </Box>
-
-        <Divider />
+        {errorMessage ? (
+          <Box sx={{ px: 2.5, pb: 2 }}>
+            <Alert severity="error" sx={{ borderRadius: "14px" }}>{errorMessage}</Alert>
+          </Box>
+        ) : null}
 
         {loading ? (
-          <Box
-            sx={{
-              minHeight: 220,
-              display: "grid",
-              placeItems: "center",
-              px: 3,
-              py: 4,
-            }}
-          >
-            <Stack alignItems="center" spacing={2}>
-              <CircularProgress />
-              <Typography color="text.secondary">
-                Carregando produtos...
-              </Typography>
-            </Stack>
-          </Box>
-        ) : errorMessage ? (
-          <Box sx={{ p: 3 }}>
-            <Alert severity="error">{errorMessage}</Alert>
-          </Box>
+          <AppLoading message="Carregando produtos..." />
         ) : (
-          <>
-            <Table>
-              <TableHead>
-                <TableRow
-                  sx={{
-                    "& th": {
-                      fontSize: 14,
-                      color: "#6B7280",
-                      fontWeight: 700,
-                      backgroundColor: "#FFFFFF",
-                    },
-                  }}
-                >
-                  <TableCell>Descrição</TableCell>
-                  <TableCell>Código de Barras</TableCell>
-                  <TableCell>Categoria</TableCell>
-                  <TableCell>Unidade</TableCell>
-                  <TableCell>Qtd. Estoque</TableCell>
-                  <TableCell>Preço Custo</TableCell>
-                  <TableCell>Preço Venda</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {produtosFiltrados.map((produto) => (
-                  <TableRow
-                    key={produto.id}
-                    hover
-                    sx={{
-                      "& td": {
-                        borderColor: "#E5E7EB",
-                        py: 1.4,
-                      },
-                    }}
-                  >
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Box
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: "12px",
-                            backgroundColor: "#EEF2FF",
-                            color: "#4F46E5",
-                            display: "grid",
-                            placeItems: "center",
-                          }}
-                        >
-                          <Inventory2OutlinedIcon fontSize="small" />
-                        </Box>
-
-                        <Typography
-                          sx={{
-                            fontWeight: 700,
-                            color: "#111827",
-                            fontSize: 15,
-                          }}
-                        >
-                          {produto.descricao}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {produto.codigoBarras}
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        icon={<CategoryOutlinedIcon sx={{ fontSize: 16 }} />}
-                        label={produto.categoria?.nome || "Sem categoria"}
-                        sx={{
-                          height: 28,
-                          fontWeight: 700,
-                          borderRadius: "999px",
-                          color: "#4F46E5",
-                          backgroundColor: "#EEF2FF",
-                          border: "1px solid #C7D2FE",
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {produto.unidadeMedida}
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {produto.quantidadeEstoque}
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {formatMoney(produto.precoCusto)}
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {formatMoney(produto.precoVenda)}
-                    </TableCell>
-
-                    <TableCell align="right">
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        justifyContent="flex-end"
-                        alignItems="center"
-                      >
-                        <Button
-                          variant="outlined"
-                          startIcon={<EditOutlinedIcon fontSize="small" />}
-                          onClick={() => openEdit(produto)}
-                          sx={{
-                            borderRadius: "12px",
-                            textTransform: "none",
-                            color: "#111827",
-                            borderColor: "#D1D5DB",
-                            fontWeight: 600,
-                            px: 1.8,
-                            minWidth: "auto",
-                          }}
-                        >
-                          Editar
-                        </Button>
-
-                        <IconButton
-                          sx={{ color: "#DC2626" }}
-                          onClick={() => handleDelete(produto)}
-                        >
-                          <DeleteOutlineIcon />
-                        </IconButton>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            <Divider />
-
-            <Box
-              sx={{
-                px: 2.5,
-                py: 2,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 2,
-              }}
-            >
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-                Exibindo {produtosFiltrados.length} produtos cadastrados
-              </Typography>
-            </Box>
-          </>
+          <AppDataTable
+            columns={columns}
+            rows={produtosFiltrados.map((item) => ({ ...item, key: item.id }))}
+            emptyMessage="Nenhum produto encontrado com os filtros informados."
+          />
         )}
       </Paper>
 
-      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="md">
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          {editingProduct ? "Editar Produto" : "Cadastrar Produto"}
-        </DialogTitle>
+      <AppFormDialog
+        open={dialogOpen}
+        title={editingProduct ? "Editar produto" : "Novo produto"}
+        onClose={closeDialog}
+        onSubmit={handleSubmit}
+        loading={saving}
+        submitLabel={editingProduct ? "Salvar alterações" : "Cadastrar produto"}
+      >
+        <AppTextField
+          name="codigoBarras"
+          label="Código de barras"
+          required
+          value={form.codigoBarras}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.codigoBarras)}
+          helperText={fieldErrors.codigoBarras}
+        />
 
-        <Box component="form" onSubmit={handleSubmit}>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
-                label="Descrição"
-                name="descricao"
-                value={form.descricao}
-                onChange={handleChange}
-                required
-                error={Boolean(fieldErrors.descricao)}
-                helperText={fieldErrors.descricao}
-                fullWidth
-              />
+        <AppTextField
+          name="descricao"
+          label="Descrição"
+          required
+          value={form.descricao}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.descricao)}
+          helperText={fieldErrors.descricao}
+        />
 
-              <TextField
-                label="Código de Barras"
-                name="codigoBarras"
-                value={form.codigoBarras}
-                onChange={handleChange}
-                required
-                error={Boolean(fieldErrors.codigoBarras)}
-                helperText={fieldErrors.codigoBarras}
-                fullWidth
-              />
+        <AppTextField
+          name="quantidadeEstoque"
+          label="Quantidade em estoque"
+          type="number"
+          required
+          value={form.quantidadeEstoque}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.quantidadeEstoque)}
+          helperText={fieldErrors.quantidadeEstoque}
+        />
 
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <TextField
-                  label="Quantidade em Estoque"
-                  name="quantidadeEstoque"
-                  type="number"
-                  value={form.quantidadeEstoque}
-                  onChange={handleChange}
-                  required
-                  error={Boolean(fieldErrors.quantidadeEstoque)}
-                  helperText={fieldErrors.quantidadeEstoque}
-                  fullWidth
-                />
+        <AppTextField
+          name="precoCusto"
+          label="Preço de custo"
+          type="number"
+          required
+          value={form.precoCusto}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.precoCusto)}
+          helperText={fieldErrors.precoCusto}
+        />
 
-                <TextField
-                  select
-                  label="Unidade de Medida"
-                  name="unidadeMedida"
-                  value={form.unidadeMedida}
-                  onChange={handleChange}
-                  required
-                  error={Boolean(fieldErrors.unidadeMedida)}
-                  helperText={fieldErrors.unidadeMedida}
-                  fullWidth
-                >
-                  {UNIDADE_OPTIONS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Stack>
+        <AppTextField
+          name="precoVenda"
+          label="Preço de venda"
+          type="number"
+          required
+          value={form.precoVenda}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.precoVenda)}
+          helperText={fieldErrors.precoVenda}
+        />
 
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <TextField
-                  label="Preço de Custo"
-                  name="precoCusto"
-                  type="number"
-                  value={form.precoCusto}
-                  onChange={handleChange}
-                  required
-                  error={Boolean(fieldErrors.precoCusto)}
-                  helperText={fieldErrors.precoCusto}
-                  fullWidth
-                />
+        <AppTextField
+          select
+          name="unidadeMedida"
+          label="Unidade de medida"
+          required
+          value={form.unidadeMedida}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.unidadeMedida)}
+          helperText={fieldErrors.unidadeMedida}
+        >
+          {UNIDADE_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </AppTextField>
 
-                <TextField
-                  label="Preço de Venda"
-                  name="precoVenda"
-                  type="number"
-                  value={form.precoVenda}
-                  onChange={handleChange}
-                  required
-                  error={Boolean(fieldErrors.precoVenda)}
-                  helperText={fieldErrors.precoVenda}
-                  fullWidth
-                />
-              </Stack>
-
-              <TextField
-                select
-                label="Categoria"
-                name="categoriaId"
-                value={form.categoriaId}
-                onChange={handleChange}
-                required
-                error={Boolean(fieldErrors.categoriaId)}
-                helperText={
-                  fieldErrors.categoriaId ||
-                  (categorias.length === 0 ? "Nenhuma categoria carregada." : "")
-                }
-                fullWidth
-              >
-                {categorias.length === 0 ? (
-                  <MenuItem disabled value="">
-                    Nenhuma categoria disponível
-                  </MenuItem>
-                ) : (
-                  categorias.map((categoria) => (
-                    <MenuItem key={categoria.id} value={categoria.id}>
-                      {categoria.nome}
-                    </MenuItem>
-                  ))
-                )}
-              </TextField>
-            </Stack>
-          </DialogContent>
-
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={closeDialog} disabled={saving}>
-              Cancelar
-            </Button>
-
-            <Button type="submit" variant="contained" disabled={saving}>
-              {saving
-                ? "Salvando..."
-                : editingProduct
-                ? "Salvar alterações"
-                : "Cadastrar"}
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
+        <AppTextField
+          select
+          name="categoriaId"
+          label="Categoria"
+          required
+          value={form.categoriaId}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.categoriaId)}
+          helperText={fieldErrors.categoriaId}
+        >
+          {categorias.map((categoria) => (
+            <MenuItem key={categoria.id} value={String(categoria.id)}>
+              {categoria.nome}
+            </MenuItem>
+          ))}
+        </AppTextField>
+      </AppFormDialog>
     </AdminLayout>
   );
 }

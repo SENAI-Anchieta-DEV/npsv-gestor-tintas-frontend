@@ -42,6 +42,7 @@ export async function loginRequest(credentials) {
   if (!response.ok) {
     const error = new Error(buildErrorMessage(data, response));
     error.status = response.status;
+    error.data = data;
     throw error;
   }
 
@@ -76,6 +77,7 @@ export async function authenticatedRequest(path, options = {}) {
   if (!response.ok) {
     const error = new Error(buildErrorMessage(data, response));
     error.status = response.status;
+    error.data = data;
     throw error;
   }
 
