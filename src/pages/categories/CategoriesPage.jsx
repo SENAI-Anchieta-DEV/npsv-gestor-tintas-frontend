@@ -5,7 +5,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import AdminLayout from "../../components/layout/AdminLayout";
-import { useAppSnackbar } from "../../components/feedback/AppSnackProvider";
+import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   createCategoriaProduto,

@@ -4,6 +4,7 @@ import HomePage from "./pages/home/HomePage";
 import UsersPage from "./pages/users/UsersPage";
 import CategoriesPage from "./pages/categories/CategoriesPage";
 import ProductsPage from "./pages/products/ProductsPage";
+import FormulasPage from "./pages/formulas/FormulasPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -43,6 +44,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ProductsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/formulas"
+        element={
+          <ProtectedRoute>
+            <FormulasPage />
           </ProtectedRoute>
         }
       />

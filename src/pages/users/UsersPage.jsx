@@ -17,7 +17,7 @@ import EngineeringOutlinedIcon from "@mui/icons-material/EngineeringOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 
 import AdminLayout from "../../components/layout/AdminLayout";
-import { useAppSnackbar } from "../../components/feedback/AppSnackProvider";
+import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   createUsuario,
