@@ -1,16 +1,10 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Box, Button, Card, CircularProgress, Typography } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CircularProgress,
-  Snackbar,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
+import AppTextField from "../../components/common/AppTextField";
+import { getProblemDetailMessage } from "../../lib/problemDetail";
 
 const features = [
   {
@@ -43,53 +37,65 @@ const features = [
   },
 ];
 
+const INITIAL_FORM = { email: "", senha: "" };
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, loading } = useAuth();
+  const { showSnackbar } = useAppSnackbar();
 
-  const [form, setForm] = useState({
-    email: "",
-    senha: "",
-  });
-
-  const [errorMessage, setErrorMessage] = useState("");
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const destination = location.state?.from?.pathname || "/";
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  }
+
+  function validate() {
+    const errors = {};
+
+    if (!form.email.trim()) {
+      errors.email = "Informe o e-mail.";
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      errors.email = "Informe um e-mail válido.";
+    }
+
+    if (!form.senha.trim()) {
+      errors.senha = "Informe a senha.";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setErrorMessage("");
 
-    if (!form.email.trim() || !form.senha.trim()) {
-      setErrorMessage("Preencha e-mail e senha para continuar.");
+    if (!validate()) {
+      showSnackbar("Revise os campos obrigatórios.", "error");
       return;
     }
 
     try {
-      await login(form);
-      setShowSuccessPopup(true);
+      await login({
+        email: form.email.trim(),
+        senha: form.senha,
+      });
 
-      setTimeout(() => {
-        setShowSuccessPopup(false);
-        navigate(destination, { replace: true });
-      }, 1000);
+      showSnackbar("Login realizado com sucesso.", "success");
+      navigate(destination, { replace: true });
     } catch (error) {
-      if (error.status === 401) {
-        setErrorMessage("Credenciais inválidas. Tente novamente.");
+      if (error?.status === 401) {
+        showSnackbar("Credenciais inválidas. Tente novamente.", "error");
         return;
       }
 
-      setErrorMessage(error.message || "Erro ao realizar login.");
+      showSnackbar(getProblemDetailMessage(error), "error");
     }
   }
 
@@ -170,27 +176,13 @@ export default function LoginPage() {
                 para <Box component="span" sx={{ color: "#2E33FF" }}>tintas e produção</Box>
               </Typography>
 
-              <Typography
-                sx={{
-                  maxWidth: 560,
-                  color: "#6B7280",
-                  fontSize: 15,
-                  lineHeight: 1.75,
-                }}
-              >
-                Controle fórmulas, estoque, produção e autenticação de forma
-                moderna, segura e centralizada.
+              <Typography sx={{ maxWidth: 560, color: "#6B7280", fontSize: 15, lineHeight: 1.75 }}>
+                Controle fórmulas, estoque, produção e autenticação de forma moderna, segura e centralizada.
               </Typography>
             </Box>
           </Box>
 
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-              gap: 1.5,
-            }}
-          >
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
             {features.map((feature) => (
               <Card
                 key={feature.title}
@@ -230,15 +222,7 @@ export default function LoginPage() {
           </Box>
         </Box>
 
-        <Box
-          sx={{
-            p: { xs: 3, sm: 4, md: 3.5 },
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#FFFFFF",
-          }}
-        >
+        <Box sx={{ p: { xs: 3, sm: 4, md: 3.5 }, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" }}>
           <Card
             elevation={0}
             sx={{
@@ -254,72 +238,46 @@ export default function LoginPage() {
               <Typography sx={{ fontSize: 30, fontWeight: 800, color: "#0B1739", mb: 1 }}>
                 Entrar
               </Typography>
-
               <Typography sx={{ color: "#6B7280", fontSize: 15, lineHeight: 1.8 }}>
                 Faça login para acessar as funcionalidades protegidas do sistema.
               </Typography>
             </Box>
 
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.2 }}>
-              <TextField
-                label="E-mail"
+            <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 1.2 }}>
+              <AppTextField
                 name="email"
+                label="E-mail"
                 type="email"
+                required
                 value={form.email}
                 onChange={handleChange}
-                fullWidth
-                InputProps={{ sx: { borderRadius: "16px" } }}
+                error={Boolean(fieldErrors.email)}
+                helperText={fieldErrors.email}
               />
 
-              <TextField
-                label="Senha"
+              <AppTextField
                 name="senha"
+                label="Senha"
                 type="password"
+                required
                 value={form.senha}
                 onChange={handleChange}
-                fullWidth
-                InputProps={{ sx: { borderRadius: "16px" } }}
+                error={Boolean(fieldErrors.senha)}
+                helperText={fieldErrors.senha}
               />
-
-              {errorMessage ? (
-                <Alert severity="error" sx={{ borderRadius: "16px" }}>
-                  {errorMessage}
-                </Alert>
-              ) : null}
 
               <Button
                 type="submit"
                 variant="contained"
                 disabled={loading}
-                sx={{
-                  mt: 0.5,
-                  py: 1.7,
-                  borderRadius: "16px",
-                  fontWeight: 800,
-                  fontSize: 16,
-                  background: "linear-gradient(135deg, #2E33FF, #2563EB)",
-                  "&:hover": {
-                    background: "linear-gradient(135deg, #2025DB, #1D4ED8)",
-                  },
-                }}
+                sx={{ borderRadius: "14px", py: 1.25, mt: 1, fontWeight: 800 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : "Entrar"}
+                {loading ? <CircularProgress size={22} color="inherit" /> : "Entrar"}
               </Button>
             </Box>
           </Card>
         </Box>
       </Box>
-
-      <Snackbar
-        open={showSuccessPopup}
-        autoHideDuration={1200}
-        onClose={() => setShowSuccessPopup(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert severity="success" variant="filled">
-          Login realizado com sucesso.
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

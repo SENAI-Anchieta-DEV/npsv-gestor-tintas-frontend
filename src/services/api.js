@@ -192,6 +192,40 @@ export function deleteProduto(id) {
   });
 }
 
+/* ===================== FÓRMULAS ===================== */
+
+export function getFormulas() {
+  return authenticatedRequest("/api/formulas", {
+    method: "GET",
+  });
+}
+
+export function getFormulaById(id) {
+  return authenticatedRequest(`/api/formulas/${encodeURIComponent(id)}`, {
+    method: "GET",
+  });
+}
+
+export function createFormula(payload) {
+  return authenticatedRequest("/api/formulas", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateFormula(id, payload) {
+  return authenticatedRequest(`/api/formulas/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteFormula(id) {
+  return authenticatedRequest(`/api/formulas/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
 /* ===================== VENDAS ===================== */
 
 export function getVendas() {
