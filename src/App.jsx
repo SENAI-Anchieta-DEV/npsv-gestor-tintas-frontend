@@ -5,6 +5,8 @@ import UsersPage from "./pages/users/UsersPage";
 import CategoriesPage from "./pages/categories/CategoriesPage";
 import ProductsPage from "./pages/products/ProductsPage";
 import FormulasPage from "./pages/formulas/FormulasPage";
+import ProductionHistoryPage from "./pages/productions/ProductionsPage";
+import SalesHistoryPage from "./pages/sales/SalesPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -53,6 +55,24 @@ export default function App() {
         element={
           <ProtectedRoute>
             <FormulasPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/historico-producao"
+        element={
+          <ProtectedRoute>
+            <ProductionHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/vendas"
+        element={
+          <ProtectedRoute>
+            <SalesHistoryPage />
           </ProtectedRoute>
         }
       />

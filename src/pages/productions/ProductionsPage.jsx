@@ -22,13 +22,46 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
 import AdminLayout from "../../components/layout/AdminLayout";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
-import { getProducaoById, getProducoes, getUsuarios } from "../../services/api";
+import {
+  cancelarProducao,
+  concluirProducao,
+  getCurrentUserEmailFromToken,
+  getFormulas,
+  getProducaoById,
+  getProducoes,
+  getUsuarios,
+  iniciarProducao,
+  registrarPerdaTotal,
+} from "../../services/api";
+
+const INITIAL_FORM = {
+  formulaId: "",
+};
+
+function normalizeFormula(item) {
+  return {
+    id: item?.id,
+    codigoInterno: item?.codigoInterno || "-",
+    nomeCor: item?.nomeCor || "-",
+  };
+}
+
+function normalizeProducao(item) {
+  return {
+    id: item?.id,
+    dataHora: item?.dataHora || null,
+    status: item?.status || "PENDENTE",
+    colorista: item?.colorista || null,
+    formula: item?.formula || null,
+  };
+}
 
 function formatDateTime(value) {
   if (!value) return "-";
@@ -37,16 +70,6 @@ function formatDateTime(value) {
   } catch {
     return value;
   }
-}
-
-function normalizeProducao(item) {
-  return {
-    id: item?.id,
-    dataHora: item?.dataHora,
-    status: item?.status || "PENDENTE",
-    colorista: item?.colorista || null,
-    formula: item?.formula || null,
-  };
 }
 
 function getStatusChip(status) {
@@ -94,28 +117,53 @@ function getStatusChip(status) {
   };
 }
 
-export default function ProductionHistoryPage() {
+export default function ProductionsPage() {
   const { showSnackbar } = useAppSnackbar();
 
   const [producoes, setProducoes] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [formulas, setFormulas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [search, setSearch] = useState("");
-  const [coloristaId, setColoristaId] = useState("TODOS");
+  const [coloristaFiltro, setColoristaFiltro] = useState("TODOS");
   const [statusFiltro, setStatusFiltro] = useState("TODOS");
   const [dataInicial, setDataInicial] = useState("");
   const [dataFinal, setDataFinal] = useState("");
 
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedProducao, setSelectedProducao] = useState(null);
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const [currentUser, setCurrentUser] = useState(null);
 
   async function loadUsuarios() {
     try {
       const data = await getUsuarios();
-      setUsuarios(Array.isArray(data) ? data.filter((u) => u.role === "COLORISTA") : []);
+      const usuariosData = Array.isArray(data) ? data : [];
+      setUsuarios(usuariosData);
+
+      const emailLogado = getCurrentUserEmailFromToken();
+      const usuarioLogado = usuariosData.find(
+        (u) => String(u.email || "").toLowerCase() === String(emailLogado || "").toLowerCase()
+      );
+
+      setCurrentUser(usuarioLogado || null);
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
+    }
+  }
+
+  async function loadFormulas() {
+    try {
+      const data = await getFormulas();
+      setFormulas(Array.isArray(data) ? data.map(normalizeFormula) : []);
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
     }
@@ -137,8 +185,13 @@ export default function ProductionHistoryPage() {
 
   useEffect(() => {
     loadUsuarios();
+    loadFormulas();
     loadProducoes();
   }, []);
+
+  const coloristas = useMemo(() => {
+    return usuarios.filter((u) => u.role === "COLORISTA" || u.role === "ADMIN");
+  }, [usuarios]);
 
   const producoesFiltradas = useMemo(() => {
     const termo = search.trim().toLowerCase();
@@ -150,9 +203,9 @@ export default function ProductionHistoryPage() {
         String(producao.colorista?.nome || "").toLowerCase().includes(termo);
 
       const matchColorista =
-        coloristaId === "TODOS"
+        coloristaFiltro === "TODOS"
           ? true
-          : String(producao.colorista?.id || "") === String(coloristaId);
+          : String(producao.colorista?.id || "") === String(coloristaFiltro);
 
       const matchStatus =
         statusFiltro === "TODOS" ? true : producao.status === statusFiltro;
@@ -167,7 +220,68 @@ export default function ProductionHistoryPage() {
 
       return matchText && matchColorista && matchStatus && matchInicial && matchFinal;
     });
-  }, [producoes, search, coloristaId, statusFiltro, dataInicial, dataFinal]);
+  }, [producoes, search, coloristaFiltro, statusFiltro, dataInicial, dataFinal]);
+
+  function openCreateDialog() {
+    setForm(INITIAL_FORM);
+    setFieldErrors({});
+    setDialogOpen(true);
+  }
+
+  function closeCreateDialog() {
+    if (saving) return;
+    setDialogOpen(false);
+    setForm(INITIAL_FORM);
+    setFieldErrors({});
+  }
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  }
+
+  function validate() {
+    const errors = {};
+
+    if (!form.formulaId) {
+      errors.formulaId = "Selecione a fórmula.";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!validate()) {
+      showSnackbar("Revise os campos obrigatórios.", "error");
+      return;
+    }
+
+    if (!currentUser?.id) {
+      showSnackbar("Não foi possível identificar o usuário logado.", "error");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await iniciarProducao({
+        coloristaId: currentUser.id,
+        formulaId: form.formulaId,
+      });
+
+      showSnackbar("Produção iniciada com sucesso.", "success");
+      closeCreateDialog();
+      await loadProducoes();
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleOpenDetail(producaoId) {
     setDetailLoading(true);
@@ -182,6 +296,37 @@ export default function ProductionHistoryPage() {
     }
   }
 
+  async function handleAction(action) {
+    if (!selectedProducao) return;
+
+    setActionLoading(true);
+
+    try {
+      if (action === "concluir") {
+        await concluirProducao(selectedProducao.id);
+        showSnackbar("Produção concluída com sucesso.", "success");
+      }
+
+      if (action === "cancelar") {
+        await cancelarProducao(selectedProducao.id);
+        showSnackbar("Produção cancelada com sucesso.", "success");
+      }
+
+      if (action === "perda") {
+        await registrarPerdaTotal(selectedProducao.id);
+        showSnackbar("Perda total registrada com sucesso.", "success");
+      }
+
+      setDetailOpen(false);
+      setSelectedProducao(null);
+      await loadProducoes();
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   return (
     <AdminLayout>
       <Paper
@@ -193,18 +338,46 @@ export default function ProductionHistoryPage() {
         }}
       >
         <Box sx={{ px: 3, py: 3 }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#0B1739", mb: 0.5 }}>
-            Histórico de Produções
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-            Consulte produções por período, colorista e status
-          </Typography>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "stretch", md: "center" }}
+            spacing={2}
+          >
+            <Box>
+              <Typography sx={{ fontSize: 18, fontWeight: 800, color: "#0B1739", mb: 0.5 }}>
+                Gestão de Produções
+              </Typography>
+              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+                Inicie, acompanhe e finalize produções no mesmo padrão visual
+              </Typography>
+            </Box>
+
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={openCreateDialog}
+              sx={{
+                borderRadius: "14px",
+                px: 2.2,
+                py: 1.1,
+                fontWeight: 700,
+                background: "linear-gradient(135deg, #4F46E5, #4338CA)",
+                boxShadow: "0 8px 20px rgba(79, 70, 229, 0.25)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #4338CA, #3730A3)",
+                },
+              }}
+            >
+              Nova Produção
+            </Button>
+          </Stack>
         </Box>
 
         <Divider />
 
         <Box sx={{ px: 2.5, py: 2 }}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          <Stack direction={{ xs: "column", lg: "row" }} spacing={2}>
             <TextField
               fullWidth
               placeholder="Buscar por fórmula ou colorista..."
@@ -216,19 +389,23 @@ export default function ProductionHistoryPage() {
                     <SearchIcon sx={{ color: "#9CA3AF" }} />
                   </InputAdornment>
                 ),
-                sx: { height: 44, borderRadius: "12px", backgroundColor: "#FFFFFF" },
+                sx: {
+                  height: 44,
+                  borderRadius: "12px",
+                  backgroundColor: "#FFFFFF",
+                },
               }}
             />
 
             <TextField
               select
               label="Colorista"
-              value={coloristaId}
-              onChange={(e) => setColoristaId(e.target.value)}
+              value={coloristaFiltro}
+              onChange={(e) => setColoristaFiltro(e.target.value)}
               sx={{ minWidth: 220 }}
             >
               <MenuItem value="TODOS">Todos os coloristas</MenuItem>
-              {usuarios.map((usuario) => (
+              {coloristas.map((usuario) => (
                 <MenuItem key={usuario.id} value={usuario.id}>
                   {usuario.nome}
                 </MenuItem>
@@ -289,7 +466,7 @@ export default function ProductionHistoryPage() {
               Nenhuma produção encontrada
             </Typography>
             <Typography sx={{ color: "#6B7280" }}>
-              Ajuste os filtros para visualizar o histórico.
+              Inicie uma nova produção ou ajuste os filtros.
             </Typography>
           </Box>
         ) : (
@@ -319,11 +496,7 @@ export default function ProductionHistoryPage() {
                   const statusChip = getStatusChip(producao.status);
 
                   return (
-                    <TableRow
-                      key={producao.id}
-                      hover
-                      sx={{ "& td": { borderColor: "#E5E7EB", py: 1.4 } }}
-                    >
+                    <TableRow key={producao.id} hover sx={{ "& td": { borderColor: "#E5E7EB", py: 1.4 } }}>
                       <TableCell>
                         <Stack direction="row" spacing={1.5} alignItems="center">
                           <Box
@@ -397,7 +570,6 @@ export default function ProductionHistoryPage() {
             </Table>
 
             <Divider />
-
             <Box sx={{ px: 2.5, py: 2 }}>
               <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
                 Exibindo {producoesFiltradas.length} produção(ões)
@@ -406,6 +578,49 @@ export default function ProductionHistoryPage() {
           </>
         )}
       </Paper>
+
+      <Dialog open={dialogOpen} onClose={closeCreateDialog} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 800 }}>Iniciar Produção</DialogTitle>
+        <Box component="form" onSubmit={handleSubmit}>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                label="Colorista responsável"
+                value={currentUser?.nome || "Usuário não identificado"}
+                InputProps={{ readOnly: true }}
+                fullWidth
+              />
+
+              <TextField
+                select
+                label="Fórmula"
+                name="formulaId"
+                value={form.formulaId}
+                onChange={handleChange}
+                required
+                error={Boolean(fieldErrors.formulaId)}
+                helperText={fieldErrors.formulaId}
+                fullWidth
+              >
+                {formulas.map((formula) => (
+                  <MenuItem key={formula.id} value={formula.id}>
+                    {formula.nomeCor} — {formula.codigoInterno}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Button onClick={closeCreateDialog} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="contained" disabled={saving}>
+              {saving ? "Salvando..." : "Iniciar"}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
 
       <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} fullWidth maxWidth="md">
         <DialogTitle sx={{ fontWeight: 800 }}>Detalhe da Produção</DialogTitle>
@@ -424,8 +639,8 @@ export default function ProductionHistoryPage() {
                   fullWidth
                 />
                 <TextField
-                  label="Data/Hora"
-                  value={formatDateTime(selectedProducao.dataHora)}
+                  label="Código Interno"
+                  value={selectedProducao.formula?.codigoInterno || "-"}
                   InputProps={{ readOnly: true }}
                   fullWidth
                 />
@@ -439,26 +654,59 @@ export default function ProductionHistoryPage() {
                   fullWidth
                 />
                 <TextField
-                  label="Status"
-                  value={selectedProducao.status}
+                  label="Data/Hora"
+                  value={formatDateTime(selectedProducao.dataHora)}
                   InputProps={{ readOnly: true }}
                   fullWidth
                 />
               </Stack>
 
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <TextField
-                  label="Código Interno da Fórmula"
-                  value={selectedProducao.formula?.codigoInterno || "-"}
-                  InputProps={{ readOnly: true }}
-                  fullWidth
-                />
-              </Stack>
+              <TextField
+                label="Status"
+                value={selectedProducao.status}
+                InputProps={{ readOnly: true }}
+                fullWidth
+              />
+
+              <Alert severity="info">
+                O backend atual não expõe GET de pesagens por produção. Então o detalhe mostra
+                fórmula, colorista e status, mas não lista PesagemEventos.
+              </Alert>
             </Stack>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setDetailOpen(false)}>Fechar</Button>
+
+        <DialogActions sx={{ px: 3, pb: 3, justifyContent: "space-between" }}>
+          <Stack direction="row" spacing={1}>
+            <Button
+              color="error"
+              onClick={() => handleAction("cancelar")}
+              disabled={actionLoading || !selectedProducao}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              color="warning"
+              onClick={() => handleAction("perda")}
+              disabled={actionLoading || !selectedProducao}
+            >
+              Perda total
+            </Button>
+          </Stack>
+
+          <Stack direction="row" spacing={1}>
+            <Button onClick={() => setDetailOpen(false)} disabled={actionLoading}>
+              Fechar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => handleAction("concluir")}
+              disabled={actionLoading || !selectedProducao}
+            >
+              {actionLoading ? "Processando..." : "Concluir"}
+            </Button>
+          </Stack>
         </DialogActions>
       </Dialog>
     </AdminLayout>

@@ -20,6 +20,7 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 
 const menuItems = [
   { label: "Dashboard", path: "/", icon: <DashboardOutlinedIcon /> },
+  { label: "Categorias", path: "/categorias-produtos", icon: <CategoryOutlinedIcon /> },
   { label: "Produtos", path: "/produtos", icon: <Inventory2OutlinedIcon /> },
   { label: "Fórmulas", path: "/formulas", icon: <ScienceOutlinedIcon /> },
   { label: "Estoque", path: "/estoque", icon: <WarehouseOutlinedIcon /> },
