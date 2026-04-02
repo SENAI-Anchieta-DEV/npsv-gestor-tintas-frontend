@@ -13,6 +13,33 @@ export function removeToken() {
 }
 
 function buildErrorMessage(data, response) {
+  if (!data) {
+    return `Erro na requisição: ${response.status}`;
+  }
+
+  if (typeof data === "string") {
+    try {
+      const parsed = JSON.parse(data);
+
+      if (parsed?.errors) {
+        const firstKey = Object.keys(parsed.errors)[0];
+        if (
+          firstKey &&
+          Array.isArray(parsed.errors[firstKey]) &&
+          parsed.errors[firstKey][0]
+        ) {
+          return parsed.errors[firstKey][0];
+        }
+      }
+
+      if (parsed?.detail) return parsed.detail;
+      if (parsed?.title) return parsed.title;
+      if (parsed?.message) return parsed.message;
+    } catch {
+      return data.trim() || `Erro na requisição: ${response.status}`;
+    }
+  }
+
   if (data?.errors) {
     const firstKey = Object.keys(data.errors)[0];
     if (
@@ -27,7 +54,6 @@ function buildErrorMessage(data, response) {
   if (data?.detail) return data.detail;
   if (data?.title) return data.title;
   if (data?.message) return data.message;
-  if (typeof data === "string" && data.trim()) return data;
 
   return `Erro na requisição: ${response.status}`;
 }
@@ -52,10 +78,10 @@ export async function loginRequest(credentials) {
   }
 
   if (!response.ok) {
-    const error = new Error(buildErrorMessage(data, response));
-    error.status = response.status;
-    error.data = data;
-    throw error;
+  const error = new Error(buildErrorMessage(data, response));
+  error.status = response.status;
+  error.data = data;
+  throw error;
   }
 
   return data;
@@ -94,6 +120,34 @@ export async function authenticatedRequest(path, options = {}) {
   }
 
   return data;
+}
+
+export function getCurrentUserEmailFromToken() {
+  const token = getStoredToken();
+  if (!token) return "";
+
+  try {
+    const payloadBase64 = token.split(".")[1];
+    const payloadJson = atob(payloadBase64);
+    const payload = JSON.parse(payloadJson);
+    return payload?.sub || "";
+  } catch {
+    return "";
+  }
+}
+
+export function getCurrentUserRoleFromToken() {
+  const token = getStoredToken();
+  if (!token) return "";
+
+  try {
+    const payloadBase64 = token.split(".")[1];
+    const payloadJson = atob(payloadBase64);
+    const payload = JSON.parse(payloadJson);
+    return payload?.role || "";
+  } catch {
+    return "";
+  }
 }
 
 /* ===================== AUTH ===================== */
@@ -246,6 +300,20 @@ export function getVendasByVendedor(vendedorId) {
   });
 }
 
+export function iniciarVenda(payload) {
+  return authenticatedRequest("/api/vendas/iniciar", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function concluirVenda(id, payload) {
+  return authenticatedRequest(`/api/vendas/${encodeURIComponent(id)}/concluir`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 /* ===================== PRODUÇÕES ===================== */
 
 export function getProducoes() {
@@ -257,5 +325,30 @@ export function getProducoes() {
 export function getProducaoById(id) {
   return authenticatedRequest(`/api/producoes/${encodeURIComponent(id)}`, {
     method: "GET",
+  });
+}
+
+export function iniciarProducao(payload) {
+  return authenticatedRequest("/api/producoes", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function concluirProducao(id) {
+  return authenticatedRequest(`/api/producoes/${encodeURIComponent(id)}/concluir`, {
+    method: "PATCH",
+  });
+}
+
+export function cancelarProducao(id) {
+  return authenticatedRequest(`/api/producoes/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export function registrarPerdaTotal(id) {
+  return authenticatedRequest(`/api/producoes/${encodeURIComponent(id)}/perda-total`, {
+    method: "PATCH",
   });
 }
