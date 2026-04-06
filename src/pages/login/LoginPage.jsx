@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Box, Button, Card, CircularProgress, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { useAuth } from "../../context/AuthContext";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import AppTextField from "../../components/common/AppTextField";
@@ -40,6 +48,9 @@ const features = [
 const INITIAL_FORM = { email: "", senha: "" };
 
 export default function LoginPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const navigate = useNavigate();
   const location = useLocation();
   const { login, loading } = useAuth();
@@ -103,95 +114,134 @@ export default function LoginPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "#F5F7FB",
+        bgcolor: "background.default",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        p: 2,
+        p: { xs: 1.5, sm: 2, md: 3 },
       }}
     >
       <Box
         sx={{
           width: "100%",
           maxWidth: 1180,
-          minHeight: { xs: "auto", md: 720 },
           display: "grid",
           gridTemplateColumns: { xs: "1fr", md: "1.15fr 0.85fr" },
-          borderRadius: "28px",
+          borderRadius: { xs: "22px", md: "28px" },
           overflow: "hidden",
-          backgroundColor: "#fff",
-          boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
+          backgroundColor: "background.paper",
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 18px 45px rgba(0, 0, 0, 0.35)"
+              : "0 18px 45px rgba(15, 23, 42, 0.08)",
+          minHeight: { xs: "auto", md: 720 },
         }}
       >
         <Box
           sx={{
-            p: { xs: 3, sm: 4, md: 4.5 },
+            p: { xs: 2.5, sm: 3.5, md: 4.5 },
             background:
-              "linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 55%, #EEF4FF 100%)",
+              theme.palette.mode === "dark"
+                ? "linear-gradient(180deg, #111827 0%, #0F172A 55%, #0B1120 100%)"
+                : "linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 55%, #EEF4FF 100%)",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
+            gap: { xs: 3, md: 4 },
           }}
         >
           <Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4.5 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                mb: { xs: 3, md: 4.5 },
+              }}
+            >
               <Box
                 sx={{
-                  width: 52,
-                  height: 52,
+                  width: { xs: 48, md: 52 },
+                  height: { xs: 48, md: 52 },
                   borderRadius: "18px",
                   background: "linear-gradient(135deg, #4F46E5, #2563EB)",
                   display: "grid",
                   placeItems: "center",
                   color: "#fff",
                   fontSize: 24,
+                  flexShrink: 0,
                 }}
               >
                 🎨
               </Box>
 
-              <Box>
-                <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#0B1739", lineHeight: 1.1 }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  sx={{
+                    fontSize: { xs: 22, md: 24 },
+                    fontWeight: 800,
+                    color: "text.primary",
+                    lineHeight: 1.1,
+                  }}
+                >
                   Gestor Tintas
                 </Typography>
-                <Typography sx={{ color: "#6B7280", fontSize: 14 }}>
+                <Typography sx={{ color: "text.secondary", fontSize: 14 }}>
                   Sistema de produção e controle
                 </Typography>
               </Box>
             </Box>
 
-            <Box sx={{ mb: 4 }}>
+            <Box sx={{ mb: { xs: 3, md: 4 } }}>
               <Typography
                 sx={{
-                  fontSize: { xs: 30, sm: 36, md: 44 },
+                  fontSize: { xs: 28, sm: 34, md: 44 },
                   fontWeight: 800,
                   lineHeight: 1.12,
-                  color: "#0B1739",
+                  color: "text.primary",
                   mb: 2,
                   letterSpacing: "-0.02em",
                 }}
               >
                 Gestão inteligente
                 <br />
-                para <Box component="span" sx={{ color: "#2E33FF" }}>tintas e produção</Box>
+                <Box component="span" sx={{ color: "#2E33FF" }}>
+                  para tintas e produção
+                </Box>
               </Typography>
 
-              <Typography sx={{ maxWidth: 560, color: "#6B7280", fontSize: 15, lineHeight: 1.75 }}>
+              <Typography
+                sx={{
+                  maxWidth: 560,
+                  color: "text.secondary",
+                  fontSize: { xs: 14, md: 15 },
+                  lineHeight: 1.75,
+                }}
+              >
                 Controle fórmulas, estoque, produção e autenticação de forma moderna, segura e centralizada.
               </Typography>
             </Box>
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 1.5,
+            }}
+          >
             {features.map((feature) => (
               <Card
                 key={feature.title}
                 elevation={0}
                 sx={{
                   borderRadius: "22px",
-                  p: 2,
-                  border: "1px solid #E5E7EB",
-                  backgroundColor: "#FFFFFFCC",
+                  p: { xs: 1.8, md: 2 },
+                  border: "1px solid",
+                  borderColor: "divider",
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "rgba(255,255,255,0.03)" : "#FFFFFFCC",
+                  boxShadow: "none",
                 }}
               >
                 <Box
@@ -210,11 +260,24 @@ export default function LoginPage() {
                   {feature.icon}
                 </Box>
 
-                <Typography sx={{ fontWeight: 800, color: "#0B1739", mb: 0.6, fontSize: 15 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 800,
+                    color: "text.primary",
+                    mb: 0.6,
+                    fontSize: 15,
+                  }}
+                >
                   {feature.title}
                 </Typography>
 
-                <Typography sx={{ color: "#6B7280", fontSize: 13.5, lineHeight: 1.65 }}>
+                <Typography
+                  sx={{
+                    color: "text.secondary",
+                    fontSize: 13.5,
+                    lineHeight: 1.65,
+                  }}
+                >
                   {feature.text}
                 </Typography>
               </Card>
@@ -222,28 +285,57 @@ export default function LoginPage() {
           </Box>
         </Box>
 
-        <Box sx={{ p: { xs: 3, sm: 4, md: 3.5 }, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" }}>
+        <Box
+          sx={{
+            p: { xs: 2.5, sm: 3.5, md: 3.5 },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "background.paper",
+          }}
+        >
           <Card
             elevation={0}
             sx={{
               width: "100%",
               maxWidth: 420,
-              borderRadius: "24px",
-              p: { xs: 2.5, md: 3 },
-              border: "1px solid #E5E7EB",
-              boxShadow: "0 14px 34px rgba(15, 23, 42, 0.05)",
+              borderRadius: { xs: "20px", md: "24px" },
+              p: { xs: 2.25, sm: 2.75, md: 3 },
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow:
+                theme.palette.mode === "dark"
+                  ? "0 14px 34px rgba(0,0,0,0.25)"
+                  : "0 14px 34px rgba(15, 23, 42, 0.05)",
             }}
           >
             <Box sx={{ mb: 3 }}>
-              <Typography sx={{ fontSize: 30, fontWeight: 800, color: "#0B1739", mb: 1 }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: 26, md: 30 },
+                  fontWeight: 800,
+                  color: "text.primary",
+                  mb: 1,
+                }}
+              >
                 Entrar
               </Typography>
-              <Typography sx={{ color: "#6B7280", fontSize: 15, lineHeight: 1.8 }}>
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                  fontSize: { xs: 14, md: 15 },
+                  lineHeight: 1.8,
+                }}
+              >
                 Faça login para acessar as funcionalidades protegidas do sistema.
               </Typography>
             </Box>
 
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 1.2 }}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{ display: "grid", gap: 1.2 }}
+            >
               <AppTextField
                 name="email"
                 label="E-mail"
@@ -270,7 +362,13 @@ export default function LoginPage() {
                 type="submit"
                 variant="contained"
                 disabled={loading}
-                sx={{ borderRadius: "14px", py: 1.25, mt: 1, fontWeight: 800 }}
+                fullWidth={isMobile}
+                sx={{
+                  borderRadius: "14px",
+                  py: 1.25,
+                  mt: 1,
+                  fontWeight: 800,
+                }}
               >
                 {loading ? <CircularProgress size={22} color="inherit" /> : "Entrar"}
               </Button>

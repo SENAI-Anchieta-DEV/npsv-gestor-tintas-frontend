@@ -1,62 +1,132 @@
-import { createTheme } from "@mui/material/styles";
+import { alpha, createTheme } from "@mui/material/styles";
 
-const theme = createTheme({
-  palette: {
-    mode: "light",
-    primary: { main: "#2E33FF" },
-    secondary: { main: "#2B82FF" },
-    success: { main: "#00C853" },
-    warning: { main: "#FFAB00" },
-    error: { main: "#D50000" },
-    background: { default: "#F4F6FA", paper: "#FFFFFF" },
-    text: { primary: "#0B1739", secondary: "#6B7280" },
-  },
-  shape: { borderRadius: 16 },
-  typography: {
-    fontFamily: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif`,
-    h4: { fontWeight: 800 },
-    h5: { fontWeight: 700 },
-    button: { textTransform: "none", fontWeight: 700 },
-  },
-  components: {
-    MuiPaper: {
-      styleOverrides: {
-        root: { boxShadow: "0 4px 20px rgba(15, 23, 42, 0.06)" },
-      },
-    },
-    MuiButton: {
-      defaultProps: { disableElevation: true },
-      styleOverrides: {
-        root: { borderRadius: 14 },
-      },
-    },
-    MuiTextField: {
-      defaultProps: {
-        fullWidth: true,
-        variant: "outlined",
-      },
-    },
-    MuiOutlinedInput: {
-      styleOverrides: {
-        root: { borderRadius: 14 },
-      },
-    },
-    MuiDialog: {
-      styleOverrides: {
-        paper: { borderRadius: 20 },
-      },
-    },
-    MuiTableHead: {
-      styleOverrides: {
-        root: { backgroundColor: "#F8FAFC" },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        head: { fontWeight: 800 },
-      },
-    },
-  },
-});
+export default function createAppTheme(mode = "light") {
+  const isDark = mode === "dark";
 
-export default theme;
+  const backgroundDefault = isDark ? "#0B1120" : "#F5F7FB";
+  const backgroundPaper = isDark ? "#111827" : "#FFFFFF";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#E5E7EB";
+  const textPrimary = isDark ? "#F9FAFB" : "#0B1739";
+  const textSecondary = isDark ? "#9CA3AF" : "#6B7280";
+
+  return createTheme({
+    palette: {
+      mode,
+      primary: { main: "#4F46E5" },
+      secondary: { main: "#3B82F6" },
+      background: {
+        default: backgroundDefault,
+        paper: backgroundPaper,
+      },
+      text: {
+        primary: textPrimary,
+        secondary: textSecondary,
+      },
+      divider: borderColor,
+      error: { main: "#EF4444" },
+      warning: { main: "#F59E0B" },
+      success: { main: "#22C55E" },
+    },
+
+    shape: {
+      borderRadius: 14,
+    },
+
+    typography: {
+      fontFamily: ["Inter", "Roboto", "Arial", "sans-serif"].join(","),
+    },
+
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: backgroundDefault,
+            color: textPrimary,
+          },
+        },
+      },
+
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+          },
+        },
+      },
+
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: "none",
+            borderRadius: 12,
+            fontWeight: 700,
+            minHeight: 42,
+          },
+        },
+      },
+
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor,
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: isDark ? "rgba(255,255,255,0.18)" : "#CBD5E1",
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#4F46E5",
+              borderWidth: 2,
+            },
+          },
+          input: {
+            color: textPrimary,
+          },
+        },
+      },
+
+      MuiInputLabel: {
+        styleOverrides: {
+          root: {
+            color: textSecondary,
+          },
+        },
+      },
+
+      MuiAlert: {
+        styleOverrides: {
+          standardInfo: {
+            backgroundColor: isDark ? alpha("#3B82F6", 0.12) : undefined,
+            color: textPrimary,
+          },
+          standardError: {
+            backgroundColor: isDark ? alpha("#EF4444", 0.12) : undefined,
+            color: textPrimary,
+          },
+          standardSuccess: {
+            backgroundColor: isDark ? alpha("#22C55E", 0.12) : undefined,
+            color: textPrimary,
+          },
+          standardWarning: {
+            backgroundColor: isDark ? alpha("#F59E0B", 0.12) : undefined,
+            color: textPrimary,
+          },
+        },
+      },
+
+      MuiTableCell: {
+        styleOverrides: {
+          root: {
+            borderColor,
+          },
+          head: {
+            color: textSecondary,
+            fontWeight: 700,
+          },
+        },
+      },
+    },
+  });
+}

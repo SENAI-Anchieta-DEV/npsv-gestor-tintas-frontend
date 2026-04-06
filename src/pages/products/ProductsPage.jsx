@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Chip, IconButton, MenuItem, Paper, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Chip,
+  IconButton,
+  MenuItem,
+  Paper,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -53,11 +63,17 @@ function normalizeProduto(item) {
 }
 
 function formatMoney(value) {
-  return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 }
 
 export default function ProductsPage() {
   const { showSnackbar } = useAppSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +125,8 @@ export default function ProductsPage() {
         String(produto.categoria?.nome || "").toLowerCase().includes(term);
 
       const matchCategoria =
-        categoriaFiltro === "TODAS" || String(produto.categoria?.id) === String(categoriaFiltro);
+        categoriaFiltro === "TODAS" ||
+        String(produto.categoria?.id) === String(categoriaFiltro);
 
       return matchSearch && matchCategoria;
     });
@@ -154,16 +171,39 @@ export default function ProductsPage() {
   function validate() {
     const errors = {};
 
-    if (!form.codigoBarras.trim()) errors.codigoBarras = "Informe o código de barras.";
-    if (!form.descricao.trim()) errors.descricao = "Informe a descrição.";
-    if (form.quantidadeEstoque === "") errors.quantidadeEstoque = "Informe a quantidade em estoque.";
-    else if (Number(form.quantidadeEstoque) < 0) errors.quantidadeEstoque = "A quantidade deve ser maior ou igual a zero.";
-    if (form.precoCusto === "") errors.precoCusto = "Informe o preço de custo.";
-    else if (Number(form.precoCusto) <= 0) errors.precoCusto = "O preço de custo deve ser maior que zero.";
-    if (form.precoVenda === "") errors.precoVenda = "Informe o preço de venda.";
-    else if (Number(form.precoVenda) <= 0) errors.precoVenda = "O preço de venda deve ser maior que zero.";
-    if (!form.unidadeMedida) errors.unidadeMedida = "Selecione a unidade de medida.";
-    if (!form.categoriaId) errors.categoriaId = "Selecione a categoria.";
+    if (!form.codigoBarras.trim()) {
+      errors.codigoBarras = "Informe o código de barras.";
+    }
+
+    if (!form.descricao.trim()) {
+      errors.descricao = "Informe a descrição.";
+    }
+
+    if (form.quantidadeEstoque === "") {
+      errors.quantidadeEstoque = "Informe a quantidade em estoque.";
+    } else if (Number(form.quantidadeEstoque) < 0) {
+      errors.quantidadeEstoque = "A quantidade deve ser maior ou igual a zero.";
+    }
+
+    if (form.precoCusto === "") {
+      errors.precoCusto = "Informe o preço de custo.";
+    } else if (Number(form.precoCusto) <= 0) {
+      errors.precoCusto = "O preço de custo deve ser maior que zero.";
+    }
+
+    if (form.precoVenda === "") {
+      errors.precoVenda = "Informe o preço de venda.";
+    } else if (Number(form.precoVenda) <= 0) {
+      errors.precoVenda = "O preço de venda deve ser maior que zero.";
+    }
+
+    if (!form.unidadeMedida) {
+      errors.unidadeMedida = "Selecione a unidade de medida.";
+    }
+
+    if (!form.categoriaId) {
+      errors.categoriaId = "Selecione a categoria.";
+    }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -178,6 +218,7 @@ export default function ProductsPage() {
     }
 
     setSaving(true);
+
     try {
       const payload = {
         codigoBarras: form.codigoBarras.trim(),
@@ -207,7 +248,7 @@ export default function ProductsPage() {
   }
 
   async function handleDelete(produto) {
-    if (!window.confirm(`Deseja excluir o produto \"${produto.descricao}\"?`)) return;
+    if (!window.confirm(`Deseja excluir o produto "${produto.descricao}"?`)) return;
 
     try {
       await deleteProduto(produto.id);
@@ -223,13 +264,44 @@ export default function ProductsPage() {
       key: "produto",
       label: "Produto",
       render: (produto) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "#EEF2FF", color: "#4F46E5" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "14px",
+              display: "grid",
+              placeItems: "center",
+              backgroundColor: "#EEF2FF",
+              color: "#4F46E5",
+              flexShrink: 0,
+            }}
+          >
             <Inventory2OutlinedIcon fontSize="small" />
           </Box>
-          <Box>
-            <Typography sx={{ fontWeight: 700, color: "text.primary" }}>{produto.descricao}</Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: 13 }}>{produto.codigoBarras}</Typography>
+
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                color: "text.primary",
+                fontSize: 14.5,
+                lineHeight: 1.25,
+                wordBreak: "break-word",
+              }}
+            >
+              {produto.descricao}
+            </Typography>
+            <Typography
+              sx={{
+                color: "text.secondary",
+                fontSize: 13,
+                lineHeight: 1.3,
+                wordBreak: "break-word",
+              }}
+            >
+              {produto.codigoBarras}
+            </Typography>
           </Box>
         </Box>
       ),
@@ -237,12 +309,22 @@ export default function ProductsPage() {
     {
       key: "categoria",
       label: "Categoria",
-      render: (produto) => <Typography>{produto.categoria?.nome || "-"}</Typography>,
+      render: (produto) => (
+        <Typography sx={{ color: "text.primary", fontSize: 14 }}>
+          {produto.categoria?.nome || "-"}
+        </Typography>
+      ),
     },
     {
       key: "estoque",
       label: "Estoque",
-      render: (produto) => <Chip label={`${produto.quantidadeEstoque} ${produto.unidadeMedida}`} size="small" sx={{ fontWeight: 700 }} />,
+      render: (produto) => (
+        <Chip
+          label={`${produto.quantidadeEstoque} ${produto.unidadeMedida}`}
+          size="small"
+          sx={{ fontWeight: 700 }}
+        />
+      ),
     },
     {
       key: "precoCusto",
@@ -259,10 +341,18 @@ export default function ProductsPage() {
       label: "Ações",
       render: (produto) => (
         <Box sx={{ display: "flex", gap: 0.5 }}>
-          <IconButton onClick={() => openEdit(produto)}>
+          <IconButton
+            onClick={() => openEdit(produto)}
+            aria-label={`Editar produto ${produto.descricao}`}
+            size={isMobile ? "medium" : "small"}
+          >
             <EditOutlinedIcon fontSize="small" />
           </IconButton>
-          <IconButton onClick={() => handleDelete(produto)}>
+          <IconButton
+            onClick={() => handleDelete(produto)}
+            aria-label={`Excluir produto ${produto.descricao}`}
+            size={isMobile ? "medium" : "small"}
+          >
             <DeleteOutlineIcon fontSize="small" />
           </IconButton>
         </Box>
@@ -272,22 +362,42 @@ export default function ProductsPage() {
 
   return (
     <AdminLayout>
-      <Paper sx={{ borderRadius: "20px", border: "1px solid #E5E7EB", boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)", overflow: "hidden" }}>
+      <Paper
+        sx={{
+          borderRadius: { xs: "16px", md: "20px" },
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 8px 24px rgba(0,0,0,0.28)"
+              : "0 4px 18px rgba(15, 23, 42, 0.05)",
+          overflow: "hidden",
+        }}
+      >
         <AppPageHeader
           title="Gerenciar Produtos"
           subtitle="Cadastre, edite e exclua produtos e insumos"
           actionLabel="Novo Produto"
           actionIcon={<AddIcon />}
           onAction={openCreate}
+          actionSx={{
+            width: { xs: "100%", md: "auto" },
+          }}
+          contentSx={{
+            px: { xs: 2, md: 3 },
+            py: { xs: 2, md: 3 },
+          }}
         />
 
-        <AppSearchField
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Pesquisar por descrição, código de barras ou categoria..."
-        />
+        <Box sx={{ px: { xs: 2, md: 2.5 }, pt: 2 }}>
+          <AppSearchField
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Pesquisar por descrição, código de barras ou categoria..."
+          />
+        </Box>
 
-        <Box sx={{ px: 2.5, pb: 2 }}>
+        <Box sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
           <AppTextField
             select
             label="Filtrar por categoria"
@@ -305,8 +415,10 @@ export default function ProductsPage() {
         </Box>
 
         {errorMessage ? (
-          <Box sx={{ px: 2.5, pb: 2 }}>
-            <Alert severity="error" sx={{ borderRadius: "14px" }}>{errorMessage}</Alert>
+          <Box sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
+            <Alert severity="error" sx={{ borderRadius: "14px" }}>
+              {errorMessage}
+            </Alert>
           </Box>
         ) : null}
 
@@ -317,6 +429,16 @@ export default function ProductsPage() {
             columns={columns}
             rows={produtosFiltrados.map((item) => ({ ...item, key: item.id }))}
             emptyMessage="Nenhum produto encontrado com os filtros informados."
+            containerSx={{
+              px: { xs: 1.5, md: 2.5 },
+              pb: { xs: 2, md: 2.5 },
+            }}
+            tableWrapperSx={{
+              overflowX: "auto",
+            }}
+            tableSx={{
+              minWidth: 760,
+            }}
           />
         )}
       </Paper>
@@ -328,6 +450,25 @@ export default function ProductsPage() {
         onSubmit={handleSubmit}
         loading={saving}
         submitLabel={editingProduct ? "Salvar alterações" : "Cadastrar produto"}
+        fullScreen={isMobile}
+        dialogProps={{
+          maxWidth: "sm",
+          fullWidth: true,
+        }}
+        actionsSx={{
+          flexDirection: { xs: "column-reverse", sm: "row" },
+          gap: 1,
+        }}
+        submitButtonSx={{
+          width: { xs: "100%", sm: "auto" },
+        }}
+        cancelButtonSx={{
+          width: { xs: "100%", sm: "auto" },
+        }}
+        contentSx={{
+          px: { xs: 2, md: 3 },
+          py: { xs: 1.5, md: 2 },
+        }}
       >
         <AppTextField
           name="codigoBarras"

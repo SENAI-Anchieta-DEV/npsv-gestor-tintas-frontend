@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Box, IconButton, Paper, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -32,6 +33,7 @@ function normalizeCategoria(item) {
 
 export default function CategoriesPage() {
   const { showSnackbar } = useAppSnackbar();
+  const theme = useTheme();
   const [categorias, setCategorias] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -64,9 +66,10 @@ export default function CategoriesPage() {
     const term = search.trim().toLowerCase();
     if (!term) return categorias;
 
-    return categorias.filter((categoria) =>
-      String(categoria.nome || "").toLowerCase().includes(term) ||
-      String(categoria.descricao || "").toLowerCase().includes(term)
+    return categorias.filter(
+      (categoria) =>
+        String(categoria.nome || "").toLowerCase().includes(term) ||
+        String(categoria.descricao || "").toLowerCase().includes(term)
     );
   }, [categorias, search]);
 
@@ -108,6 +111,7 @@ export default function CategoriesPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
     if (!validate()) {
       showSnackbar("Revise os campos obrigatórios.", "error");
       return;
@@ -115,7 +119,11 @@ export default function CategoriesPage() {
 
     setSaving(true);
     try {
-      const payload = { nome: form.nome.trim(), descricao: form.descricao.trim() };
+      const payload = {
+        nome: form.nome.trim(),
+        descricao: form.descricao.trim(),
+      };
+
       if (editingCategory) {
         await updateCategoriaProduto(editingCategory.id, payload);
         showSnackbar("Categoria atualizada com sucesso.", "success");
@@ -123,6 +131,7 @@ export default function CategoriesPage() {
         await createCategoriaProduto(payload);
         showSnackbar("Categoria cadastrada com sucesso.", "success");
       }
+
       closeDialog();
       await loadCategorias();
     } catch (error) {
@@ -133,7 +142,7 @@ export default function CategoriesPage() {
   }
 
   async function handleDelete(categoria) {
-    if (!window.confirm(`Deseja excluir a categoria \"${categoria.nome}\"?`)) return;
+    if (!window.confirm(`Deseja excluir a categoria "${categoria.nome}"?`)) return;
 
     try {
       await deleteCategoriaProduto(categoria.id);
@@ -150,17 +159,31 @@ export default function CategoriesPage() {
       label: "Categoria",
       render: (categoria) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "#EEF2FF", color: "#4F46E5" }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "14px",
+              display: "grid",
+              placeItems: "center",
+              backgroundColor: "#EEF2FF",
+              color: "#4F46E5",
+            }}
+          >
             <CategoryOutlinedIcon fontSize="small" />
           </Box>
-          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>{categoria.nome}</Typography>
+          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+            {categoria.nome}
+          </Typography>
         </Box>
       ),
     },
     {
       key: "descricao",
       label: "Descrição",
-      render: (categoria) => <Typography sx={{ color: "text.secondary" }}>{categoria.descricao}</Typography>,
+      render: (categoria) => (
+        <Typography sx={{ color: "text.secondary" }}>{categoria.descricao}</Typography>
+      ),
     },
     {
       key: "acoes",
@@ -180,7 +203,17 @@ export default function CategoriesPage() {
 
   return (
     <AdminLayout>
-      <Paper sx={{ borderRadius: "20px", border: "1px solid #E5E7EB", boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)", overflow: "hidden" }}>
+      <Paper
+        sx={{
+          borderRadius: { xs: "16px", md: "20px" },
+          border: "none",
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 8px 24px rgba(0,0,0,0.28)"
+              : "0 4px 18px rgba(15, 23, 42, 0.05)",
+          overflow: "hidden",
+        }}
+      >
         <AppPageHeader
           title="Categorias de Produtos"
           subtitle="Cadastre, edite e exclua categorias de produto"
@@ -197,7 +230,9 @@ export default function CategoriesPage() {
 
         {errorMessage ? (
           <Box sx={{ px: 2.5, pb: 2 }}>
-            <Alert severity="error" sx={{ borderRadius: "14px" }}>{errorMessage}</Alert>
+            <Alert severity="error" sx={{ borderRadius: "14px" }}>
+              {errorMessage}
+            </Alert>
           </Box>
         ) : null}
 

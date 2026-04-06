@@ -8,15 +8,13 @@ import {
   Paper,
   Stack,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import { useTheme } from "@mui/material/styles";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
 import AttachMoneyOutlinedIcon from "@mui/icons-material/AttachMoneyOutlined";
-import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined";
-import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import AdminLayout from "../../components/layout/AdminLayout";
 import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
 import { getProducoes, getVendas } from "../../services/api";
@@ -33,6 +31,9 @@ function isToday(value) {
 }
 
 export default function HomePage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [vendas, setVendas] = useState([]);
@@ -44,7 +45,10 @@ export default function HomePage() {
       setErrorMessage("");
 
       try {
-        const [vendasData, producoesData] = await Promise.all([getVendas(), getProducoes()]);
+        const [vendasData, producoesData] = await Promise.all([
+          getVendas(),
+          getProducoes(),
+        ]);
         setVendas(Array.isArray(vendasData) ? vendasData : []);
         setProducoes(Array.isArray(producoesData) ? producoesData : []);
       } catch (error) {
@@ -57,8 +61,15 @@ export default function HomePage() {
     loadData();
   }, []);
 
-  const vendasHoje = useMemo(() => vendas.filter((v) => isToday(v.dataHora)), [vendas]);
-  const producoesHoje = useMemo(() => producoes.filter((p) => isToday(p.dataHora)), [producoes]);
+  const vendasHoje = useMemo(
+    () => vendas.filter((v) => isToday(v.dataHora)),
+    [vendas]
+  );
+
+  const producoesHoje = useMemo(
+    () => producoes.filter((p) => isToday(p.dataHora)),
+    [producoes]
+  );
 
   const totalVendasHoje = useMemo(
     () => vendasHoje.reduce((acc, venda) => acc + Number(venda.valorTotal || 0), 0),
@@ -109,12 +120,30 @@ export default function HomePage() {
   ];
 
   const activities = [
-    { title: "Vendas registradas hoje", time: `${vendasHoje.length} no total`, color: "#35C759", bg: "#ECFDF3" },
-    { title: "Produções registradas hoje", time: `${producoesHoje.length} no total`, color: "#4F46E5", bg: "#EEF2FF" },
-    { title: "Produções concluídas hoje", time: `${totalProducoesConcluidasHoje} concluída(s)`, color: "#4F7DF3", bg: "#EEF2FF" },
+    {
+      title: "Vendas registradas hoje",
+      time: `${vendasHoje.length} no total`,
+      color: "#35C759",
+      bg: "#ECFDF3",
+    },
+    {
+      title: "Produções registradas hoje",
+      time: `${producoesHoje.length} no total`,
+      color: "#4F46E5",
+      bg: "#EEF2FF",
+    },
+    {
+      title: "Produções concluídas hoje",
+      time: `${totalProducoesConcluidasHoje} concluída(s)`,
+      color: "#4F7DF3",
+      bg: "#EEF2FF",
+    },
     {
       title: "Receita de vendas de hoje",
-      time: totalVendasHoje.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+      time: totalVendasHoje.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      }),
       color: "#F59E0B",
       bg: "#FFF7ED",
     },
@@ -126,11 +155,16 @@ export default function HomePage() {
         <Paper
           sx={{
             minHeight: 260,
-            borderRadius: "18px",
-            border: "1px solid #E5E7EB",
-            boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+            borderRadius: { xs: "16px", md: "18px" },
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 8px 24px rgba(0,0,0,0.28)"
+                : "0 4px 18px rgba(15,23,42,0.05)",
             display: "grid",
             placeItems: "center",
+            p: { xs: 2.5, md: 3 },
           }}
         >
           <Stack alignItems="center" spacing={2}>
@@ -141,36 +175,66 @@ export default function HomePage() {
       ) : errorMessage ? (
         <Alert severity="error">{errorMessage}</Alert>
       ) : (
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, md: 3 }}>
           {cards.map((card) => (
-            <Grid key={card.title} size={{ xs: 12, md: 6, xl: 3 }}>
+            <Grid item xs={12} sm={6} xl={3} key={card.title}>
               <Paper
                 sx={{
-                  p: 3,
-                  borderRadius: "18px",
-                  border: "1px solid #E5E7EB",
-                  boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+                  p: { xs: 2, md: 3 },
+                  borderRadius: { xs: "16px", md: "18px" },
+                  border: "1px solid",
+                  borderColor: "divider",
+                  boxShadow:
+                    theme.palette.mode === "dark"
+                      ? "0 8px 24px rgba(0,0,0,0.28)"
+                      : "0 4px 18px rgba(15,23,42,0.05)",
+                  height: "100%",
                 }}
               >
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                  <Box>
-                    <Typography sx={{ fontSize: 13, color: "#6B7280", mb: 1.2 }}>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="flex-start"
+                  spacing={2}
+                >
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        fontSize: 13,
+                        color: "text.secondary",
+                        mb: 1.2,
+                        lineHeight: 1.3,
+                      }}
+                    >
                       {card.title}
                     </Typography>
-                    <Typography sx={{ fontWeight: 800, fontSize: 24, color: "#000" }}>
+
+                    <Typography
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: {
+                          xs: card.title === "RECEITA HOJE" ? 22 : 24,
+                          md: card.title === "RECEITA HOJE" ? 24 : 26,
+                        },
+                        color: "text.primary",
+                        lineHeight: 1.1,
+                        wordBreak: "break-word",
+                      }}
+                    >
                       {card.value}
                     </Typography>
                   </Box>
 
                   <Box
                     sx={{
-                      width: 48,
-                      height: 48,
+                      width: { xs: 44, md: 48 },
+                      height: { xs: 44, md: 48 },
                       borderRadius: "14px",
                       display: "grid",
                       placeItems: "center",
                       bgcolor: card.iconBg,
                       color: card.color,
+                      flexShrink: 0,
                     }}
                   >
                     {card.icon}
@@ -184,7 +248,10 @@ export default function HomePage() {
                     mt: 2.5,
                     height: 8,
                     borderRadius: "999px",
-                    bgcolor: "#ECECEC",
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.08)"
+                        : "#ECECEC",
                     "& .MuiLinearProgress-bar": {
                       backgroundColor: card.color,
                     },
@@ -194,28 +261,50 @@ export default function HomePage() {
             </Grid>
           ))}
 
-          <Grid size={{ xs: 12 }}>
+          <Grid item xs={12}>
             <Paper
               sx={{
-                borderRadius: "18px",
-                border: "1px solid #E5E7EB",
-                boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+                borderRadius: { xs: "16px", md: "18px" },
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow:
+                  theme.palette.mode === "dark"
+                    ? "0 8px 24px rgba(0,0,0,0.28)"
+                    : "0 4px 18px rgba(15,23,42,0.05)",
                 overflow: "hidden",
               }}
             >
-              <Box sx={{ p: 3 }}>
-                <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#0B1739", mb: 0.5 }}>
+              <Box sx={{ p: { xs: 2, md: 3 } }}>
+                <Typography
+                  sx={{
+                    fontSize: { xs: 18, md: 22 },
+                    fontWeight: 800,
+                    color: "text.primary",
+                    mb: 0.5,
+                  }}
+                >
                   Resumo Operacional
                 </Typography>
-                <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+                <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                   Indicadores resumidos de vendas e produções
                 </Typography>
               </Box>
 
-              <Box sx={{ borderTop: "1px solid #E5E7EB", p: 3 }}>
+              <Box
+                sx={{
+                  borderTop: "1px solid",
+                  borderColor: "divider",
+                  p: { xs: 2, md: 3 },
+                }}
+              >
                 <Stack spacing={2.2}>
                   {activities.map((item) => (
-                    <Stack key={item.title} direction="row" spacing={2} alignItems="center">
+                    <Stack
+                      key={item.title}
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                    >
                       <Box
                         sx={{
                           width: 36,
@@ -226,16 +315,31 @@ export default function HomePage() {
                           display: "grid",
                           placeItems: "center",
                           fontWeight: 800,
+                          flexShrink: 0,
                         }}
                       >
                         ●
                       </Box>
 
-                      <Box>
-                        <Typography sx={{ fontWeight: 700, color: "#111827" }}>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 700,
+                            color: "text.primary",
+                            fontSize: { xs: 14, md: 15 },
+                            lineHeight: 1.3,
+                          }}
+                        >
                           {item.title}
                         </Typography>
-                        <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+                        <Typography
+                          sx={{
+                            fontSize: 14,
+                            color: "text.secondary",
+                            lineHeight: 1.3,
+                            wordBreak: "break-word",
+                          }}
+                        >
                           {item.time}
                         </Typography>
                       </Box>

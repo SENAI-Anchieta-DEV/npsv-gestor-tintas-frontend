@@ -337,8 +337,8 @@ export default function UsersPage() {
     <AdminLayout>
       <Paper
         sx={{
-          borderRadius: "20px",
-          border: "1px solid #E5E7EB",
+          borderRadius: { xs: "16px", md: "20px" },
+          border: "none",
           boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)",
           overflow: "hidden",
         }}

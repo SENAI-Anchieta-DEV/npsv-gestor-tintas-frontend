@@ -21,7 +21,9 @@ import {
   TableRow,
   TextField,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -119,6 +121,8 @@ function getStatusChip(status) {
 
 export default function ProductionsPage() {
   const { showSnackbar } = useAppSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [producoes, setProducoes] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
@@ -331,13 +335,17 @@ export default function ProductionsPage() {
     <AdminLayout>
       <Paper
         sx={{
-          borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+          borderRadius: { xs: "16px", md: "20px" },
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 8px 24px rgba(0,0,0,0.28)"
+              : "0 4px 18px rgba(15,23,42,0.05)",
           overflow: "hidden",
         }}
       >
-        <Box sx={{ px: 3, py: 3 }}>
+        <Box sx={{ px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
             justifyContent="space-between"
@@ -345,10 +353,17 @@ export default function ProductionsPage() {
             spacing={2}
           >
             <Box>
-              <Typography sx={{ fontSize: 18, fontWeight: 800, color: "#0B1739", mb: 0.5 }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: 17, md: 18 },
+                  fontWeight: 800,
+                  color: "text.primary",
+                  mb: 0.5,
+                }}
+              >
                 Gestão de Produções
               </Typography>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                 Inicie, acompanhe e finalize produções no mesmo padrão visual
               </Typography>
             </Box>
@@ -358,6 +373,7 @@ export default function ProductionsPage() {
               startIcon={<AddIcon />}
               onClick={openCreateDialog}
               sx={{
+                width: { xs: "100%", md: "auto" },
                 borderRadius: "14px",
                 px: 2.2,
                 py: 1.1,
@@ -376,7 +392,7 @@ export default function ProductionsPage() {
 
         <Divider />
 
-        <Box sx={{ px: 2.5, py: 2 }}>
+        <Box sx={{ px: { xs: 2, md: 2.5 }, py: 2 }}>
           <Stack direction={{ xs: "column", lg: "row" }} spacing={2}>
             <TextField
               fullWidth
@@ -386,14 +402,9 @@ export default function ProductionsPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#9CA3AF" }} />
+                    <SearchIcon sx={{ color: "text.secondary" }} />
                   </InputAdornment>
                 ),
-                sx: {
-                  height: 44,
-                  borderRadius: "12px",
-                  backgroundColor: "#FFFFFF",
-                },
               }}
             />
 
@@ -402,7 +413,7 @@ export default function ProductionsPage() {
               label="Colorista"
               value={coloristaFiltro}
               onChange={(e) => setColoristaFiltro(e.target.value)}
-              sx={{ minWidth: 220 }}
+              sx={{ minWidth: { xs: "100%", lg: 220 } }}
             >
               <MenuItem value="TODOS">Todos os coloristas</MenuItem>
               {coloristas.map((usuario) => (
@@ -417,7 +428,7 @@ export default function ProductionsPage() {
               label="Status"
               value={statusFiltro}
               onChange={(e) => setStatusFiltro(e.target.value)}
-              sx={{ minWidth: 180 }}
+              sx={{ minWidth: { xs: "100%", lg: 180 } }}
             >
               <MenuItem value="TODOS">Todos</MenuItem>
               <MenuItem value="PENDENTE">Pendente</MenuItem>
@@ -433,7 +444,7 @@ export default function ProductionsPage() {
               value={dataInicial}
               onChange={(e) => setDataInicial(e.target.value)}
               InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 170 }}
+              sx={{ minWidth: { xs: "100%", lg: 170 } }}
             />
 
             <TextField
@@ -442,7 +453,7 @@ export default function ProductionsPage() {
               value={dataFinal}
               onChange={(e) => setDataFinal(e.target.value)}
               InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 170 }}
+              sx={{ minWidth: { xs: "100%", lg: 170 } }}
             />
           </Stack>
         </Box>
@@ -457,121 +468,133 @@ export default function ProductionsPage() {
             </Stack>
           </Box>
         ) : errorMessage ? (
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: { xs: 2, md: 3 } }}>
             <Alert severity="error">{errorMessage}</Alert>
           </Box>
         ) : producoesFiltradas.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography sx={{ fontWeight: 700, color: "#111827", mb: 1 }}>
+          <Box sx={{ p: { xs: 3, md: 4 }, textAlign: "center" }}>
+            <Typography sx={{ fontWeight: 700, color: "text.primary", mb: 1 }}>
               Nenhuma produção encontrada
             </Typography>
-            <Typography sx={{ color: "#6B7280" }}>
+            <Typography sx={{ color: "text.secondary" }}>
               Inicie uma nova produção ou ajuste os filtros.
             </Typography>
           </Box>
         ) : (
           <>
-            <Table>
-              <TableHead>
-                <TableRow
-                  sx={{
-                    "& th": {
-                      fontSize: 14,
-                      color: "#6B7280",
-                      fontWeight: 700,
-                      backgroundColor: "#FFFFFF",
-                    },
-                  }}
-                >
-                  <TableCell>Fórmula</TableCell>
-                  <TableCell>Data/Hora</TableCell>
-                  <TableCell>Colorista</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
+            <Box sx={{ width: "100%", overflowX: "auto" }}>
+              <Table sx={{ minWidth: 760 }}>
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      "& th": {
+                        fontSize: 14,
+                        color: "text.secondary",
+                        fontWeight: 700,
+                        backgroundColor: "background.paper",
+                      },
+                    }}
+                  >
+                    <TableCell>Fórmula</TableCell>
+                    <TableCell>Data/Hora</TableCell>
+                    <TableCell>Colorista</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Ações</TableCell>
+                  </TableRow>
+                </TableHead>
 
-              <TableBody>
-                {producoesFiltradas.map((producao) => {
-                  const statusChip = getStatusChip(producao.status);
+                <TableBody>
+                  {producoesFiltradas.map((producao) => {
+                    const statusChip = getStatusChip(producao.status);
 
-                  return (
-                    <TableRow key={producao.id} hover sx={{ "& td": { borderColor: "#E5E7EB", py: 1.4 } }}>
-                      <TableCell>
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Box
+                    return (
+                      <TableRow
+                        key={producao.id}
+                        hover
+                        sx={{ "& td": { borderColor: "divider", py: 1.4 } }}
+                      >
+                        <TableCell>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Box
+                              sx={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: "12px",
+                                backgroundColor: "#EEF2FF",
+                                color: "#4F46E5",
+                                display: "grid",
+                                placeItems: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <PrecisionManufacturingOutlinedIcon fontSize="small" />
+                            </Box>
+
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: 800,
+                                  color: "text.primary",
+                                  fontSize: 15,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {producao.formula?.nomeCor || "Fórmula não informada"}
+                              </Typography>
+                              <Typography sx={{ fontSize: 12.5, color: "text.secondary" }}>
+                                {producao.formula?.codigoInterno || "-"}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </TableCell>
+
+                        <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
+                          {formatDateTime(producao.dataHora)}
+                        </TableCell>
+
+                        <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
+                          {producao.colorista?.nome || "-"}
+                        </TableCell>
+
+                        <TableCell>
+                          <Chip
+                            label={statusChip.label}
                             sx={{
-                              width: 36,
-                              height: 36,
+                              height: 28,
+                              fontWeight: 700,
+                              borderRadius: "999px",
+                              color: statusChip.color,
+                              backgroundColor: statusChip.backgroundColor,
+                              border: statusChip.border,
+                            }}
+                          />
+                        </TableCell>
+
+                        <TableCell align="right">
+                          <Button
+                            variant="outlined"
+                            startIcon={<VisibilityOutlinedIcon fontSize="small" />}
+                            onClick={() => handleOpenDetail(producao.id)}
+                            sx={{
                               borderRadius: "12px",
-                              backgroundColor: "#EEF2FF",
-                              color: "#4F46E5",
-                              display: "grid",
-                              placeItems: "center",
+                              textTransform: "none",
+                              fontWeight: 600,
+                              px: 1.8,
                             }}
                           >
-                            <PrecisionManufacturingOutlinedIcon fontSize="small" />
-                          </Box>
-
-                          <Box>
-                            <Typography sx={{ fontWeight: 800, color: "#111827", fontSize: 15 }}>
-                              {producao.formula?.nomeCor || "Fórmula não informada"}
-                            </Typography>
-                            <Typography sx={{ fontSize: 12.5, color: "#6B7280" }}>
-                              {producao.formula?.codigoInterno || "-"}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </TableCell>
-
-                      <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                        {formatDateTime(producao.dataHora)}
-                      </TableCell>
-
-                      <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                        {producao.colorista?.nome || "-"}
-                      </TableCell>
-
-                      <TableCell>
-                        <Chip
-                          label={statusChip.label}
-                          sx={{
-                            height: 28,
-                            fontWeight: 700,
-                            borderRadius: "999px",
-                            color: statusChip.color,
-                            backgroundColor: statusChip.backgroundColor,
-                            border: statusChip.border,
-                          }}
-                        />
-                      </TableCell>
-
-                      <TableCell align="right">
-                        <Button
-                          variant="outlined"
-                          startIcon={<VisibilityOutlinedIcon fontSize="small" />}
-                          onClick={() => handleOpenDetail(producao.id)}
-                          sx={{
-                            borderRadius: "12px",
-                            textTransform: "none",
-                            color: "#111827",
-                            borderColor: "#D1D5DB",
-                            fontWeight: 600,
-                            px: 1.8,
-                          }}
-                        >
-                          Ver detalhes
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                            Ver detalhes
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </Box>
 
             <Divider />
-            <Box sx={{ px: 2.5, py: 2 }}>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+            <Box sx={{ px: { xs: 2, md: 2.5 }, py: 2 }}>
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                 Exibindo {producoesFiltradas.length} produção(ões)
               </Typography>
             </Box>
@@ -579,7 +602,13 @@ export default function ProductionsPage() {
         )}
       </Paper>
 
-      <Dialog open={dialogOpen} onClose={closeCreateDialog} fullWidth maxWidth="sm">
+      <Dialog
+        open={dialogOpen}
+        onClose={closeCreateDialog}
+        fullWidth
+        maxWidth="sm"
+        fullScreen={isMobile}
+      >
         <DialogTitle sx={{ fontWeight: 800 }}>Iniciar Produção</DialogTitle>
         <Box component="form" onSubmit={handleSubmit}>
           <DialogContent>
@@ -611,18 +640,40 @@ export default function ProductionsPage() {
             </Stack>
           </DialogContent>
 
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={closeCreateDialog} disabled={saving}>
+          <DialogActions
+            sx={{
+              px: 3,
+              pb: 3,
+              flexDirection: { xs: "column-reverse", sm: "row" },
+              gap: 1,
+            }}
+          >
+            <Button
+              onClick={closeCreateDialog}
+              disabled={saving}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               Cancelar
             </Button>
-            <Button type="submit" variant="contained" disabled={saving}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={saving}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               {saving ? "Salvando..." : "Iniciar"}
             </Button>
           </DialogActions>
         </Box>
       </Dialog>
 
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} fullWidth maxWidth="md">
+      <Dialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        fullWidth
+        maxWidth="md"
+        fullScreen={isMobile}
+      >
         <DialogTitle sx={{ fontWeight: 800 }}>Detalhe da Produção</DialogTitle>
         <DialogContent>
           {detailLoading || !selectedProducao ? (
@@ -676,12 +727,25 @@ export default function ProductionsPage() {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, justifyContent: "space-between" }}>
-          <Stack direction="row" spacing={1}>
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 3,
+            justifyContent: "space-between",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 1.5,
+          }}
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             <Button
               color="error"
               onClick={() => handleAction("cancelar")}
               disabled={actionLoading || !selectedProducao}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
             >
               Cancelar
             </Button>
@@ -690,19 +754,29 @@ export default function ProductionsPage() {
               color="warning"
               onClick={() => handleAction("perda")}
               disabled={actionLoading || !selectedProducao}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
             >
               Perda total
             </Button>
           </Stack>
 
-          <Stack direction="row" spacing={1}>
-            <Button onClick={() => setDetailOpen(false)} disabled={actionLoading}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
+            <Button
+              onClick={() => setDetailOpen(false)}
+              disabled={actionLoading}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               Fechar
             </Button>
             <Button
               variant="contained"
               onClick={() => handleAction("concluir")}
               disabled={actionLoading || !selectedProducao}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
             >
               {actionLoading ? "Processando..." : "Concluir"}
             </Button>

@@ -4,30 +4,17 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
   IconButton,
-  InputAdornment,
   MenuItem,
   Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import PointOfSaleOutlinedIcon from "@mui/icons-material/PointOfSaleOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import AdminLayout from "../../components/layout/AdminLayout";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
@@ -41,6 +28,12 @@ import {
   getVendasByVendedor,
   iniciarVenda,
 } from "../../services/api";
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppSearchField from "../../components/common/AppSearchField";
+import AppTextField from "../../components/common/AppTextField";
 
 const INITIAL_ITEM = {
   produtoId: "",
@@ -98,6 +91,8 @@ function formatMoney(value) {
 
 export default function SalesPage() {
   const { showSnackbar } = useAppSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [vendas, setVendas] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
@@ -329,406 +324,360 @@ export default function SalesPage() {
     }
   }
 
+  const columns = [
+    {
+      key: "venda",
+      label: "Venda",
+      render: (venda) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "14px",
+              display: "grid",
+              placeItems: "center",
+              backgroundColor: "#EEF2FF",
+              color: "#4F46E5",
+              flexShrink: 0,
+            }}
+          >
+            <PointOfSaleOutlinedIcon fontSize="small" />
+          </Box>
+
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                color: "text.primary",
+                fontSize: 14.5,
+                lineHeight: 1.25,
+                wordBreak: "break-word",
+              }}
+            >
+              {venda.id}
+            </Typography>
+            <Typography
+              sx={{
+                color: "text.secondary",
+                fontSize: 13,
+                lineHeight: 1.3,
+                wordBreak: "break-word",
+              }}
+            >
+              {venda.nomeVendedor}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      key: "dataHora",
+      label: "Data/Hora",
+      render: (venda) => formatDateTime(venda.dataAbertura),
+    },
+    {
+      key: "itens",
+      label: "Itens",
+      render: (venda) => (
+        <Chip
+          label={`${venda.itens.length} item(ns)`}
+          size="small"
+          sx={{ fontWeight: 700 }}
+        />
+      ),
+    },
+    {
+      key: "valorTotal",
+      label: "Valor Total",
+      render: (venda) => formatMoney(venda.valorTotal),
+    },
+    {
+      key: "acoes",
+      label: "Ações",
+      render: (venda) => (
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          <IconButton
+            onClick={() => handleOpenVenda(venda.id)}
+            aria-label={`Ver detalhes da venda ${venda.id}`}
+            size={isMobile ? "medium" : "small"}
+          >
+            <VisibilityOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
+
   return (
     <AdminLayout>
       <Paper
         sx={{
-          borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+          borderRadius: { xs: "16px", md: "20px" },
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 8px 24px rgba(0,0,0,0.28)"
+              : "0 4px 18px rgba(15, 23, 42, 0.05)",
           overflow: "hidden",
         }}
       >
-        <Box sx={{ px: 3, py: 3 }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
-            alignItems={{ xs: "stretch", md: "center" }}
-            spacing={2}
+        <AppPageHeader
+          title="Gestão de Vendas"
+          subtitle="Inicie, acompanhe e conclua vendas"
+          actionLabel="Nova Venda"
+          actionIcon={<AddIcon />}
+          onAction={handleNovaVenda}
+          actionLoading={savingStart}
+          actionSx={{
+            width: { xs: "100%", md: "auto" },
+          }}
+          contentSx={{
+            px: { xs: 2, md: 3 },
+            py: { xs: 2, md: 3 },
+          }}
+        />
+
+        <Box sx={{ px: { xs: 2, md: 2.5 }, pt: 2 }}>
+          <AppSearchField
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por vendedor ou ID da venda..."
+          />
+        </Box>
+
+        <Box
+          sx={{
+            px: { xs: 2, md: 2.5 },
+            pb: 2,
+            display: "grid",
+            gap: 2,
+            gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)", xl: "repeat(4, 1fr)" },
+          }}
+        >
+          <AppTextField
+            select
+            label="Vendedor"
+            value={vendedorFiltro}
+            onChange={(e) => setVendedorFiltro(e.target.value)}
+            helperText=" "
           >
-            <Box>
-              <Typography sx={{ fontSize: 18, fontWeight: 800, color: "#0B1739", mb: 0.5 }}>
-                Gestão de Vendas
-              </Typography>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-                Inicie, acompanhe e conclua vendas no mesmo padrão das demais telas
-              </Typography>
-            </Box>
+            <MenuItem value="TODOS">Todos os vendedores</MenuItem>
+            {vendedores.map((usuario) => (
+              <MenuItem key={usuario.id} value={usuario.id}>
+                {usuario.nome}
+              </MenuItem>
+            ))}
+          </AppTextField>
 
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleNovaVenda}
-              disabled={savingStart}
-              sx={{
-                borderRadius: "14px",
-                px: 2.2,
-                py: 1.1,
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #4F46E5, #4338CA)",
-                boxShadow: "0 8px 20px rgba(79, 70, 229, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #4338CA, #3730A3)",
-                },
-              }}
-            >
-              {savingStart ? "Salvando..." : "Nova Venda"}
-            </Button>
-          </Stack>
+          <AppTextField
+            label="Data inicial"
+            type="date"
+            value={dataInicial}
+            onChange={(e) => setDataInicial(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            helperText=" "
+          />
+
+          <AppTextField
+            label="Data final"
+            type="date"
+            value={dataFinal}
+            onChange={(e) => setDataFinal(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            helperText=" "
+          />
         </Box>
 
-        <Divider />
-
-        <Box sx={{ px: 2.5, py: 2 }}>
-          <Stack direction={{ xs: "column", lg: "row" }} spacing={2}>
-            <TextField
-              fullWidth
-              placeholder="Buscar por vendedor ou ID da venda..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#9CA3AF" }} />
-                  </InputAdornment>
-                ),
-                sx: {
-                  height: 44,
-                  borderRadius: "12px",
-                  backgroundColor: "#FFFFFF",
-                },
-              }}
-            />
-
-            <TextField
-              select
-              label="Vendedor"
-              value={vendedorFiltro}
-              onChange={(e) => setVendedorFiltro(e.target.value)}
-              sx={{ minWidth: 240 }}
-            >
-              <MenuItem value="TODOS">Todos os vendedores</MenuItem>
-              {vendedores.map((usuario) => (
-                <MenuItem key={usuario.id} value={usuario.id}>
-                  {usuario.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <TextField
-              label="Data inicial"
-              type="date"
-              value={dataInicial}
-              onChange={(e) => setDataInicial(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 170 }}
-            />
-
-            <TextField
-              label="Data final"
-              type="date"
-              value={dataFinal}
-              onChange={(e) => setDataFinal(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 170 }}
-            />
-          </Stack>
-        </Box>
-
-        <Divider />
+        {errorMessage ? (
+          <Box sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
+            <Alert severity="error" sx={{ borderRadius: "14px" }}>
+              {errorMessage}
+            </Alert>
+          </Box>
+        ) : null}
 
         {loading ? (
-          <Box sx={{ minHeight: 220, display: "grid", placeItems: "center", p: 4 }}>
-            <Stack alignItems="center" spacing={2}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando vendas...</Typography>
-            </Stack>
-          </Box>
-        ) : errorMessage ? (
-          <Box sx={{ p: 3 }}>
-            <Alert severity="error">{errorMessage}</Alert>
-          </Box>
-        ) : vendasFiltradas.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography sx={{ fontWeight: 700, color: "#111827", mb: 1 }}>
-              Nenhuma venda encontrada
-            </Typography>
-            <Typography sx={{ color: "#6B7280" }}>
-              Inicie uma nova venda ou ajuste os filtros.
-            </Typography>
-          </Box>
+          <AppLoading message="Carregando vendas..." />
         ) : (
-          <>
-            <Table>
-              <TableHead>
-                <TableRow
-                  sx={{
-                    "& th": {
-                      fontSize: 14,
-                      color: "#6B7280",
-                      fontWeight: 700,
-                      backgroundColor: "#FFFFFF",
-                    },
-                  }}
-                >
-                  <TableCell>Venda</TableCell>
-                  <TableCell>Data/Hora</TableCell>
-                  <TableCell>Vendedor</TableCell>
-                  <TableCell>Itens</TableCell>
-                  <TableCell>Valor Total</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {vendasFiltradas.map((venda) => (
-                  <TableRow key={venda.id} hover sx={{ "& td": { borderColor: "#E5E7EB", py: 1.4 } }}>
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Box
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: "12px",
-                            backgroundColor: "#EEF2FF",
-                            color: "#4F46E5",
-                            display: "grid",
-                            placeItems: "center",
-                          }}
-                        >
-                          <PointOfSaleOutlinedIcon fontSize="small" />
-                        </Box>
-
-                        <Typography sx={{ fontWeight: 800, color: "#111827", fontSize: 15 }}>
-                          {venda.id}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {formatDateTime(venda.dataAbertura)}
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {venda.nomeVendedor}
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        label={`${venda.itens.length} item(ns)`}
-                        sx={{
-                          height: 28,
-                          fontWeight: 700,
-                          borderRadius: "999px",
-                          color: "#4F46E5",
-                          backgroundColor: "#EEF2FF",
-                          border: "1px solid #C7D2FE",
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {formatMoney(venda.valorTotal)}
-                    </TableCell>
-
-                    <TableCell align="right">
-                      <Button
-                        variant="outlined"
-                        startIcon={<VisibilityOutlinedIcon fontSize="small" />}
-                        onClick={() => handleOpenVenda(venda.id)}
-                        sx={{
-                          borderRadius: "12px",
-                          textTransform: "none",
-                          color: "#111827",
-                          borderColor: "#D1D5DB",
-                          fontWeight: 600,
-                          px: 1.8,
-                        }}
-                      >
-                        Ver detalhes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            <Divider />
-            <Box sx={{ px: 2.5, py: 2 }}>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-                Exibindo {vendasFiltradas.length} venda(s)
-              </Typography>
-            </Box>
-          </>
+          <AppDataTable
+            columns={columns}
+            rows={vendasFiltradas.map((item) => ({ ...item, key: item.id }))}
+            emptyMessage="Nenhuma venda encontrada."
+            containerSx={{
+              px: { xs: 1.5, md: 2.5 },
+              pb: { xs: 2, md: 2.5 },
+            }}
+            tableWrapperSx={{
+              overflowX: "auto",
+            }}
+            tableSx={{
+              minWidth: 760,
+            }}
+          />
         )}
       </Paper>
 
-      <Dialog open={detailDialogOpen} onClose={closeDetailDialog} fullWidth maxWidth="md">
-        <DialogTitle sx={{ fontWeight: 800 }}>Detalhe / Conclusão da Venda</DialogTitle>
-        <Box component="form" onSubmit={handleConcluirVenda}>
-          <DialogContent>
-            {detailLoading || !selectedVenda ? (
-              <Box sx={{ minHeight: 180, display: "grid", placeItems: "center" }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Stack spacing={2.5} sx={{ mt: 1 }}>
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                  <TextField
-                    label="ID da Venda"
-                    value={selectedVenda.id}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Data/Hora"
-                    value={formatDateTime(selectedVenda.dataAbertura)}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                  />
-                </Stack>
+      <AppFormDialog
+        open={detailDialogOpen}
+        title="Detalhe / Conclusão da Venda"
+        onClose={closeDetailDialog}
+        onSubmit={handleConcluirVenda}
+        loading={savingConclude}
+        submitLabel="Concluir venda"
+        fullScreen={isMobile}
+        dialogProps={{
+          maxWidth: "md",
+          fullWidth: true,
+        }}
+        actionsSx={{
+          flexDirection: { xs: "column-reverse", sm: "row" },
+          gap: 1,
+        }}
+        submitButtonSx={{
+          width: { xs: "100%", sm: "auto" },
+        }}
+        cancelButtonSx={{
+          width: { xs: "100%", sm: "auto" },
+        }}
+        contentSx={{
+          px: { xs: 2, md: 3 },
+          py: { xs: 1.5, md: 2 },
+        }}
+      >
+        {detailLoading || !selectedVenda ? (
+          <Box sx={{ minHeight: 180, display: "grid", placeItems: "center" }}>
+            <AppLoading message="Carregando venda..." />
+          </Box>
+        ) : (
+          <Box sx={{ display: "grid", gap: 2 }}>
+            <AppTextField
+              label="ID da venda"
+              value={selectedVenda.id}
+              InputProps={{ readOnly: true }}
+            />
 
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                  <TextField
-                    label="Vendedor"
-                    value={selectedVenda.nomeVendedor}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                  />
-                  <TextField
-                    select
-                    label="Forma de Pagamento"
-                    name="formaPagamento"
-                    value={concludeForm.formaPagamento}
-                    onChange={handleConcludeChange}
-                    required
-                    error={Boolean(concludeErrors.formaPagamento)}
-                    helperText={concludeErrors.formaPagamento}
-                    fullWidth
-                  >
-                    {FORMA_PAGAMENTO_OPTIONS.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option.replaceAll("_", " ")}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Stack>
+            <AppTextField
+              label="Data/Hora"
+              value={formatDateTime(selectedVenda.dataAbertura)}
+              InputProps={{ readOnly: true }}
+            />
 
-                <Divider />
+            <AppTextField
+              label="Vendedor"
+              value={selectedVenda.nomeVendedor}
+              InputProps={{ readOnly: true }}
+            />
 
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography sx={{ fontWeight: 800, color: "#111827" }}>
-                    Itens da Venda
-                  </Typography>
+            <AppTextField
+              select
+              label="Forma de pagamento"
+              name="formaPagamento"
+              value={concludeForm.formaPagamento}
+              onChange={handleConcludeChange}
+              required
+              error={Boolean(concludeErrors.formaPagamento)}
+              helperText={concludeErrors.formaPagamento}
+            >
+              {FORMA_PAGAMENTO_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option.replaceAll("_", " ")}
+                </MenuItem>
+              ))}
+            </AppTextField>
 
-                  <Button
-                    type="button"
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={addItem}
-                    sx={{ borderRadius: "12px", textTransform: "none" }}
-                  >
-                    Adicionar item
-                  </Button>
-                </Stack>
+            <Box sx={{ pt: 0.5 }}>
+              <Typography sx={{ fontWeight: 800, color: "text.primary", mb: 0.5 }}>
+                Itens da venda
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
+                Adicione os produtos e quantidades.
+              </Typography>
 
+              <Button
+                type="button"
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={addItem}
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  mb: 2,
+                }}
+              >
+                Adicionar item
+              </Button>
+
+              <Box sx={{ display: "grid", gap: 2 }}>
                 {concludeForm.itens.map((item, index) => (
                   <Paper
                     key={`item-venda-${index}`}
                     variant="outlined"
                     sx={{
-                      p: 2,
+                      p: { xs: 1.5, md: 2 },
                       borderRadius: "16px",
-                      borderColor: "#E5E7EB",
+                      borderColor: "divider",
                       boxShadow: "none",
                     }}
                   >
-                    <Stack spacing={2}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography sx={{ fontWeight: 700, color: "#0B1739" }}>
+                    <Box sx={{ display: "grid", gap: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: { xs: "stretch", sm: "center" },
+                          flexDirection: { xs: "column", sm: "row" },
+                          gap: 1,
+                        }}
+                      >
+                        <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
                           Item {index + 1}
                         </Typography>
 
-                        <IconButton
+                        <Button
+                          type="button"
                           color="error"
                           onClick={() => removeItem(index)}
                           disabled={concludeForm.itens.length === 1}
+                          sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
                         >
-                          <DeleteOutlineIcon />
-                        </IconButton>
-                      </Stack>
+                          Remover
+                        </Button>
+                      </Box>
 
-                      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                        <TextField
-                          select
-                          label="Produto"
-                          value={item.produtoId}
-                          onChange={(e) => handleItemChange(index, "produtoId", e.target.value)}
-                          fullWidth
-                        >
-                          {produtos.map((produto) => (
-                            <MenuItem key={produto.id} value={produto.id}>
-                              {produto.descricao} — {formatMoney(produto.precoVenda)}
-                            </MenuItem>
-                          ))}
-                        </TextField>
+                      <AppTextField
+                        select
+                        label="Produto"
+                        value={item.produtoId}
+                        onChange={(e) => handleItemChange(index, "produtoId", e.target.value)}
+                      >
+                        {produtos.map((produto) => (
+                          <MenuItem key={produto.id} value={produto.id}>
+                            {produto.descricao} — {formatMoney(produto.precoVenda)}
+                          </MenuItem>
+                        ))}
+                      </AppTextField>
 
-                        <TextField
-                          label="Quantidade"
-                          type="number"
-                          value={item.quantidade}
-                          onChange={(e) => handleItemChange(index, "quantidade", e.target.value)}
-                          fullWidth
-                        />
-                      </Stack>
-                    </Stack>
+                      <AppTextField
+                        label="Quantidade"
+                        type="number"
+                        value={item.quantidade}
+                        onChange={(e) => handleItemChange(index, "quantidade", e.target.value)}
+                      />
+                    </Box>
                   </Paper>
                 ))}
+              </Box>
 
-                {concludeErrors.itens ? <Alert severity="error">{concludeErrors.itens}</Alert> : null}
-
-                {selectedVenda.itens.length > 0 ? (
-                  <>
-                    <Divider />
-                    <Typography sx={{ fontWeight: 800, color: "#111827" }}>
-                      Itens já registrados
-                    </Typography>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Produto</TableCell>
-                          <TableCell>Quantidade</TableCell>
-                          <TableCell>Preço Unitário</TableCell>
-                          <TableCell>Subtotal</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {selectedVenda.itens.map((item, index) => (
-                          <TableRow key={`${item.produtoId}-${index}`}>
-                            <TableCell>{item.nomeProduto}</TableCell>
-                            <TableCell>{item.quantidade}</TableCell>
-                            <TableCell>{formatMoney(item.precoPraticado)}</TableCell>
-                            <TableCell>{formatMoney(item.subtotal)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </>
-                ) : null}
-              </Stack>
-            )}
-          </DialogContent>
-
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={closeDetailDialog} disabled={savingConclude}>
-              Fechar
-            </Button>
-            <Button type="submit" variant="contained" disabled={savingConclude || detailLoading}>
-              {savingConclude ? "Concluindo..." : "Concluir venda"}
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
+              {concludeErrors.itens ? (
+                <Alert severity="error" sx={{ mt: 2, borderRadius: "14px" }}>
+                  {concludeErrors.itens}
+                </Alert>
+              ) : null}
+            </Box>
+          </Box>
+        )}
+      </AppFormDialog>
     </AdminLayout>
   );
 }

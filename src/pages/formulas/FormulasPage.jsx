@@ -3,28 +3,15 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  IconButton,
-  InputAdornment,
   MenuItem,
   Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
   Typography,
+  IconButton,
+  Chip,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
@@ -38,6 +25,12 @@ import {
   getProdutos,
   updateFormula,
 } from "../../services/api";
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppSearchField from "../../components/common/AppSearchField";
+import AppTextField from "../../components/common/AppTextField";
 
 const INITIAL_ITEM = {
   insumoId: "",
@@ -91,6 +84,8 @@ function isProdutoInsumo(produto) {
 
 export default function FormulasPage() {
   const { showSnackbar } = useAppSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [formulas, setFormulas] = useState([]);
   const [produtos, setProdutos] = useState([]);
@@ -302,365 +297,304 @@ export default function FormulasPage() {
     }
   }
 
+  const columns = [
+    {
+      key: "formula",
+      label: "Fórmula",
+      render: (formula) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "14px",
+              display: "grid",
+              placeItems: "center",
+              backgroundColor: "#EEF2FF",
+              color: "#4F46E5",
+              flexShrink: 0,
+            }}
+          >
+            <ScienceOutlinedIcon fontSize="small" />
+          </Box>
+
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                color: "text.primary",
+                fontSize: 14.5,
+                lineHeight: 1.25,
+                wordBreak: "break-word",
+              }}
+            >
+              {formula.nomeCor}
+            </Typography>
+            <Typography
+              sx={{
+                color: "text.secondary",
+                fontSize: 13,
+                lineHeight: 1.3,
+                wordBreak: "break-word",
+              }}
+            >
+              {formula.codigoInterno}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      key: "itens",
+      label: "Itens",
+      render: (formula) => (
+        <Chip
+          label={`${formula.itens.length} item(ns)`}
+          size="small"
+          sx={{ fontWeight: 700 }}
+        />
+      ),
+    },
+    {
+      key: "criacao",
+      label: "Criação",
+      render: (formula) => formatDateTime(formula.dataCriacao),
+    },
+    {
+      key: "atualizacao",
+      label: "Atualização",
+      render: (formula) => formatDateTime(formula.dataAtualizacao),
+    },
+    {
+      key: "acoes",
+      label: "Ações",
+      render: (formula) => (
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          <IconButton
+            onClick={() => openEdit(formula)}
+            aria-label={`Editar fórmula ${formula.nomeCor}`}
+            size={isMobile ? "medium" : "small"}
+          >
+            <EditOutlinedIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            onClick={() => handleDelete(formula)}
+            aria-label={`Excluir fórmula ${formula.nomeCor}`}
+            size={isMobile ? "medium" : "small"}
+          >
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+    },
+  ];
+
   return (
     <AdminLayout>
       <Paper
         sx={{
-          borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+          borderRadius: { xs: "16px", md: "20px" },
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 8px 24px rgba(0,0,0,0.28)"
+              : "0 4px 18px rgba(15, 23, 42, 0.05)",
           overflow: "hidden",
         }}
       >
-        <Box sx={{ px: 3, py: 3 }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
-            alignItems={{ xs: "stretch", md: "center" }}
-            spacing={2}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: "#0B1739",
-                  mb: 0.5,
-                }}
-              >
-                Gerenciar Fórmulas
-              </Typography>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-                Cadastre, edite e exclua fórmulas de tintas
-              </Typography>
-            </Box>
+        <AppPageHeader
+          title="Gerenciar Fórmulas"
+          subtitle="Cadastre, edite e exclua fórmulas de tintas"
+          actionLabel="Nova Fórmula"
+          actionIcon={<AddIcon />}
+          onAction={openCreate}
+          actionSx={{
+            width: { xs: "100%", md: "auto" },
+          }}
+          contentSx={{
+            px: { xs: 2, md: 3 },
+            py: { xs: 2, md: 3 },
+          }}
+        />
 
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={openCreate}
-              sx={{
-                borderRadius: "14px",
-                px: 2.2,
-                py: 1.1,
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #4F46E5, #4338CA)",
-                boxShadow: "0 8px 20px rgba(79, 70, 229, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #4338CA, #3730A3)",
-                },
-              }}
-            >
-              Nova Fórmula
-            </Button>
-          </Stack>
-        </Box>
-
-        <Divider />
-
-        <Box sx={{ px: 2.5, py: 2 }}>
-          <TextField
-            fullWidth
-            placeholder="Pesquisar por nome da cor ou código interno..."
+        <Box sx={{ px: { xs: 2, md: 2.5 }, pt: 2 }}>
+          <AppSearchField
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#9CA3AF" }} />
-                </InputAdornment>
-              ),
-              sx: {
-                height: 44,
-                borderRadius: "12px",
-                backgroundColor: "#FFFFFF",
-              },
-            }}
+            placeholder="Pesquisar por nome da cor ou código interno..."
           />
         </Box>
 
-        <Divider />
+        {errorMessage ? (
+          <Box sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
+            <Alert severity="error" sx={{ borderRadius: "14px" }}>
+              {errorMessage}
+            </Alert>
+          </Box>
+        ) : null}
 
         {loading ? (
-          <Box sx={{ minHeight: 220, display: "grid", placeItems: "center", p: 4 }}>
-            <Stack alignItems="center" spacing={2}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando fórmulas...</Typography>
-            </Stack>
-          </Box>
-        ) : errorMessage ? (
-          <Box sx={{ p: 3 }}>
-            <Alert severity="error">{errorMessage}</Alert>
-          </Box>
-        ) : formulasFiltradas.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography sx={{ fontWeight: 700, color: "#111827", mb: 1 }}>
-              Nenhuma fórmula encontrada
-            </Typography>
-            <Typography sx={{ color: "#6B7280" }}>
-              Cadastre uma nova fórmula para começar.
-            </Typography>
-          </Box>
+          <AppLoading message="Carregando fórmulas..." />
         ) : (
-          <>
-            <Table>
-              <TableHead>
-                <TableRow
-                  sx={{
-                    "& th": {
-                      fontSize: 14,
-                      color: "#6B7280",
-                      fontWeight: 700,
-                      backgroundColor: "#FFFFFF",
-                    },
-                  }}
-                >
-                  <TableCell>Fórmula</TableCell>
-                  <TableCell>Código Interno</TableCell>
-                  <TableCell>Itens</TableCell>
-                  <TableCell>Criação</TableCell>
-                  <TableCell>Atualização</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {formulasFiltradas.map((formula) => (
-                  <TableRow
-                    key={formula.id}
-                    hover
-                    sx={{ "& td": { borderColor: "#E5E7EB", py: 1.4 } }}
-                  >
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Box
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: "12px",
-                            backgroundColor: "#EEF2FF",
-                            color: "#4F46E5",
-                            display: "grid",
-                            placeItems: "center",
-                          }}
-                        >
-                          <ScienceOutlinedIcon fontSize="small" />
-                        </Box>
-
-                        <Typography sx={{ fontWeight: 800, color: "#111827", fontSize: 15 }}>
-                          {formula.nomeCor}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {formula.codigoInterno}
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        label={`${formula.itens.length} item(ns)`}
-                        sx={{
-                          height: 28,
-                          fontWeight: 700,
-                          borderRadius: "999px",
-                          color: "#4F46E5",
-                          backgroundColor: "#EEF2FF",
-                          border: "1px solid #C7D2FE",
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {formatDateTime(formula.dataCriacao)}
-                    </TableCell>
-
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
-                      {formatDateTime(formula.dataAtualizacao)}
-                    </TableCell>
-
-                    <TableCell align="right">
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        justifyContent="flex-end"
-                        alignItems="center"
-                      >
-                        <Button
-                          variant="outlined"
-                          startIcon={<EditOutlinedIcon fontSize="small" />}
-                          onClick={() => openEdit(formula)}
-                          sx={{
-                            borderRadius: "12px",
-                            textTransform: "none",
-                            color: "#111827",
-                            borderColor: "#D1D5DB",
-                            fontWeight: 600,
-                            px: 1.8,
-                            minWidth: "auto",
-                          }}
-                        >
-                          Editar
-                        </Button>
-
-                        <IconButton
-                          sx={{ color: "#DC2626" }}
-                          onClick={() => handleDelete(formula)}
-                        >
-                          <DeleteOutlineIcon />
-                        </IconButton>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            <Divider />
-
-            <Box sx={{ px: 2.5, py: 2 }}>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
-                Exibindo {formulasFiltradas.length} fórmula(s)
-              </Typography>
-            </Box>
-          </>
+          <AppDataTable
+            columns={columns}
+            rows={formulasFiltradas.map((item) => ({ ...item, key: item.id }))}
+            emptyMessage="Nenhuma fórmula encontrada."
+            containerSx={{
+              px: { xs: 1.5, md: 2.5 },
+              pb: { xs: 2, md: 2.5 },
+            }}
+            tableWrapperSx={{
+              overflowX: "auto",
+            }}
+            tableSx={{
+              minWidth: 720,
+            }}
+          />
         )}
       </Paper>
 
-      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="md">
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          {editingFormula ? "Editar Fórmula" : "Cadastrar Fórmula"}
-        </DialogTitle>
+      <AppFormDialog
+        open={dialogOpen}
+        title={editingFormula ? "Editar fórmula" : "Nova fórmula"}
+        onClose={closeDialog}
+        onSubmit={handleSubmit}
+        loading={saving}
+        submitLabel={editingFormula ? "Salvar alterações" : "Cadastrar fórmula"}
+        fullScreen={isMobile}
+        dialogProps={{
+          maxWidth: "md",
+          fullWidth: true,
+        }}
+        actionsSx={{
+          flexDirection: { xs: "column-reverse", sm: "row" },
+          gap: 1,
+        }}
+        submitButtonSx={{
+          width: { xs: "100%", sm: "auto" },
+        }}
+        cancelButtonSx={{
+          width: { xs: "100%", sm: "auto" },
+        }}
+        contentSx={{
+          px: { xs: 2, md: 3 },
+          py: { xs: 1.5, md: 2 },
+        }}
+      >
+        <AppTextField
+          name="nomeCor"
+          label="Nome da cor"
+          required
+          value={form.nomeCor}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.nomeCor)}
+          helperText={fieldErrors.nomeCor}
+        />
 
-        <Box component="form" onSubmit={handleSubmit}>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <TextField
-                  label="Nome da Cor"
-                  name="nomeCor"
-                  value={form.nomeCor}
-                  onChange={handleChange}
-                  required
-                  error={Boolean(fieldErrors.nomeCor)}
-                  helperText={fieldErrors.nomeCor}
-                  fullWidth
-                />
+        <AppTextField
+          name="codigoInterno"
+          label="Código interno"
+          required
+          value={form.codigoInterno}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.codigoInterno)}
+          helperText={fieldErrors.codigoInterno}
+        />
 
-                <TextField
-                  label="Código Interno"
-                  name="codigoInterno"
-                  value={form.codigoInterno}
-                  onChange={handleChange}
-                  required
-                  error={Boolean(fieldErrors.codigoInterno)}
-                  helperText={fieldErrors.codigoInterno}
-                  fullWidth
-                />
-              </Stack>
+        <Box sx={{ pt: 0.5 }}>
+          <Typography sx={{ fontWeight: 800, color: "text.primary", mb: 0.5 }}>
+            Itens da fórmula
+          </Typography>
+          <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
+            Adicione os insumos e suas quantidades-alvo.
+          </Typography>
 
-              <Divider />
+          <Button
+            type="button"
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={handleAddItem}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              mb: 2,
+            }}
+          >
+            Adicionar item
+          </Button>
 
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography sx={{ fontWeight: 800, color: "#111827" }}>
-                    Itens da Fórmula
-                  </Typography>
-                  <Typography sx={{ fontSize: 13, color: "#6B7280" }}>
-                    Adicione os insumos e suas quantidades-alvo
-                  </Typography>
+          <Box sx={{ display: "grid", gap: 2 }}>
+            {form.itens.map((item, index) => (
+              <Paper
+                key={`item-${index}`}
+                variant="outlined"
+                sx={{
+                  p: { xs: 1.5, md: 2 },
+                  borderRadius: "16px",
+                  borderColor: "divider",
+                  boxShadow: "none",
+                }}
+              >
+                <Box sx={{ display: "grid", gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: { xs: "stretch", sm: "center" },
+                      flexDirection: { xs: "column", sm: "row" },
+                      gap: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+                      Item {index + 1}
+                    </Typography>
+
+                    <Button
+                      type="button"
+                      color="error"
+                      onClick={() => handleRemoveItem(index)}
+                      disabled={form.itens.length === 1}
+                      sx={{ alignSelf: { xs: "flex-start", sm: "auto" } }}
+                    >
+                      Remover
+                    </Button>
+                  </Box>
+
+                  <AppTextField
+                    select
+                    label="Insumo"
+                    value={item.insumoId}
+                    onChange={(e) =>
+                      handleItemChange(index, "insumoId", e.target.value)
+                    }
+                  >
+                    {produtos.map((produto) => (
+                      <MenuItem key={produto.id} value={produto.id}>
+                        {produto.descricao} — {produto.categoria?.nome || "Sem categoria"}
+                      </MenuItem>
+                    ))}
+                  </AppTextField>
+
+                  <AppTextField
+                    label="Quantidade necessária"
+                    type="number"
+                    value={item.quantidadeNecessaria}
+                    onChange={(e) =>
+                      handleItemChange(index, "quantidadeNecessaria", e.target.value)
+                    }
+                  />
                 </Box>
+              </Paper>
+            ))}
+          </Box>
 
-                <Button
-                  type="button"
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddItem}
-                  sx={{ borderRadius: "12px", textTransform: "none" }}
-                >
-                  Adicionar item
-                </Button>
-              </Stack>
-
-              {form.itens.map((item, index) => (
-                <Paper
-                  key={`item-${index}`}
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    borderRadius: "16px",
-                    borderColor: "#E5E7EB",
-                    boxShadow: "none",
-                  }}
-                >
-                  <Stack spacing={2}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Typography sx={{ fontWeight: 700, color: "#0B1739" }}>
-                        Item {index + 1}
-                      </Typography>
-
-                      <Button
-                        type="button"
-                        color="error"
-                        onClick={() => handleRemoveItem(index)}
-                        disabled={form.itens.length === 1}
-                      >
-                        Remover
-                      </Button>
-                    </Stack>
-
-                    <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                      <TextField
-                        select
-                        label="Insumo"
-                        value={item.insumoId}
-                        onChange={(e) =>
-                          handleItemChange(index, "insumoId", e.target.value)
-                        }
-                        fullWidth
-                      >
-                        {produtos.map((produto) => (
-                          <MenuItem key={produto.id} value={produto.id}>
-                            {produto.descricao} — {produto.categoria?.nome || "Sem categoria"}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-
-                      <TextField
-                        label="Quantidade Necessária"
-                        type="number"
-                        value={item.quantidadeNecessaria}
-                        onChange={(e) =>
-                          handleItemChange(index, "quantidadeNecessaria", e.target.value)
-                        }
-                        fullWidth
-                      />
-                    </Stack>
-                  </Stack>
-                </Paper>
-              ))}
-
-              {fieldErrors.itens ? (
-                <Alert severity="error">{fieldErrors.itens}</Alert>
-              ) : null}
-            </Stack>
-          </DialogContent>
-
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={closeDialog} disabled={saving}>
-              Cancelar
-            </Button>
-
-            <Button type="submit" variant="contained" disabled={saving}>
-              {saving
-                ? "Salvando..."
-                : editingFormula
-                ? "Salvar alterações"
-                : "Cadastrar"}
-            </Button>
-          </DialogActions>
+          {fieldErrors.itens ? (
+            <Alert severity="error" sx={{ mt: 2, borderRadius: "14px" }}>
+              {fieldErrors.itens}
+            </Alert>
+          ) : null}
         </Box>
-      </Dialog>
+      </AppFormDialog>
     </AdminLayout>
   );
 }
