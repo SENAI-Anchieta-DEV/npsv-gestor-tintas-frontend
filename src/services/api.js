@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://gestor-tintas-backend-api.onrender.com/";
+const API_BASE_URL = "https://gestor-tintas-backend-api.onrender.com";
 
 export function getStoredToken() {
   return localStorage.getItem("token");
