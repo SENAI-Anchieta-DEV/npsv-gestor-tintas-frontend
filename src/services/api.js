@@ -352,3 +352,35 @@ export function registrarPerdaTotal(id) {
     method: "PATCH",
   });
 }
+
+export function getClientes() {
+  return authenticatedRequest("/api/clientes", {
+    method: "GET",
+  });
+}
+
+export function getClienteById(id) {
+  return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
+    method: "GET",
+  });
+}
+
+export function createCliente(payload) {
+  return authenticatedRequest("/api/clientes", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateCliente(id, payload) {
+  return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deactivateCliente(id) {
+  return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
