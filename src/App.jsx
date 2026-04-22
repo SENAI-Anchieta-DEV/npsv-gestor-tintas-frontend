@@ -7,6 +7,7 @@ import ProductsPage from "./pages/products/ProductsPage";
 import FormulasPage from "./pages/formulas/FormulasPage";
 import ProductionHistoryPage from "./pages/productions/ProductionsPage";
 import SalesHistoryPage from "./pages/sales/SalesPage";
+import ClientsPage from "./pages/clients/ClientsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -73,6 +74,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <SalesHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/clientes"
+        element={
+          <ProtectedRoute>
+            <ClientsPage />
           </ProtectedRoute>
         }
       />

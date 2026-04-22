@@ -1,7 +1,13 @@
 {
   "projects": {
     "default": "npsv-gestor-tintas-front-ba401"
+<<<<<<< HEAD
   },
   "targets": {},
   "etags": {}
 }
+=======
+  }
+}
+
+>>>>>>> feat/gerenciar-clientes-NPSV-319

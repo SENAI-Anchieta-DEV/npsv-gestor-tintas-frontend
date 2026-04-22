@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -33,6 +34,7 @@ import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
 import {
   concluirVenda,
+  getClientes,
   getCurrentUserEmailFromToken,
   getProdutos,
   getUsuarios,
@@ -60,6 +62,27 @@ const FORMA_PAGAMENTO_OPTIONS = [
   "BOLETO",
   "OUTROS",
 ];
+
+function onlyDigits(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function formatCpf(value) {
+  const digits = onlyDigits(value).slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1-$2");
+}
+
+function normalizeCliente(item) {
+  return {
+    id: item?.id,
+    nome: item?.nome || "-",
+    cpf: item?.cpf || "",
+    ativo: Boolean(item?.ativo),
+  };
+}
 
 function normalizeVenda(item) {
   return {
@@ -102,6 +125,9 @@ export default function SalesPage() {
   const [vendas, setVendas] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [produtos, setProdutos] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [savingStart, setSavingStart] = useState(false);
   const [savingConclude, setSavingConclude] = useState(false);
@@ -128,7 +154,9 @@ export default function SalesPage() {
 
       const emailLogado = getCurrentUserEmailFromToken();
       const usuarioLogado = usuariosData.find(
-        (u) => String(u.email || "").toLowerCase() === String(emailLogado || "").toLowerCase()
+        (u) =>
+          String(u.email || "").toLowerCase() ===
+          String(emailLogado || "").toLowerCase()
       );
 
       setCurrentUser(usuarioLogado || null);
@@ -141,6 +169,19 @@ export default function SalesPage() {
     try {
       const data = await getProdutos();
       setProdutos(Array.isArray(data) ? data.map(normalizeProduto) : []);
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
+    }
+  }
+
+  async function loadClientes() {
+    try {
+      const data = await getClientes();
+      setClientes(
+        Array.isArray(data)
+          ? data.map(normalizeCliente).filter((item) => item.ativo)
+          : []
+      );
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
     }
@@ -167,6 +208,7 @@ export default function SalesPage() {
   useEffect(() => {
     loadUsuarios();
     loadProdutos();
+    loadClientes();
   }, []);
 
   useEffect(() => {
@@ -200,6 +242,7 @@ export default function SalesPage() {
 
   function openDetailDialog(venda) {
     setSelectedVenda(venda);
+    setSelectedCliente(null);
     setConcludeForm(INITIAL_CONCLUDE_FORM);
     setConcludeErrors({});
     setDetailDialogOpen(true);
@@ -209,6 +252,7 @@ export default function SalesPage() {
     if (savingConclude) return;
     setDetailDialogOpen(false);
     setSelectedVenda(null);
+    setSelectedCliente(null);
     setConcludeForm(INITIAL_CONCLUDE_FORM);
     setConcludeErrors({});
   }
@@ -253,7 +297,11 @@ export default function SalesPage() {
     }
 
     const itensInvalidos = concludeForm.itens.some((item) => {
-      return !item.produtoId || item.quantidade === "" || Number(item.quantidade) <= 0;
+      return (
+        !item.produtoId ||
+        item.quantidade === "" ||
+        Number(item.quantidade) <= 0
+      );
     });
 
     if (itensInvalidos) {
@@ -275,6 +323,7 @@ export default function SalesPage() {
     try {
       await iniciarVenda({
         vendedorId: currentUser.id,
+        ...(selectedCliente?.id ? { clienteId: selectedCliente.id } : {}),
       });
 
       showSnackbar("Venda iniciada com sucesso.", "success");
@@ -313,6 +362,7 @@ export default function SalesPage() {
     try {
       await concluirVenda(selectedVenda.id, {
         formaPagamento: concludeForm.formaPagamento,
+        ...(selectedCliente?.id ? { clienteId: selectedCliente.id } : {}),
         itens: concludeForm.itens.map((item) => ({
           produtoId: item.produtoId,
           quantidade: Number(item.quantidade),
@@ -614,6 +664,24 @@ export default function SalesPage() {
                   </TextField>
                 </Stack>
 
+                <Autocomplete
+                  options={clientes}
+                  value={selectedCliente}
+                  onChange={(_, value) => setSelectedCliente(value)}
+                  getOptionLabel={(option) =>
+                    `${option?.nome || ""}${option?.cpf ? ` — ${formatCpf(option.cpf)}` : ""}`
+                  }
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Cliente (opcional)"
+                      helperText="Venda sem cliente continua válida."
+                      fullWidth
+                    />
+                  )}
+                />
+
                 <Divider />
 
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -685,7 +753,9 @@ export default function SalesPage() {
                   </Paper>
                 ))}
 
-                {concludeErrors.itens ? <Alert severity="error">{concludeErrors.itens}</Alert> : null}
+                {concludeErrors.itens ? (
+                  <Alert severity="error">{concludeErrors.itens}</Alert>
+                ) : null}
 
                 {selectedVenda.itens.length > 0 ? (
                   <>
