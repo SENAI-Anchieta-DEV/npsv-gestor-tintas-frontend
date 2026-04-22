@@ -8,6 +8,7 @@ import FormulasPage from "./pages/formulas/FormulasPage";
 import ProductionHistoryPage from "./pages/productions/ProductionsPage";
 import SalesHistoryPage from "./pages/sales/SalesPage";
 import ClientsPage from "./pages/clients/ClientsPage";
+import SuppliersPage from "./pages/suppliers/SuppliersPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -83,6 +84,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ClientsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/fornecedores"
+        element={
+          <ProtectedRoute>
+            <SuppliersPage />
           </ProtectedRoute>
         }
       />

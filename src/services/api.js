@@ -384,3 +384,35 @@ export function deactivateCliente(id) {
     method: "DELETE",
   });
 }
+
+export function getFornecedores() {
+  return authenticatedRequest("/api/fornecedores", {
+    method: "GET",
+  });
+}
+
+export function getFornecedorById(id) {
+  return authenticatedRequest(`/api/fornecedores/id/${encodeURIComponent(id)}`, {
+    method: "GET",
+  });
+}
+
+export function createFornecedor(payload) {
+  return authenticatedRequest("/api/fornecedores", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateFornecedor(id, payload) {
+  return authenticatedRequest(`/api/fornecedores/id/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deactivateFornecedor(id) {
+  return authenticatedRequest(`/api/fornecedores/id/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
