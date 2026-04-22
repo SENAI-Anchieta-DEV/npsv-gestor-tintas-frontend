@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/login/LoginPage";
 import HomePage from "./pages/home/HomePage";
+import LandingPage from "./pages/landing/LandingPage";
 import UsersPage from "./pages/users/UsersPage";
 import CategoriesPage from "./pages/categories/CategoriesPage";
 import ProductsPage from "./pages/products/ProductsPage";
@@ -14,7 +15,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<LandingPage />} />
 
       <Route
         path="/"
