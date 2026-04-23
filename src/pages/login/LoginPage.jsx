@@ -48,7 +48,7 @@ export default function LoginPage() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
 
-  const destination = location.state?.from?.pathname || "/";
+  const destination = location.state?.from?.pathname || "/dashboard";
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -151,7 +151,14 @@ export default function LoginPage() {
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#0B1739", lineHeight: 1.1 }}>
+                <Typography
+                  sx={{
+                    fontSize: 24,
+                    fontWeight: 800,
+                    color: "#0B1739",
+                    lineHeight: 1.1,
+                  }}
+                >
                   Gestor Tintas
                 </Typography>
                 <Typography sx={{ color: "#6B7280", fontSize: 14 }}>
@@ -173,16 +180,33 @@ export default function LoginPage() {
               >
                 Gestão inteligente
                 <br />
-                para <Box component="span" sx={{ color: "#2E33FF" }}>tintas e produção</Box>
+                para{" "}
+                <Box component="span" sx={{ color: "#2E33FF" }}>
+                  tintas e produção
+                </Box>
               </Typography>
 
-              <Typography sx={{ maxWidth: 560, color: "#6B7280", fontSize: 15, lineHeight: 1.75 }}>
-                Controle fórmulas, estoque, produção e autenticação de forma moderna, segura e centralizada.
+              <Typography
+                sx={{
+                  maxWidth: 560,
+                  color: "#6B7280",
+                  fontSize: 15,
+                  lineHeight: 1.75,
+                }}
+              >
+                Controle fórmulas, estoque, produção e autenticação de forma moderna,
+                segura e centralizada.
               </Typography>
             </Box>
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 1.5,
+            }}
+          >
             {features.map((feature) => (
               <Card
                 key={feature.title}
@@ -210,11 +234,24 @@ export default function LoginPage() {
                   {feature.icon}
                 </Box>
 
-                <Typography sx={{ fontWeight: 800, color: "#0B1739", mb: 0.6, fontSize: 15 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 800,
+                    color: "#0B1739",
+                    mb: 0.6,
+                    fontSize: 15,
+                  }}
+                >
                   {feature.title}
                 </Typography>
 
-                <Typography sx={{ color: "#6B7280", fontSize: 13.5, lineHeight: 1.65 }}>
+                <Typography
+                  sx={{
+                    color: "#6B7280",
+                    fontSize: 13.5,
+                    lineHeight: 1.65,
+                  }}
+                >
                   {feature.text}
                 </Typography>
               </Card>
@@ -222,7 +259,15 @@ export default function LoginPage() {
           </Box>
         </Box>
 
-        <Box sx={{ p: { xs: 3, sm: 4, md: 3.5 }, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" }}>
+        <Box
+          sx={{
+            p: { xs: 3, sm: 4, md: 3.5 },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#FFFFFF",
+          }}
+        >
           <Card
             elevation={0}
             sx={{
@@ -235,7 +280,14 @@ export default function LoginPage() {
             }}
           >
             <Box sx={{ mb: 3 }}>
-              <Typography sx={{ fontSize: 30, fontWeight: 800, color: "#0B1739", mb: 1 }}>
+              <Typography
+                sx={{
+                  fontSize: 30,
+                  fontWeight: 800,
+                  color: "#0B1739",
+                  mb: 1,
+                }}
+              >
                 Entrar
               </Typography>
               <Typography sx={{ color: "#6B7280", fontSize: 15, lineHeight: 1.8 }}>
@@ -243,7 +295,11 @@ export default function LoginPage() {
               </Typography>
             </Box>
 
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 1.2 }}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{ display: "grid", gap: 1.2 }}
+            >
               <AppTextField
                 name="email"
                 label="E-mail"
@@ -272,7 +328,11 @@ export default function LoginPage() {
                 disabled={loading}
                 sx={{ borderRadius: "14px", py: 1.25, mt: 1, fontWeight: 800 }}
               >
-                {loading ? <CircularProgress size={22} color="inherit" /> : "Entrar"}
+                {loading ? (
+                  <CircularProgress size={22} color="inherit" />
+                ) : (
+                  "Entrar"
+                )}
               </Button>
             </Box>
           </Card>
