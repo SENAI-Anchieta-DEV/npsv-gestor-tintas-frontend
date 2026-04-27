@@ -12,6 +12,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
+import qrCodeApp from "../../assets/qrcode-app.png";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
@@ -920,16 +921,25 @@ export default function LandingPage() {
                 width: 180,
                 height: 180,
                 backgroundColor: "#FFFFFF",
-                borderRadius: "16px",
                 mx: "auto",
                 mb: 3,
-                display: "grid",
-                placeItems: "center",
-                color: colors.text,
-                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.10)",
+                overflow: "hidden",
               }}
             >
-              QR Code
+              <Box
+                component="img"
+                src="./qrcode-app.a176cb5b.png"
+                alt="QR Code para baixar o app Gestor Tintas"
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
+              />
             </Box>
 
             <Typography sx={{ color: "#FFF", fontWeight: 800, mb: 1 }}>
