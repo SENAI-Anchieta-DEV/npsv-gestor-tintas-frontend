@@ -10,6 +10,7 @@ import ProductionHistoryPage from "./pages/productions/ProductionsPage";
 import SalesHistoryPage from "./pages/sales/SalesPage";
 import ClientsPage from "./pages/clients/ClientsPage";
 import SuppliersPage from "./pages/suppliers/SuppliersPage";
+import MachinePage from "./pages/machine/MachinePage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -95,6 +96,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <SuppliersPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/aba-maquina"
+        element={
+          <ProtectedRoute allowedRoles={["COLORISTA"]}>
+            <MachinePage />
           </ProtectedRoute>
         }
       />
