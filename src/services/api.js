@@ -416,3 +416,27 @@ export function deactivateFornecedor(id) {
     method: "DELETE",
   });
 }
+
+export function getActiveProduction() {
+  return authenticatedRequest("/api/producoes/ativa", {
+    method: "GET",
+  });
+}
+
+export function concludeProduction(producaoId) {
+  return authenticatedRequest(
+    `/api/producoes/id/${encodeURIComponent(producaoId)}/concluir`,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+export function cancelProduction(producaoId) {
+  return authenticatedRequest(
+    `/api/producoes/id/${encodeURIComponent(producaoId)}/cancelar`,
+    {
+      method: "PATCH",
+    }
+  );
+}
