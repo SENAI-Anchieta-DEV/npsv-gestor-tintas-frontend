@@ -18,7 +18,7 @@ import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import AdminLayout from "../../components/layout/AdminLayout";
-import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
+import { getProblemDetailMessage } from "../../lib/problemDetail";
 import { getProducoes, getVendas } from "../../services/api";
 
 function isToday(value) {

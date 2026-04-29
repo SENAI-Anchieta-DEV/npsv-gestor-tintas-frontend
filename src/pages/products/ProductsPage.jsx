@@ -240,9 +240,80 @@ export default function ProductsPage() {
       render: (produto) => <Typography>{produto.categoria?.nome || "-"}</Typography>,
     },
     {
-      key: "estoque",
+      key: "quantidadeEstoque",
       label: "Estoque",
-      render: (produto) => <Chip label={`${produto.quantidadeEstoque} ${produto.unidadeMedida}`} size="small" sx={{ fontWeight: 700 }} />,
+      render: (produto) => {
+        const quantidade = Number(produto?.quantidadeEstoque ?? 0);
+
+        return (
+          <Chip
+            label={`${quantidade}`}
+            size="small"
+            sx={{ fontWeight: 700 }}
+          />
+        );
+      }
+    },
+    {
+      key: "unidadeMedida",
+      label: "Unidade de medida",
+      render: (produto) => (
+        <Chip
+          label={produto.unidadeMedida || "UN"}
+          size="small"
+          sx={{ fontWeight: 700 }}
+        />
+      ),
+    },
+    {
+      key: "statusEstoque",
+      label: "Status do estoque",
+      render: (produto) => {
+        const quantidade = Number(produto.quantidadeEstoque || 0);
+
+        if (quantidade === 0) {
+          return (
+            <Chip
+              label="Sem estoque"
+              size="small"
+              sx={{
+                fontWeight: 700,
+                color: "#DC2626",
+                backgroundColor: "#FEF2F2",
+                border: "1px solid #FECACA",
+              }}
+            />
+          );
+        }
+
+        if (quantidade <= 10) {
+          return (
+            <Chip
+              label="Estoque baixo"
+              size="small"
+              sx={{
+                fontWeight: 700,
+                color: "#D97706",
+                backgroundColor: "#FFFBEB",
+                border: "1px solid #FDE68A",
+              }}
+            />
+          );
+        }
+
+        return (
+          <Chip
+            label="Disponível"
+            size="small"
+            sx={{
+              fontWeight: 700,
+              color: "#16A34A",
+              backgroundColor: "#F0FDF4",
+              border: "1px solid #BBF7D0",
+            }}
+          />
+        );
+      },
     },
     {
       key: "precoCusto",

@@ -19,11 +19,10 @@ import OpacityOutlinedIcon from "@mui/icons-material/OpacityOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 
 const menuItems = [
-  { label: "Dashboard", path: "/", icon: <DashboardOutlinedIcon /> },
+  { label: "Dashboard", path: "/dashboard", icon: <DashboardOutlinedIcon /> },
   { label: "Categorias", path: "/categorias-produtos", icon: <CategoryOutlinedIcon /> },
   { label: "Produtos", path: "/produtos", icon: <Inventory2OutlinedIcon /> },
   { label: "Fórmulas", path: "/formulas", icon: <ScienceOutlinedIcon /> },
-  { label: "Estoque", path: "/estoque", icon: <WarehouseOutlinedIcon /> },
   { label: "Aba da Máquina", path: "/aba-maquina", icon: <PrecisionManufacturingOutlinedIcon /> },
   { label: "Histórico Produção", path: "/historico-producao", icon: <HistoryOutlinedIcon /> },
   { label: "Vendas", path: "/vendas", icon: <ShoppingCartOutlinedIcon /> },
