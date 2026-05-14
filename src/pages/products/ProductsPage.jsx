@@ -33,6 +33,7 @@ const INITIAL_FORM = {
   codigoBarras: "",
   descricao: "",
   quantidadeEstoque: "",
+  estoqueMinimo: "",
   precoCusto: "",
   precoVenda: "",
   unidadeMedida: "UN",
@@ -45,6 +46,7 @@ function normalizeProduto(item) {
     codigoBarras: item?.codigoBarras || "-",
     descricao: item?.descricao || "-",
     quantidadeEstoque: item?.quantidadeEstoque ?? 0,
+    estoqueMinimo: item?.estoqueMinimo ?? 0,
     precoCusto: item?.precoCusto ?? 0,
     precoVenda: item?.precoVenda ?? 0,
     unidadeMedida: item?.unidadeMedida || "UN",
@@ -128,6 +130,7 @@ export default function ProductsPage() {
       codigoBarras: produto.codigoBarras || "",
       descricao: produto.descricao || "",
       quantidadeEstoque: String(produto.quantidadeEstoque ?? ""),
+      estoqueMinimo: String(produto.estoqueMinimo ?? ""),
       precoCusto: String(produto.precoCusto ?? ""),
       precoVenda: String(produto.precoVenda ?? ""),
       unidadeMedida: produto.unidadeMedida || "UN",
@@ -158,6 +161,8 @@ export default function ProductsPage() {
     if (!form.descricao.trim()) errors.descricao = "Informe a descrição.";
     if (form.quantidadeEstoque === "") errors.quantidadeEstoque = "Informe a quantidade em estoque.";
     else if (Number(form.quantidadeEstoque) < 0) errors.quantidadeEstoque = "A quantidade deve ser maior ou igual a zero.";
+    if (form.estoqueMinimo === "") errors.estoqueMinimo = "Informe o estoque mínimo.";
+    else if (Number(form.estoqueMinimo) < 0) errors.estoqueMinimo = "O estoque mínimo deve ser maior ou igual a zero.";
     if (form.precoCusto === "") errors.precoCusto = "Informe o preço de custo.";
     else if (Number(form.precoCusto) <= 0) errors.precoCusto = "O preço de custo deve ser maior que zero.";
     if (form.precoVenda === "") errors.precoVenda = "Informe o preço de venda.";
@@ -183,6 +188,7 @@ export default function ProductsPage() {
         codigoBarras: form.codigoBarras.trim(),
         descricao: form.descricao.trim(),
         quantidadeEstoque: Number(form.quantidadeEstoque),
+        estoqueMinimo: Number(form.estoqueMinimo),
         precoCusto: Number(form.precoCusto),
         precoVenda: Number(form.precoVenda),
         unidadeMedida: form.unidadeMedida,
@@ -253,6 +259,15 @@ export default function ProductsPage() {
           />
         );
       }
+    },
+    {
+      key: "estoqueMinimo",
+      label: "Estoque mínimo",
+      render: (produto) => (
+        <Typography sx={{ fontWeight: 700, color: "text.secondary" }}>
+          {produto.estoqueMinimo ?? 0}
+        </Typography>
+      ),
     },
     {
       key: "unidadeMedida",
@@ -429,6 +444,17 @@ export default function ProductsPage() {
           onChange={handleChange}
           error={Boolean(fieldErrors.quantidadeEstoque)}
           helperText={fieldErrors.quantidadeEstoque}
+        />
+
+        <AppTextField
+          name="estoqueMinimo"
+          label="Estoque mínimo"
+          type="number"
+          required
+          value={form.estoqueMinimo}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.estoqueMinimo)}
+          helperText={fieldErrors.estoqueMinimo}
         />
 
         <AppTextField

@@ -3,11 +3,13 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   Paper,
   Typography,
@@ -129,6 +131,7 @@ export default function SuppliersPage() {
 
   const [fornecedores, setFornecedores] = useState([]);
   const [search, setSearch] = useState("");
+  const [showOnlyActive, setShowOnlyActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
@@ -159,17 +162,23 @@ export default function SuppliersPage() {
   }, []);
 
   const filteredSuppliers = useMemo(() => {
+    let filtered = fornecedores;
+
+    if (showOnlyActive) {
+      filtered = filtered.filter((fornecedor) => fornecedor.ativo);
+    }
+
     const term = search.trim().toLowerCase();
 
-    if (!term) return fornecedores;
+    if (!term) return filtered;
 
-    return fornecedores.filter((fornecedor) => {
+    return filtered.filter((fornecedor) => {
       return (
         String(fornecedor.razaoSocial || "").toLowerCase().includes(term) ||
         String(fornecedor.cnpj || "").toLowerCase().includes(term)
       );
     });
-  }, [fornecedores, search]);
+  }, [fornecedores, search, showOnlyActive]);
 
   function openCreate() {
     setEditingSupplier(null);
@@ -425,6 +434,18 @@ export default function SuppliersPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Pesquisar por razão social ou CNPJ..."
         />
+
+        <Box sx={{ px: 2.5, pb: 1 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showOnlyActive}
+                onChange={(e) => setShowOnlyActive(e.target.checked)}
+              />
+            }
+            label="Mostrar apenas fornecedores ativos"
+          />
+        </Box>
 
         {errorMessage ? (
           <Box sx={{ px: 2.5, pb: 2 }}>

@@ -379,10 +379,26 @@ export function updateCliente(id, payload) {
   });
 }
 
-export function deactivateCliente(id) {
+export function deleteCliente(id) {
   return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+}
+
+export async function deactivateCliente(id) {
+  try {
+    return await authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}/desativar`, {
+      method: "PATCH",
+    });
+  } catch (error) {
+    if (error?.status === 404) {
+      return await authenticatedRequest(`/api/clientes/${encodeURIComponent(id)}/desativar`, {
+        method: "PATCH",
+      });
+    }
+
+    throw error;
+  }
 }
 
 export function getFornecedores() {

@@ -8,11 +8,14 @@ import {
   DialogContent,
   DialogTitle,
   Button,
+  Checkbox,
+  FormControlLabel,
   IconButton,
   Paper,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
@@ -23,7 +26,9 @@ import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   createCliente,
   deactivateCliente,
+  deleteCliente,
   getClientes,
+  getVendas,
   updateCliente,
 } from "../../services/api";
 
@@ -123,17 +128,83 @@ function getStatusChipStyles(ativo) {
   };
 }
 
+function getSaleClientIdentifier(venda) {
+  if (!venda) return null;
+
+  const keys = [
+    venda.clienteId,
+    venda.clientId,
+    venda.customerId,
+    venda.cliente?.id,
+    venda.cliente?.clienteId,
+    venda.cliente?.customerId,
+    venda.cliente?._id,
+    venda.cliente,
+  ];
+
+  return keys.find((value) => value !== undefined && value !== null) ?? null;
+}
+
+function getSaleClientCpf(venda) {
+  return (
+    venda.cliente?.cpf ||
+    venda.cliente?.documento ||
+    venda.cliente?.cpfCliente ||
+    venda.cliente?.cpf_cnpj ||
+    null
+  );
+}
+
+function normalizeCpf(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function isSaleForClient(venda, cliente) {
+  if (!cliente || !venda) return false;
+
+  const saleClientId = getSaleClientIdentifier(venda);
+  if (saleClientId && String(saleClientId) === String(cliente.id)) {
+    return true;
+  }
+
+  const saleClientCpf = normalizeCpf(getSaleClientCpf(venda));
+  const clientCpf = normalizeCpf(cliente.cpf);
+
+  if (saleClientCpf && clientCpf && saleClientCpf === clientCpf) {
+    return true;
+  }
+
+  return false;
+}
+
+async function getAssociatedSalesCount(cliente) {
+  try {
+    const vendas = await getVendas();
+    if (!Array.isArray(vendas)) return 0;
+
+    return vendas.filter((venda) => isSaleForClient(venda, cliente)).length;
+  } catch {
+    return 0;
+  }
+}
+
 export default function ClientsPage() {
   const { showSnackbar } = useAppSnackbar();
 
   const [clientes, setClientes] = useState([]);
   const [search, setSearch] = useState("");
+  const [showOnlyActive, setShowOnlyActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
+  const [checkingSales, setCheckingSales] = useState(false);
+  const [associatedSalesCount, setAssociatedSalesCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
+  const [deleteClientCandidate, setDeleteClientCandidate] = useState(null);
   const [clientToDeactivate, setClientToDeactivate] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
@@ -158,17 +229,23 @@ export default function ClientsPage() {
   }, []);
 
   const filteredClients = useMemo(() => {
+    let filtered = clientes;
+
+    if (showOnlyActive) {
+      filtered = filtered.filter((cliente) => cliente.ativo);
+    }
+
     const term = search.trim().toLowerCase();
 
-    if (!term) return clientes;
+    if (!term) return filtered;
 
-    return clientes.filter((cliente) => {
+    return filtered.filter((cliente) => {
       return (
         String(cliente.nome || "").toLowerCase().includes(term) ||
         String(cliente.cpf || "").toLowerCase().includes(term)
       );
     });
-  }, [clientes, search]);
+  }, [clientes, search, showOnlyActive]);
 
   function openCreate() {
     setEditingClient(null);
@@ -198,14 +275,36 @@ export default function ClientsPage() {
     setFieldErrors({});
   }
 
-  function openDeactivateDialog(cliente) {
+  function openDeleteDialog(cliente) {
+    setDeleteClientCandidate(cliente);
+    setDeleteDialogOpen(true);
+  }
+
+  function closeDeleteDialog() {
+    if (deleting) return;
+    setDeleteClientCandidate(null);
+    setDeleteDialogOpen(false);
+  }
+
+  async function openDeactivateDialog(cliente) {
     setClientToDeactivate(cliente);
+    setAssociatedSalesCount(0);
     setConfirmDialogOpen(true);
+    setCheckingSales(true);
+
+    try {
+      const count = await getAssociatedSalesCount(cliente);
+      setAssociatedSalesCount(count);
+    } finally {
+      setCheckingSales(false);
+    }
   }
 
   function closeDeactivateDialog() {
     if (deactivating) return;
     setClientToDeactivate(null);
+    setAssociatedSalesCount(0);
+    setCheckingSales(false);
     setConfirmDialogOpen(false);
   }
 
@@ -290,6 +389,39 @@ export default function ClientsPage() {
       showSnackbar(getProblemDetailMessage(error), "error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteClientCandidate?.id) return;
+
+    setDeleting(true);
+
+    try {
+      await deleteCliente(deleteClientCandidate.id);
+      showSnackbar("Cliente excluído com sucesso.", "success");
+      closeDeleteDialog();
+      await loadClientes();
+    } catch (error) {
+      if (error?.status === 409) {
+        closeDeleteDialog();
+        setClientToDeactivate(deleteClientCandidate);
+        setDeleteClientCandidate(null);
+        setAssociatedSalesCount(0);
+        setConfirmDialogOpen(true);
+        setCheckingSales(true);
+
+        try {
+          const count = await getAssociatedSalesCount(deleteClientCandidate);
+          setAssociatedSalesCount(count);
+        } finally {
+          setCheckingSales(false);
+        }
+      } else {
+        showSnackbar(getProblemDetailMessage(error), "error");
+      }
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -384,6 +516,10 @@ export default function ClientsPage() {
             <EditOutlinedIcon fontSize="small" />
           </IconButton>
 
+          <IconButton onClick={() => openDeleteDialog(cliente)}>
+            <DeleteOutlineIcon fontSize="small" />
+          </IconButton>
+
           <IconButton
             onClick={() => openDeactivateDialog(cliente)}
             disabled={!cliente.ativo}
@@ -418,6 +554,18 @@ export default function ClientsPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Pesquisar por nome ou CPF..."
         />
+
+        <Box sx={{ px: 2.5, pb: 1 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showOnlyActive}
+                onChange={(e) => setShowOnlyActive(e.target.checked)}
+              />
+            }
+            label="Mostrar apenas clientes ativos"
+          />
+        </Box>
 
         {errorMessage ? (
           <Box sx={{ px: 2.5, pb: 2 }}>
@@ -503,32 +651,79 @@ export default function ClientsPage() {
         />
       </AppFormDialog>
 
-      <Dialog open={confirmDialogOpen} onClose={closeDeactivateDialog} fullWidth maxWidth="xs">
+      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 800 }}>
-          Confirmar desativação
+          Confirmar exclusão
         </DialogTitle>
 
         <DialogContent>
           <Typography sx={{ color: "text.secondary" }}>
-            Deseja desativar o cliente{" "}
+            Deseja excluir o cliente{" "}
             <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
-              {clientToDeactivate?.nome || "-"}
+              {deleteClientCandidate?.nome || "-"}
             </Box>
             ?
           </Typography>
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={closeDeactivateDialog} disabled={deactivating}>
+          <Button onClick={closeDeleteDialog} disabled={deleting}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={deleting}
+          >
+            {deleting ? "Excluindo..." : "Excluir"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmDialogOpen} onClose={closeDeactivateDialog} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          Confirmar desativação
+        </DialogTitle>
+
+        <DialogContent>
+          {checkingSales ? (
+            <Typography sx={{ color: "text.secondary" }}>
+              Verificando vendas associadas...
+            </Typography>
+          ) : associatedSalesCount > 0 ? (
+            <Typography sx={{ color: "text.secondary" }}>
+              O cliente{" "}
+              <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                {clientToDeactivate?.nome || "-"}
+              </Box>
+              {" "}possui {associatedSalesCount} venda(s) associada(s). Deseja desativar o cliente mesmo assim?
+            </Typography>
+          ) : (
+            <Typography sx={{ color: "text.secondary" }}>
+              Deseja desativar o cliente{" "}
+              <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                {clientToDeactivate?.nome || "-"}
+              </Box>
+              ?
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={closeDeactivateDialog} disabled={deactivating || checkingSales}>
             Cancelar
           </Button>
           <Button
             variant="contained"
             color="error"
             onClick={handleConfirmDeactivate}
-            disabled={deactivating}
+            disabled={deactivating || checkingSales}
           >
-            {deactivating ? "Desativando..." : "Desativar"}
+            {deactivating
+              ? "Desativando..."
+              : associatedSalesCount > 0
+              ? "Desativar mesmo assim"
+              : "Desativar"}
           </Button>
         </DialogActions>
       </Dialog>
