@@ -75,44 +75,54 @@ function formatDateTime(value) {
 function getStatusChip(status) {
   if (status === "CONCLUIDO") {
     return {
-      color: "#16A34A",
-      backgroundColor: "#F0FDF4",
-      border: "1px solid #BBF7D0",
+      color: "success.main",
+      backgroundColor: "success.light",
+      borderColor: "success.light",
+      borderStyle: "solid",
+      borderWidth: "1px",
       label: "Concluído",
     };
   }
 
   if (status === "CANCELADO") {
     return {
-      color: "#DC2626",
-      backgroundColor: "#FEF2F2",
-      border: "1px solid #FECACA",
+      color: "error.main",
+      backgroundColor: "error.light",
+      borderColor: "error.light",
+      borderStyle: "solid",
+      borderWidth: "1px",
       label: "Cancelado",
     };
   }
 
   if (status === "PERDA_TOTAL") {
     return {
-      color: "#B91C1C",
-      backgroundColor: "#FEF2F2",
-      border: "1px solid #FCA5A5",
+      color: "error.dark",
+      backgroundColor: "error.light",
+      borderColor: "error.light",
+      borderStyle: "solid",
+      borderWidth: "1px",
       label: "Perda total",
     };
   }
 
   if (status === "PROCESSANDO") {
     return {
-      color: "#D97706",
-      backgroundColor: "#FFFBEB",
-      border: "1px solid #FDE68A",
+      color: "warning.dark",
+      backgroundColor: "warning.light",
+      borderColor: "warning.light",
+      borderStyle: "solid",
+      borderWidth: "1px",
       label: "Processando",
     };
   }
 
   return {
-    color: "#4F46E5",
-    backgroundColor: "#EEF2FF",
-    border: "1px solid #C7D2FE",
+    color: "primary.main",
+    backgroundColor: "primary.light",
+    borderColor: "primary.light",
+    borderStyle: "solid",
+    borderWidth: "1px",
     label: "Pendente",
   };
 }
@@ -332,8 +342,13 @@ export default function ProductionsPage() {
       <Paper
         sx={{
           borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 4px 18px rgba(255,255,255,0.04)"
+              : "0 4px 18px rgba(15,23,42,0.05)",
           overflow: "hidden",
         }}
       >
@@ -345,10 +360,10 @@ export default function ProductionsPage() {
             spacing={2}
           >
             <Box>
-              <Typography sx={{ fontSize: 18, fontWeight: 800, color: "#0B1739", mb: 0.5 }}>
+              <Typography sx={{ fontSize: 18, fontWeight: 800, color: "text.primary", mb: 0.5 }}>
                 Gestão de Produções
               </Typography>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                 Inicie, acompanhe e finalize produções no mesmo padrão visual
               </Typography>
             </Box>
@@ -392,7 +407,7 @@ export default function ProductionsPage() {
                 sx: {
                   height: 44,
                   borderRadius: "12px",
-                  backgroundColor: "#FFFFFF",
+                  backgroundColor: "background.paper",
                 },
               }}
             />
@@ -462,10 +477,10 @@ export default function ProductionsPage() {
           </Box>
         ) : producoesFiltradas.length === 0 ? (
           <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography sx={{ fontWeight: 700, color: "#111827", mb: 1 }}>
+            <Typography sx={{ fontWeight: 700, color: "text.primary", mb: 1 }}>
               Nenhuma produção encontrada
             </Typography>
-            <Typography sx={{ color: "#6B7280" }}>
+            <Typography sx={{ color: "text.secondary" }}>
               Inicie uma nova produção ou ajuste os filtros.
             </Typography>
           </Box>
@@ -477,9 +492,9 @@ export default function ProductionsPage() {
                   sx={{
                     "& th": {
                       fontSize: 14,
-                      color: "#6B7280",
+                      color: "text.secondary",
                       fontWeight: 700,
-                      backgroundColor: "#FFFFFF",
+                      backgroundColor: "background.paper",
                     },
                   }}
                 >
@@ -496,7 +511,7 @@ export default function ProductionsPage() {
                   const statusChip = getStatusChip(producao.status);
 
                   return (
-                    <TableRow key={producao.id} hover sx={{ "& td": { borderColor: "#E5E7EB", py: 1.4 } }}>
+                    <TableRow key={producao.id} hover sx={{ "& td": { borderColor: "divider", py: 1.4 } }}>
                       <TableCell>
                         <Stack direction="row" spacing={1.5} alignItems="center">
                           <Box
@@ -504,8 +519,8 @@ export default function ProductionsPage() {
                               width: 36,
                               height: 36,
                               borderRadius: "12px",
-                              backgroundColor: "#EEF2FF",
-                              color: "#4F46E5",
+                              backgroundColor: "primary.light",
+                              color: "primary.main",
                               display: "grid",
                               placeItems: "center",
                             }}
@@ -514,21 +529,21 @@ export default function ProductionsPage() {
                           </Box>
 
                           <Box>
-                            <Typography sx={{ fontWeight: 800, color: "#111827", fontSize: 15 }}>
+                            <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: 15 }}>
                               {producao.formula?.nomeCor || "Fórmula não informada"}
                             </Typography>
-                            <Typography sx={{ fontSize: 12.5, color: "#6B7280" }}>
+                            <Typography sx={{ fontSize: 12.5, color: "text.secondary" }}>
                               {producao.formula?.codigoInterno || "-"}
                             </Typography>
                           </Box>
                         </Stack>
                       </TableCell>
 
-                      <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
+                      <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
                         {formatDateTime(producao.dataHora)}
                       </TableCell>
 
-                      <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
+                      <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
                         {producao.colorista?.nome || "-"}
                       </TableCell>
 
@@ -554,8 +569,8 @@ export default function ProductionsPage() {
                           sx={{
                             borderRadius: "12px",
                             textTransform: "none",
-                            color: "#111827",
-                            borderColor: "#D1D5DB",
+                            color: "text.primary",
+                            borderColor: "divider",
                             fontWeight: 600,
                             px: 1.8,
                           }}
@@ -571,7 +586,7 @@ export default function ProductionsPage() {
 
             <Divider />
             <Box sx={{ px: 2.5, py: 2 }}>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                 Exibindo {producoesFiltradas.length} produção(ões)
               </Typography>
             </Box>

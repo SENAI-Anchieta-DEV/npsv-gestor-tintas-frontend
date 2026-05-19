@@ -115,16 +115,20 @@ function normalizeCliente(item) {
 function getStatusChipStyles(ativo) {
   if (ativo) {
     return {
-      color: "#16A34A",
-      backgroundColor: "#F0FDF4",
-      border: "1px solid #BBF7D0",
+      color: "success.main",
+      backgroundColor: "success.light",
+      borderColor: "success.light",
+      borderStyle: "solid",
+      borderWidth: "1px",
     };
   }
 
   return {
-    color: "#6B7280",
-    backgroundColor: "#F3F4F6",
-    border: "1px solid #D1D5DB",
+    color: "text.secondary",
+    backgroundColor: "background.paper",
+    borderColor: "divider",
+    borderStyle: "solid",
+    borderWidth: "1px",
   };
 }
 
@@ -455,8 +459,8 @@ export default function ClientsPage() {
               borderRadius: "14px",
               display: "grid",
               placeItems: "center",
-              backgroundColor: "#EEF2FF",
-              color: "#4F46E5",
+              backgroundColor: "primary.light",
+              color: "primary.main",
             }}
           >
             <PersonOutlineOutlinedIcon fontSize="small" />

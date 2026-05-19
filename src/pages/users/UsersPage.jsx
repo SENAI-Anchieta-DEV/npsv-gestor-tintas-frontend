@@ -56,40 +56,50 @@ function getRoleLabel(role) {
 function getRoleChipStyles(role) {
   if (role === "ADMIN") {
     return {
-      color: "#4F46E5",
-      backgroundColor: "#EEF2FF",
-      border: "1px solid #C7D2FE",
+      color: "primary.main",
+      backgroundColor: "primary.light",
+      borderColor: "primary.light",
+      borderStyle: "solid",
+      borderWidth: "1px",
     };
   }
 
   if (role === "COLORISTA") {
     return {
-      color: "#2563EB",
-      backgroundColor: "#EFF6FF",
-      border: "1px solid #BFDBFE",
+      color: "info.main",
+      backgroundColor: "info.light",
+      borderColor: "info.light",
+      borderStyle: "solid",
+      borderWidth: "1px",
     };
   }
 
   return {
-    color: "#D97706",
-    backgroundColor: "#FFFBEB",
-    border: "1px solid #FDE68A",
+    color: "warning.dark",
+    backgroundColor: "warning.light",
+    borderColor: "warning.light",
+    borderStyle: "solid",
+    borderWidth: "1px",
   };
 }
 
 function getStatusChipStyles(ativo) {
   if (ativo) {
     return {
-      color: "#16A34A",
-      backgroundColor: "#F0FDF4",
-      border: "1px solid #BBF7D0",
+      color: "success.main",
+      backgroundColor: "success.light",
+      borderColor: "success.light",
+      borderStyle: "solid",
+      borderWidth: "1px",
     };
   }
 
   return {
-    color: "#6B7280",
-    backgroundColor: "#F3F4F6",
-    border: "1px solid #D1D5DB",
+    color: "text.secondary",
+    backgroundColor: "background.paper",
+    borderColor: "divider",
+    borderStyle: "solid",
+    borderWidth: "1px",
   };
 }
 
@@ -338,8 +348,13 @@ export default function UsersPage() {
       <Paper
         sx={{
           borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)",
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 4px 18px rgba(255,255,255,0.04)"
+              : "0 4px 18px rgba(15, 23, 42, 0.05)",
           overflow: "hidden",
         }}
       >

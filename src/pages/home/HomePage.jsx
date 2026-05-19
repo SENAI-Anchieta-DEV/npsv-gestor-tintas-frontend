@@ -75,9 +75,9 @@ export default function HomePage() {
       title: "VENDAS HOJE",
       value: vendasHoje.length,
       progress: 70,
-      color: "#35C759",
+      color: "success.main",
       icon: <AttachMoneyOutlinedIcon />,
-      iconBg: "#ECFDF3",
+      iconBg: "success.light",
     },
     {
       title: "RECEITA HOJE",
@@ -86,37 +86,37 @@ export default function HomePage() {
         currency: "BRL",
       }),
       progress: 70,
-      color: "#4F46E5",
+      color: "primary.main",
       icon: <ReceiptLongOutlinedIcon />,
-      iconBg: "#EEF2FF",
+      iconBg: "primary.light",
     },
     {
       title: "PRODUÇÕES HOJE",
       value: producoesHoje.length,
       progress: 68,
-      color: "#142B73",
+      color: "info.main",
       icon: <PrecisionManufacturingOutlinedIcon />,
-      iconBg: "#EEF2FF",
+      iconBg: "primary.light",
     },
     {
       title: "CONCLUÍDAS HOJE",
       value: totalProducoesConcluidasHoje,
       progress: 65,
-      color: "#4F7DF3",
+      color: "primary.dark",
       icon: <ScienceOutlinedIcon />,
-      iconBg: "#EEF2FF",
+      iconBg: "primary.light",
     },
   ];
 
   const activities = [
-    { title: "Vendas registradas hoje", time: `${vendasHoje.length} no total`, color: "#35C759", bg: "#ECFDF3" },
-    { title: "Produções registradas hoje", time: `${producoesHoje.length} no total`, color: "#4F46E5", bg: "#EEF2FF" },
-    { title: "Produções concluídas hoje", time: `${totalProducoesConcluidasHoje} concluída(s)`, color: "#4F7DF3", bg: "#EEF2FF" },
+    { title: "Vendas registradas hoje", time: `${vendasHoje.length} no total`, color: "success.main", bg: "success.light" },
+    { title: "Produções registradas hoje", time: `${producoesHoje.length} no total`, color: "primary.main", bg: "primary.light" },
+    { title: "Produções concluídas hoje", time: `${totalProducoesConcluidasHoje} concluída(s)`, color: "primary.dark", bg: "primary.light" },
     {
       title: "Receita de vendas de hoje",
       time: totalVendasHoje.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      color: "#F59E0B",
-      bg: "#FFF7ED",
+      color: "warning.dark",
+      bg: "warning.light",
     },
   ];
 
@@ -127,8 +127,13 @@ export default function HomePage() {
           sx={{
             minHeight: 260,
             borderRadius: "18px",
-            border: "1px solid #E5E7EB",
-            boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+            border: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "background.paper",
+            boxShadow: (theme) =>
+              theme.palette.mode === "dark"
+                ? "0 4px 18px rgba(255,255,255,0.04)"
+                : "0 4px 18px rgba(15,23,42,0.05)",
             display: "grid",
             placeItems: "center",
           }}
@@ -148,16 +153,21 @@ export default function HomePage() {
                 sx={{
                   p: 3,
                   borderRadius: "18px",
-                  border: "1px solid #E5E7EB",
-                  boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  backgroundColor: "background.paper",
+                  boxShadow: (theme) =>
+                    theme.palette.mode === "dark"
+                      ? "0 4px 18px rgba(255,255,255,0.04)"
+                      : "0 4px 18px rgba(15,23,42,0.05)",
                 }}
               >
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                   <Box>
-                    <Typography sx={{ fontSize: 13, color: "#6B7280", mb: 1.2 }}>
+                    <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 1.2 }}>
                       {card.title}
                     </Typography>
-                    <Typography sx={{ fontWeight: 800, fontSize: 24, color: "#000" }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: 24, color: "text.primary" }}>
                       {card.value}
                     </Typography>
                   </Box>
@@ -184,7 +194,7 @@ export default function HomePage() {
                     mt: 2.5,
                     height: 8,
                     borderRadius: "999px",
-                    bgcolor: "#ECECEC",
+                    bgcolor: "divider",
                     "& .MuiLinearProgress-bar": {
                       backgroundColor: card.color,
                     },
@@ -198,21 +208,26 @@ export default function HomePage() {
             <Paper
               sx={{
                 borderRadius: "18px",
-                border: "1px solid #E5E7EB",
-                boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+                border: "1px solid",
+                borderColor: "divider",
+                backgroundColor: "background.paper",
+                boxShadow: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? "0 4px 18px rgba(255,255,255,0.04)"
+                    : "0 4px 18px rgba(15,23,42,0.05)",
                 overflow: "hidden",
               }}
             >
               <Box sx={{ p: 3 }}>
-                <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#0B1739", mb: 0.5 }}>
+                <Typography sx={{ fontSize: 22, fontWeight: 800, color: "text.primary", mb: 0.5 }}>
                   Resumo Operacional
                 </Typography>
-                <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+                <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                   Indicadores resumidos de vendas e produções
                 </Typography>
               </Box>
 
-              <Box sx={{ borderTop: "1px solid #E5E7EB", p: 3 }}>
+              <Box sx={{ borderTop: 1, borderColor: "divider", borderStyle: "solid", p: 3 }}>
                 <Stack spacing={2.2}>
                   {activities.map((item) => (
                     <Stack key={item.title} direction="row" spacing={2} alignItems="center">
@@ -232,10 +247,10 @@ export default function HomePage() {
                       </Box>
 
                       <Box>
-                        <Typography sx={{ fontWeight: 700, color: "#111827" }}>
+                        <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
                           {item.title}
                         </Typography>
-                        <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+                        <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                           {item.time}
                         </Typography>
                       </Box>

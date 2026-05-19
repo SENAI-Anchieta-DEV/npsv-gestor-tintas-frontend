@@ -384,8 +384,13 @@ export default function SalesPage() {
       <Paper
         sx={{
           borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 4px 18px rgba(255,255,255,0.04)"
+              : "0 4px 18px rgba(15,23,42,0.05)",
           overflow: "hidden",
         }}
       >
@@ -397,10 +402,10 @@ export default function SalesPage() {
             spacing={2}
           >
             <Box>
-              <Typography sx={{ fontSize: 18, fontWeight: 800, color: "#0B1739", mb: 0.5 }}>
+              <Typography sx={{ fontSize: 18, fontWeight: 800, color: "text.primary", mb: 0.5 }}>
                 Gestão de Vendas
               </Typography>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                 Inicie, acompanhe e conclua vendas no mesmo padrão das demais telas
               </Typography>
             </Box>
@@ -439,14 +444,9 @@ export default function SalesPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#9CA3AF" }} />
+                    <SearchIcon sx={{ color: "text.secondary" }} />
                   </InputAdornment>
                 ),
-                sx: {
-                  height: 44,
-                  borderRadius: "12px",
-                  backgroundColor: "#FFFFFF",
-                },
               }}
             />
 
@@ -500,10 +500,10 @@ export default function SalesPage() {
           </Box>
         ) : vendasFiltradas.length === 0 ? (
           <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography sx={{ fontWeight: 700, color: "#111827", mb: 1 }}>
+            <Typography sx={{ fontWeight: 700, color: "text.primary", mb: 1 }}>
               Nenhuma venda encontrada
             </Typography>
-            <Typography sx={{ color: "#6B7280" }}>
+            <Typography sx={{ color: "text.secondary" }}>
               Inicie uma nova venda ou ajuste os filtros.
             </Typography>
           </Box>
@@ -515,9 +515,9 @@ export default function SalesPage() {
                   sx={{
                     "& th": {
                       fontSize: 14,
-                      color: "#6B7280",
+                      color: "text.secondary",
                       fontWeight: 700,
-                      backgroundColor: "#FFFFFF",
+                      backgroundColor: "background.paper",
                     },
                   }}
                 >
@@ -532,7 +532,7 @@ export default function SalesPage() {
 
               <TableBody>
                 {vendasFiltradas.map((venda) => (
-                  <TableRow key={venda.id} hover sx={{ "& td": { borderColor: "#E5E7EB", py: 1.4 } }}>
+                  <TableRow key={venda.id} hover sx={{ "& td": { borderColor: "divider", py: 1.4 } }}>
                     <TableCell>
                       <Stack direction="row" spacing={1.5} alignItems="center">
                         <Box
@@ -540,8 +540,8 @@ export default function SalesPage() {
                             width: 36,
                             height: 36,
                             borderRadius: "12px",
-                            backgroundColor: "#EEF2FF",
-                            color: "#4F46E5",
+                            backgroundColor: "primary.light",
+                            color: "primary.main",
                             display: "grid",
                             placeItems: "center",
                           }}
@@ -549,17 +549,17 @@ export default function SalesPage() {
                           <PointOfSaleOutlinedIcon fontSize="small" />
                         </Box>
 
-                        <Typography sx={{ fontWeight: 800, color: "#111827", fontSize: 15 }}>
+                        <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: 15 }}>
                           {venda.id}
                         </Typography>
                       </Stack>
                     </TableCell>
 
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
+                    <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
                       {formatDateTime(venda.dataAbertura)}
                     </TableCell>
 
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
+                    <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
                       {venda.nomeVendedor}
                     </TableCell>
 
@@ -570,14 +570,16 @@ export default function SalesPage() {
                           height: 28,
                           fontWeight: 700,
                           borderRadius: "999px",
-                          color: "#4F46E5",
-                          backgroundColor: "#EEF2FF",
-                          border: "1px solid #C7D2FE",
+                          color: "primary.main",
+                          backgroundColor: "primary.light",
+                          borderColor: "primary.light",
+                          borderStyle: "solid",
+                          borderWidth: "1px",
                         }}
                       />
                     </TableCell>
 
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
+                    <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
                       {formatMoney(venda.valorTotal)}
                     </TableCell>
 
@@ -589,8 +591,8 @@ export default function SalesPage() {
                         sx={{
                           borderRadius: "12px",
                           textTransform: "none",
-                          color: "#111827",
-                          borderColor: "#D1D5DB",
+                          color: "text.primary",
+                          borderColor: "divider",
                           fontWeight: 600,
                           px: 1.8,
                         }}
@@ -605,7 +607,7 @@ export default function SalesPage() {
 
             <Divider />
             <Box sx={{ px: 2.5, py: 2 }}>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                 Exibindo {vendasFiltradas.length} venda(s)
               </Typography>
             </Box>
@@ -685,7 +687,7 @@ export default function SalesPage() {
                 <Divider />
 
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography sx={{ fontWeight: 800, color: "#111827" }}>
+                  <Typography sx={{ fontWeight: 800, color: "text.primary" }}>
                     Itens da Venda
                   </Typography>
 
@@ -707,13 +709,13 @@ export default function SalesPage() {
                     sx={{
                       p: 2,
                       borderRadius: "16px",
-                      borderColor: "#E5E7EB",
+                      borderColor: "divider",
                       boxShadow: "none",
                     }}
                   >
                     <Stack spacing={2}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography sx={{ fontWeight: 700, color: "#0B1739" }}>
+                        <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
                           Item {index + 1}
                         </Typography>
 
@@ -760,7 +762,7 @@ export default function SalesPage() {
                 {selectedVenda.itens.length > 0 ? (
                   <>
                     <Divider />
-                    <Typography sx={{ fontWeight: 800, color: "#111827" }}>
+                    <Typography sx={{ fontWeight: 800, color: "text.primary" }}>
                       Itens já registrados
                     </Typography>
                     <Table>

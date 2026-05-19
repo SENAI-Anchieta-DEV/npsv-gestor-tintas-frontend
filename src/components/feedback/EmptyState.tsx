@@ -11,7 +11,8 @@ export default function EmptyState({
       sx={{
         minHeight: 220,
         borderRadius: "18px",
-        border: "1px dashed #CBD5E1",
+        border: "1px dashed",
+        borderColor: "divider",
         boxShadow: "none",
         display: "grid",
         placeItems: "center",
@@ -20,11 +21,11 @@ export default function EmptyState({
       }}
     >
       <Box sx={{ maxWidth: 420 }}>
-        <Typography sx={{ fontSize: 18, fontWeight: 800, color: "#0B1739", mb: 1 }}>
+        <Typography sx={{ fontSize: 18, fontWeight: 800, color: "text.primary", mb: 1 }}>
           {title}
         </Typography>
 
-        <Typography sx={{ color: "#6B7280", fontSize: 14, lineHeight: 1.7, mb: actionLabel ? 2.5 : 0 }}>
+        <Typography sx={{ color: "text.secondary", fontSize: 14, lineHeight: 1.7, mb: actionLabel ? 2.5 : 0 }}>
           {description}
         </Typography>
 

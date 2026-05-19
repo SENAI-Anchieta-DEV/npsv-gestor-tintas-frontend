@@ -30,13 +30,13 @@ import {
 } from "../../services/api";
 
 const COLORS = {
-  border: "#E5E7EB",
-  text: "#0B1739",
-  textSoft: "#6B7280",
-  primary: "#2E33FF",
-  success: "#22C55E",
-  warning: "#FACC15",
-  danger: "#EF4444",
+  border: "divider",
+  text: "text.primary",
+  textSoft: "text.secondary",
+  primary: "primary.main",
+  success: "success.main",
+  warning: "warning.main",
+  danger: "error.main",
 };
 
 const MQTT_URL = process.env.MQTT_URL || "ws://localhost:9001";
@@ -274,7 +274,7 @@ export default function MachinePage() {
         <Paper
           sx={{
             borderRadius: "18px",
-            border: `1px solid ${COLORS.border}`,
+            border: (theme) => `1px solid ${theme.palette.divider}`,
             boxShadow: "0 2px 10px rgba(15, 23, 42, 0.04)",
             p: 3,
           }}
@@ -384,7 +384,7 @@ export default function MachinePage() {
               <Paper
                 sx={{
                   borderRadius: "18px",
-                  border: `1px solid ${COLORS.border}`,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
                   p: 3,
                   height: "100%",
                 }}
@@ -434,7 +434,7 @@ export default function MachinePage() {
                       borderRadius: "14px",
                       p: 2,
                       textAlign: "center",
-                      bgcolor: "#F8FAFC",
+                      backgroundColor: "background.paper",
                     }}
                   >
                     <Typography sx={{ color: COLORS.textSoft, fontSize: 12 }}>
@@ -451,7 +451,7 @@ export default function MachinePage() {
                       borderRadius: "14px",
                       p: 2,
                       textAlign: "center",
-                      bgcolor: "#F8FAFC",
+                      backgroundColor: "background.paper",
                     }}
                   >
                     <Typography sx={{ color: COLORS.textSoft, fontSize: 12 }}>
@@ -489,7 +489,7 @@ export default function MachinePage() {
               <Paper
                 sx={{
                   borderRadius: "18px",
-                  border: `1px solid ${COLORS.border}`,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
                   overflow: "hidden",
                 }}
               >
@@ -502,7 +502,7 @@ export default function MachinePage() {
                         borderRadius: "10px",
                         display: "grid",
                         placeItems: "center",
-                        bgcolor: "#EEF2FF",
+                        bgcolor: "primary.light",
                         color: COLORS.primary,
                       }}
                     >
@@ -530,7 +530,7 @@ export default function MachinePage() {
                       mt: 2.5,
                       borderRadius: "14px",
                       p: 2,
-                      bgcolor: "#F8FAFC",
+                      backgroundColor: "background.paper",
                     }}
                   >
                     <Typography sx={{ color: COLORS.textSoft, fontSize: 12, mb: 1 }}>
@@ -547,17 +547,13 @@ export default function MachinePage() {
                       sx={{
                         height: 8,
                         borderRadius: "999px",
-                        backgroundColor: "#E5E7EB",
+                        backgroundColor: "divider",
                         "& .MuiLinearProgress-bar": {
                           backgroundColor: COLORS.primary,
                           borderRadius: "999px",
                         },
                       }}
                     />
-
-                    <Typography sx={{ mt: 1.5, fontWeight: 700, color: COLORS.text }}>
-                      {weighedCount} de {production.itens.length} pigmentos pesados
-                    </Typography>
                   </Paper>
                 </Box>
 
@@ -593,7 +589,7 @@ export default function MachinePage() {
                                 ? "rgba(250,204,21,0.55)"
                                 : status === "danger"
                                 ? `${COLORS.danger}55`
-                                : COLORS.border,
+                                : "divider",
                             backgroundColor:
                               status === "success"
                                 ? `${COLORS.success}08`
@@ -601,7 +597,7 @@ export default function MachinePage() {
                                 ? "rgba(250,204,21,0.08)"
                                 : status === "danger"
                                 ? `${COLORS.danger}08`
-                                : "#FFFFFF",
+                                : "background.paper",
                           }}
                         >
                           <Stack spacing={1.2}>
@@ -663,7 +659,7 @@ export default function MachinePage() {
                               sx={{
                                 height: 6,
                                 borderRadius: "999px",
-                                backgroundColor: "#E5E7EB",
+                                backgroundColor: "divider",
                                 "& .MuiLinearProgress-bar": {
                                   backgroundColor: COLORS.primary,
                                   borderRadius: "999px",
@@ -700,7 +696,7 @@ export default function MachinePage() {
               <Paper
                 sx={{
                   borderRadius: "18px",
-                  border: `1px solid ${COLORS.border}`,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
                   p: 2.5,
                 }}
               >

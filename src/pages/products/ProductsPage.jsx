@@ -230,7 +230,7 @@ export default function ProductsPage() {
       label: "Produto",
       render: (produto) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "#EEF2FF", color: "#4F46E5" }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "primary.light", color: "primary.main" }}>
             <Inventory2OutlinedIcon fontSize="small" />
           </Box>
           <Box>
@@ -293,9 +293,11 @@ export default function ProductsPage() {
               size="small"
               sx={{
                 fontWeight: 700,
-                color: "#DC2626",
-                backgroundColor: "#FEF2F2",
-                border: "1px solid #FECACA",
+                color: "error.main",
+                backgroundColor: "error.light",
+                borderColor: "error.light",
+                borderStyle: "solid",
+                borderWidth: "1px",
               }}
             />
           );
@@ -308,9 +310,11 @@ export default function ProductsPage() {
               size="small"
               sx={{
                 fontWeight: 700,
-                color: "#D97706",
-                backgroundColor: "#FFFBEB",
-                border: "1px solid #FDE68A",
+                color: "warning.dark",
+                backgroundColor: "warning.light",
+                borderColor: "warning.light",
+                borderStyle: "solid",
+                borderWidth: "1px",
               }}
             />
           );
@@ -322,9 +326,11 @@ export default function ProductsPage() {
             size="small"
             sx={{
               fontWeight: 700,
-              color: "#16A34A",
-              backgroundColor: "#F0FDF4",
-              border: "1px solid #BBF7D0",
+              color: "success.main",
+              backgroundColor: "success.light",
+              borderColor: "success.light",
+              borderStyle: "solid",
+              borderWidth: "1px",
             }}
           />
         );
@@ -358,7 +364,19 @@ export default function ProductsPage() {
 
   return (
     <AdminLayout>
-      <Paper sx={{ borderRadius: "20px", border: "1px solid #E5E7EB", boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)", overflow: "hidden" }}>
+      <Paper
+        sx={{
+          borderRadius: "20px",
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 4px 18px rgba(255,255,255,0.04)"
+              : "0 4px 18px rgba(15, 23, 42, 0.05)",
+          overflow: "hidden",
+        }}
+      >
         <AppPageHeader
           title="Gerenciar Produtos"
           subtitle="Cadastre, edite e exclua produtos e insumos"

@@ -13,10 +13,10 @@ export default function ProtectedRoute({ children }) {
           minHeight: "100vh",
           display: "grid",
           placeItems: "center",
-          bgcolor: "#F5F7FB",
+          bgcolor: "background.default",
         }}
       >
-        <Paper sx={{ p: 4, borderRadius: 4, textAlign: "center" }}>
+        <Paper sx={{ p: 4, borderRadius: 4, textAlign: "center", backgroundColor: "background.paper" }}>
           <CircularProgress sx={{ mb: 2 }} />
           <Typography fontWeight={700}>Carregando...</Typography>
         </Paper>

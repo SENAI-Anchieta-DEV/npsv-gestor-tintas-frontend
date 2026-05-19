@@ -150,7 +150,7 @@ export default function CategoriesPage() {
       label: "Categoria",
       render: (categoria) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "#EEF2FF", color: "#4F46E5" }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "primary.light", color: "primary.main" }}>
             <CategoryOutlinedIcon fontSize="small" />
           </Box>
           <Typography sx={{ fontWeight: 700, color: "text.primary" }}>{categoria.nome}</Typography>
@@ -180,7 +180,19 @@ export default function CategoriesPage() {
 
   return (
     <AdminLayout>
-      <Paper sx={{ borderRadius: "20px", border: "1px solid #E5E7EB", boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)", overflow: "hidden" }}>
+      <Paper
+        sx={{
+          borderRadius: "20px",
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 4px 18px rgba(255,255,255,0.04)"
+              : "0 4px 18px rgba(15, 23, 42, 0.05)",
+          overflow: "hidden",
+        }}
+      >
         <AppPageHeader
           title="Categorias de Produtos"
           subtitle="Cadastre, edite e exclua categorias de produto"

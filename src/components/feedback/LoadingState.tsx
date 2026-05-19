@@ -6,8 +6,12 @@ export default function LoadingState({ message = "Carregando..." }) {
       sx={{
         minHeight: 220,
         borderRadius: "18px",
-        border: "1px solid #E5E7EB",
-        boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)",
+        border: "1px solid",
+        borderColor: "divider",
+        boxShadow: (theme) =>
+          theme.palette.mode === "dark"
+            ? "0 4px 18px rgba(255,255,255,0.05)"
+            : "0 4px 18px rgba(15, 23, 42, 0.05)",
         display: "grid",
         placeItems: "center",
         p: 4,

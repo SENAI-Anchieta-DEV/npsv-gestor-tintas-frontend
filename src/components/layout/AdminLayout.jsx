@@ -1,10 +1,9 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Box, IconButton, Stack, Typography } from "@mui/material";
+import { Box, IconButton, Stack, Typography, useTheme } from "@mui/material";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
-import WarehouseOutlinedIcon from "@mui/icons-material/WarehouseOutlined";
 import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
@@ -17,6 +16,8 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import OpacityOutlinedIcon from "@mui/icons-material/OpacityOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import { useColorMode } from "../../context/ColorModeContext";
 
 const menuItems = [
   { label: "Dashboard", path: "/dashboard", icon: <DashboardOutlinedIcon /> },
@@ -50,22 +51,24 @@ function formatCurrentDate() {
 export default function AdminLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const { mode, toggleColorMode } = useColorMode();
 
   const currentDate = useMemo(() => formatCurrentDate(), []);
 
   function isActive(path) {
-    if (path === "/") {
-      return location.pathname === "/";
-    }
-
+    if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   }
+
+  const sidebarBg = theme.palette.mode === "dark" ? "#0F172A" : "#0F1E63";
+  const topbarBg = theme.palette.background.paper;
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#F5F7FB",
+        backgroundColor: "background.default",
         display: "flex",
       }}
     >
@@ -73,7 +76,7 @@ export default function AdminLayout({ children }) {
         sx={{
           width: 232,
           minHeight: "100vh",
-          background: "#0F1E63",
+          background: sidebarBg,
           color: "#fff",
           display: "flex",
           flexDirection: "column",
@@ -131,13 +134,11 @@ export default function AdminLayout({ children }) {
                     alignItems: "center",
                     gap: 1.5,
                     cursor: "pointer",
-                    color: active ? "#FFFFFF" : "rgba(255,255,255,0.88)",
+                    color: active ? "common.white" : "rgba(255,255,255,0.88)",
                     background: active
                       ? "linear-gradient(135deg, #4F46E5, #4338CA)"
                       : "transparent",
-                    boxShadow: active
-                      ? "0 8px 18px rgba(79, 70, 229, 0.28)"
-                      : "none",
+                    boxShadow: active ? "0 8px 18px rgba(79, 70, 229, 0.28)" : "none",
                     "&:hover": {
                       background: active
                         ? "linear-gradient(135deg, #4F46E5, #4338CA)"
@@ -146,13 +147,7 @@ export default function AdminLayout({ children }) {
                     transition: "all 0.2s ease",
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: "grid",
-                      placeItems: "center",
-                      color: "inherit",
-                    }}
-                  >
+                  <Box sx={{ display: "grid", placeItems: "center", color: "inherit" }}>
                     {item.icon}
                   </Box>
 
@@ -180,10 +175,11 @@ export default function AdminLayout({ children }) {
           }}
         >
           <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.72)", mb: 1.8 }}>
-            Tema: Claro
+            Tema: {mode === "dark" ? "Escuro" : "Claro"}
           </Typography>
 
           <IconButton
+            onClick={toggleColorMode}
             sx={{
               width: 40,
               height: 40,
@@ -194,7 +190,7 @@ export default function AdminLayout({ children }) {
               },
             }}
           >
-            <DarkModeOutlinedIcon fontSize="small" />
+            {mode === "dark" ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
           </IconButton>
         </Box>
       </Box>
@@ -204,27 +200,22 @@ export default function AdminLayout({ children }) {
           sx={{
             height: 62,
             px: 3,
-            borderBottom: "1px solid #E5E7EB",
-            backgroundColor: "#FFFFFF",
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            backgroundColor: topbarBg,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
           }}
         >
-          <Typography
-            sx={{
-              fontSize: 18,
-              fontWeight: 800,
-              color: "#0B1739",
-            }}
-          >
+          <Typography sx={{ fontSize: 18, fontWeight: 800, color: "text.primary" }}>
             Sistema de Gestão de Tintas
           </Typography>
 
           <Typography
             sx={{
               fontSize: 14,
-              color: "#6B7280",
+              color: "text.secondary",
               textTransform: "capitalize",
             }}
           >

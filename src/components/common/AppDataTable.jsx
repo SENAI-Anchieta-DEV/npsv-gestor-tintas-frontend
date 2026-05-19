@@ -2,7 +2,7 @@ import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, Tab
 
 export default function AppDataTable({ columns, rows, emptyMessage = "Nenhum registro encontrado." }) {
   return (
-    <TableContainer component={Paper} elevation={0} sx={{ borderTop: "1px solid #E5E7EB", borderRadius: 0 }}>
+    <TableContainer component={Paper} elevation={0} sx={{ borderTop: "1px solid", borderTopColor: "divider", borderRadius: 0 }}>
       <Table>
         <TableHead>
           <TableRow>

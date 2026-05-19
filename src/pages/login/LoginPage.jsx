@@ -103,7 +103,7 @@ export default function LoginPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "#F5F7FB",
+        bgcolor: "background.default",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -119,15 +119,17 @@ export default function LoginPage() {
           gridTemplateColumns: { xs: "1fr", md: "1.15fr 0.85fr" },
           borderRadius: "28px",
           overflow: "hidden",
-          backgroundColor: "#fff",
-          boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
+          backgroundColor: "background.paper",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 18px 45px rgba(255,255,255,0.05)"
+              : "0 18px 45px rgba(15, 23, 42, 0.08)",
         }}
       >
         <Box
           sx={{
             p: { xs: 3, sm: 4, md: 4.5 },
-            background:
-              "linear-gradient(180deg, #FFFFFF 0%, #F8FBFF 55%, #EEF4FF 100%)",
+            backgroundColor: "background.default",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
@@ -155,13 +157,13 @@ export default function LoginPage() {
                   sx={{
                     fontSize: 24,
                     fontWeight: 800,
-                    color: "#0B1739",
+                    color: "text.primary",
                     lineHeight: 1.1,
                   }}
                 >
                   Gestor Tintas
                 </Typography>
-                <Typography sx={{ color: "#6B7280", fontSize: 14 }}>
+                <Typography sx={{ color: "text.secondary", fontSize: 14 }}>
                   Sistema de produção e controle
                 </Typography>
               </Box>
@@ -173,7 +175,7 @@ export default function LoginPage() {
                   fontSize: { xs: 30, sm: 36, md: 44 },
                   fontWeight: 800,
                   lineHeight: 1.12,
-                  color: "#0B1739",
+                  color: "text.primary",
                   mb: 2,
                   letterSpacing: "-0.02em",
                 }}
@@ -189,7 +191,7 @@ export default function LoginPage() {
               <Typography
                 sx={{
                   maxWidth: 560,
-                  color: "#6B7280",
+                  color: "text.secondary",
                   fontSize: 15,
                   lineHeight: 1.75,
                 }}
@@ -214,8 +216,9 @@ export default function LoginPage() {
                 sx={{
                   borderRadius: "22px",
                   p: 2,
-                  border: "1px solid #E5E7EB",
-                  backgroundColor: "#FFFFFFCC",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  backgroundColor: "background.paper",
                 }}
               >
                 <Box
@@ -237,7 +240,7 @@ export default function LoginPage() {
                 <Typography
                   sx={{
                     fontWeight: 800,
-                    color: "#0B1739",
+                    color: "text.primary",
                     mb: 0.6,
                     fontSize: 15,
                   }}
@@ -247,7 +250,7 @@ export default function LoginPage() {
 
                 <Typography
                   sx={{
-                    color: "#6B7280",
+                    color: "text.secondary",
                     fontSize: 13.5,
                     lineHeight: 1.65,
                   }}
@@ -265,7 +268,7 @@ export default function LoginPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#FFFFFF",
+            backgroundColor: "background.default",
           }}
         >
           <Card
@@ -275,8 +278,13 @@ export default function LoginPage() {
               maxWidth: 420,
               borderRadius: "24px",
               p: { xs: 2.5, md: 3 },
-              border: "1px solid #E5E7EB",
-              boxShadow: "0 14px 34px rgba(15, 23, 42, 0.05)",
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "background.paper",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark"
+                  ? "0 14px 34px rgba(255,255,255,0.06)"
+                  : "0 14px 34px rgba(15, 23, 42, 0.05)",
             }}
           >
             <Box sx={{ mb: 3 }}>
@@ -284,13 +292,13 @@ export default function LoginPage() {
                 sx={{
                   fontSize: 30,
                   fontWeight: 800,
-                  color: "#0B1739",
+                  color: "text.primary",
                   mb: 1,
                 }}
               >
                 Entrar
               </Typography>
-              <Typography sx={{ color: "#6B7280", fontSize: 15, lineHeight: 1.8 }}>
+              <Typography sx={{ color: "text.secondary", fontSize: 15, lineHeight: 1.8 }}>
                 Faça login para acessar as funcionalidades protegidas do sistema.
               </Typography>
             </Box>

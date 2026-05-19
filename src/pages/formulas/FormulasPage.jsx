@@ -307,8 +307,13 @@ export default function FormulasPage() {
       <Paper
         sx={{
           borderRadius: "20px",
-          border: "1px solid #E5E7EB",
-          boxShadow: "0 4px 18px rgba(15,23,42,0.05)",
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 4px 18px rgba(255,255,255,0.04)"
+              : "0 4px 18px rgba(15,23,42,0.05)",
           overflow: "hidden",
         }}
       >
@@ -324,13 +329,13 @@ export default function FormulasPage() {
                 sx={{
                   fontSize: 18,
                   fontWeight: 800,
-                  color: "#0B1739",
+                  color: "text.primary",
                   mb: 0.5,
                 }}
               >
                 Gerenciar Fórmulas
               </Typography>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                 Cadastre, edite e exclua fórmulas de tintas
               </Typography>
             </Box>
@@ -367,13 +372,13 @@ export default function FormulasPage() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#9CA3AF" }} />
+                  <SearchIcon sx={{ color: "text.secondary" }} />
                 </InputAdornment>
               ),
               sx: {
                 height: 44,
                 borderRadius: "12px",
-                backgroundColor: "#FFFFFF",
+                backgroundColor: "background.paper",
               },
             }}
           />
@@ -394,10 +399,10 @@ export default function FormulasPage() {
           </Box>
         ) : formulasFiltradas.length === 0 ? (
           <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography sx={{ fontWeight: 700, color: "#111827", mb: 1 }}>
+            <Typography sx={{ fontWeight: 700, color: "text.primary", mb: 1 }}>
               Nenhuma fórmula encontrada
             </Typography>
-            <Typography sx={{ color: "#6B7280" }}>
+            <Typography sx={{ color: "text.secondary" }}>
               Cadastre uma nova fórmula para começar.
             </Typography>
           </Box>
@@ -409,9 +414,9 @@ export default function FormulasPage() {
                   sx={{
                     "& th": {
                       fontSize: 14,
-                      color: "#6B7280",
+                      color: "text.secondary",
                       fontWeight: 700,
-                      backgroundColor: "#FFFFFF",
+                      backgroundColor: "background.paper",
                     },
                   }}
                 >
@@ -429,7 +434,7 @@ export default function FormulasPage() {
                   <TableRow
                     key={formula.id}
                     hover
-                    sx={{ "& td": { borderColor: "#E5E7EB", py: 1.4 } }}
+                    sx={{ "& td": { borderColor: "divider", py: 1.4 } }}
                   >
                     <TableCell>
                       <Stack direction="row" spacing={1.5} alignItems="center">
@@ -438,8 +443,8 @@ export default function FormulasPage() {
                             width: 36,
                             height: 36,
                             borderRadius: "12px",
-                            backgroundColor: "#EEF2FF",
-                            color: "#4F46E5",
+                            backgroundColor: "primary.light",
+                            color: "primary.main",
                             display: "grid",
                             placeItems: "center",
                           }}
@@ -447,13 +452,13 @@ export default function FormulasPage() {
                           <ScienceOutlinedIcon fontSize="small" />
                         </Box>
 
-                        <Typography sx={{ fontWeight: 800, color: "#111827", fontSize: 15 }}>
+                        <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: 15 }}>
                           {formula.nomeCor}
                         </Typography>
                       </Stack>
                     </TableCell>
 
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
+                    <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
                       {formula.codigoInterno}
                     </TableCell>
 
@@ -464,18 +469,20 @@ export default function FormulasPage() {
                           height: 28,
                           fontWeight: 700,
                           borderRadius: "999px",
-                          color: "#4F46E5",
-                          backgroundColor: "#EEF2FF",
-                          border: "1px solid #C7D2FE",
+                          color: "primary.main",
+                          backgroundColor: "primary.light",
+                          borderColor: "primary.light",
+                          borderStyle: "solid",
+                          borderWidth: "1px",
                         }}
                       />
                     </TableCell>
 
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
+                    <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
                       {formatDateTime(formula.dataCriacao)}
                     </TableCell>
 
-                    <TableCell sx={{ color: "#4B5563", fontSize: 14 }}>
+                    <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
                       {formatDateTime(formula.dataAtualizacao)}
                     </TableCell>
 
@@ -493,8 +500,8 @@ export default function FormulasPage() {
                           sx={{
                             borderRadius: "12px",
                             textTransform: "none",
-                            color: "#111827",
-                            borderColor: "#D1D5DB",
+                            color: "text.primary",
+                            borderColor: "divider",
                             fontWeight: 600,
                             px: 1.8,
                             minWidth: "auto",
@@ -504,7 +511,7 @@ export default function FormulasPage() {
                         </Button>
 
                         <IconButton
-                          sx={{ color: "#DC2626" }}
+                          sx={{ color: "error.main" }}
                           onClick={() => handleDelete(formula)}
                         >
                           <DeleteOutlineIcon />
@@ -519,7 +526,7 @@ export default function FormulasPage() {
             <Divider />
 
             <Box sx={{ px: 2.5, py: 2 }}>
-              <Typography sx={{ fontSize: 14, color: "#6B7280" }}>
+              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                 Exibindo {formulasFiltradas.length} fórmula(s)
               </Typography>
             </Box>
@@ -563,10 +570,10 @@ export default function FormulasPage() {
 
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Box>
-                  <Typography sx={{ fontWeight: 800, color: "#111827" }}>
+                  <Typography sx={{ fontWeight: 800, color: "text.primary" }}>
                     Itens da Fórmula
                   </Typography>
-                  <Typography sx={{ fontSize: 13, color: "#6B7280" }}>
+                  <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
                     Adicione os insumos e suas quantidades-alvo
                   </Typography>
                 </Box>
@@ -589,13 +596,13 @@ export default function FormulasPage() {
                   sx={{
                     p: 2,
                     borderRadius: "16px",
-                    borderColor: "#E5E7EB",
+                    borderColor: "divider",
                     boxShadow: "none",
                   }}
                 >
                   <Stack spacing={2}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Typography sx={{ fontWeight: 700, color: "#0B1739" }}>
+                      <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
                         Item {index + 1}
                       </Typography>
 
