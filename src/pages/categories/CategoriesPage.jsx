@@ -150,7 +150,7 @@ export default function CategoriesPage() {
       label: "Categoria",
       render: (categoria) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "primary.light", color: "primary.main" }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "primary.light", color: "black" }}>
             <CategoryOutlinedIcon fontSize="small" />
           </Box>
           <Typography sx={{ fontWeight: 700, color: "text.primary" }}>{categoria.nome}</Typography>

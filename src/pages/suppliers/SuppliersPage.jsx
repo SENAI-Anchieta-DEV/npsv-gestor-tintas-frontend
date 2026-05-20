@@ -344,7 +344,7 @@ export default function SuppliersPage() {
               display: "grid",
               placeItems: "center",
               backgroundColor: "primary.light",
-              color: "primary.main",
+              color: "black",
             }}
           >
             <BusinessOutlinedIcon fontSize="small" />

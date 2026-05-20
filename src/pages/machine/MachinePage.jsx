@@ -310,8 +310,8 @@ export default function MachinePage() {
                   sx={{
                     color:
                       connectionStatus === "Conectado"
-                        ? COLORS.success
-                        : COLORS.warning,
+                        ? "black"
+                        : "black",
                     fontSize: 18,
                   }}
                 />
@@ -503,7 +503,7 @@ export default function MachinePage() {
                         display: "grid",
                         placeItems: "center",
                         bgcolor: "primary.light",
-                        color: COLORS.primary,
+                        color: "black",
                       }}
                     >
                       <Inventory2OutlinedIcon fontSize="small" />

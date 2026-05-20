@@ -230,7 +230,7 @@ export default function ProductsPage() {
       label: "Produto",
       render: (produto) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "primary.light", color: "primary.main" }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "primary.light", color: "black" }}>
             <Inventory2OutlinedIcon fontSize="small" />
           </Box>
           <Box>
@@ -293,7 +293,7 @@ export default function ProductsPage() {
               size="small"
               sx={{
                 fontWeight: 700,
-                color: "error.main",
+                color: "black",
                 backgroundColor: "error.light",
                 borderColor: "error.light",
                 borderStyle: "solid",
@@ -310,7 +310,7 @@ export default function ProductsPage() {
               size="small"
               sx={{
                 fontWeight: 700,
-                color: "warning.dark",
+                color: "black",
                 backgroundColor: "warning.light",
                 borderColor: "warning.light",
                 borderStyle: "solid",
@@ -326,7 +326,7 @@ export default function ProductsPage() {
             size="small"
             sx={{
               fontWeight: 700,
-              color: "success.main",
+              color: "black",
               backgroundColor: "success.light",
               borderColor: "success.light",
               borderStyle: "solid",

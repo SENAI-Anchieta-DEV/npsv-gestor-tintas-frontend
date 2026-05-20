@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Box, Button, Card, CircularProgress, Typography } from "@mui/material";
+import { Box, Button, Card, CircularProgress, IconButton, Typography } from "@mui/material";
+import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import { useAuth } from "../../context/AuthContext";
+import { useColorMode } from "../../context/ColorModeContext";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import AppTextField from "../../components/common/AppTextField";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
@@ -44,6 +47,7 @@ export default function LoginPage() {
   const location = useLocation();
   const { login, loading } = useAuth();
   const { showSnackbar } = useAppSnackbar();
+  const { mode, toggleColorMode } = useColorMode();
 
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -108,8 +112,27 @@ export default function LoginPage() {
         alignItems: "center",
         justifyContent: "center",
         p: 2,
+        position: "relative",
       }}
     >
+      <IconButton
+        onClick={toggleColorMode}
+        sx={{
+          position: "absolute",
+          top: 20,
+          right: 20,
+          backgroundColor: "background.paper",
+          color: "text.primary",
+          border: "1px solid",
+          borderColor: "divider",
+          "&:hover": {
+            backgroundColor: "action.hover",
+          },
+        }}
+      >
+        {mode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
+      </IconButton>
+
       <Box
         sx={{
           width: "100%",

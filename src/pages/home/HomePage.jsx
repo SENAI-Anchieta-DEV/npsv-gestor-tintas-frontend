@@ -180,7 +180,7 @@ export default function HomePage() {
                       display: "grid",
                       placeItems: "center",
                       bgcolor: card.iconBg,
-                      color: card.color,
+                      color: "black",
                     }}
                   >
                     {card.icon}
@@ -237,7 +237,7 @@ export default function HomePage() {
                           height: 36,
                           borderRadius: "12px",
                           bgcolor: item.bg,
-                          color: item.color,
+                          color: "black",
                           display: "grid",
                           placeItems: "center",
                           fontWeight: 800,

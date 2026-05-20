@@ -56,7 +56,7 @@ function getRoleLabel(role) {
 function getRoleChipStyles(role) {
   if (role === "ADMIN") {
     return {
-      color: "primary.main",
+      color: "black",
       backgroundColor: "primary.light",
       borderColor: "primary.light",
       borderStyle: "solid",
@@ -66,7 +66,7 @@ function getRoleChipStyles(role) {
 
   if (role === "COLORISTA") {
     return {
-      color: "info.main",
+      color: "black",
       backgroundColor: "info.light",
       borderColor: "info.light",
       borderStyle: "solid",
@@ -75,7 +75,7 @@ function getRoleChipStyles(role) {
   }
 
   return {
-    color: "warning.dark",
+    color: "black",
     backgroundColor: "warning.light",
     borderColor: "warning.light",
     borderStyle: "solid",
@@ -86,7 +86,7 @@ function getRoleChipStyles(role) {
 function getStatusChipStyles(ativo) {
   if (ativo) {
     return {
-      color: "success.main",
+      color: "black",
       backgroundColor: "success.light",
       borderColor: "success.light",
       borderStyle: "solid",
@@ -297,11 +297,11 @@ export default function UsersPage() {
         <Chip
           icon={
             user.role === "ADMIN" ? (
-              <ShieldOutlinedIcon />
+              <ShieldOutlinedIcon sx={{ color: "white !important" }} />
             ) : user.role === "COLORISTA" ? (
-              <EngineeringOutlinedIcon />
+              <EngineeringOutlinedIcon sx={{ color: "white !important" }} />
             ) : (
-              <StorefrontOutlinedIcon />
+              <StorefrontOutlinedIcon sx={{ color: "white !important" }} />
             )
           }
           label={getRoleLabel(user.role)}

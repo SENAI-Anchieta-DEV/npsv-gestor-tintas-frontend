@@ -541,7 +541,7 @@ export default function SalesPage() {
                             height: 36,
                             borderRadius: "12px",
                             backgroundColor: "primary.light",
-                            color: "primary.main",
+                            color: "black",
                             display: "grid",
                             placeItems: "center",
                           }}
@@ -570,9 +570,9 @@ export default function SalesPage() {
                           height: 28,
                           fontWeight: 700,
                           borderRadius: "999px",
-                          color: "primary.main",
-                          backgroundColor: "primary.light",
-                          borderColor: "primary.light",
+                          color: "black",
+                          backgroundColor: "white",
+                          borderColor: "black",
                           borderStyle: "solid",
                           borderWidth: "1px",
                         }}
@@ -592,7 +592,7 @@ export default function SalesPage() {
                           borderRadius: "12px",
                           textTransform: "none",
                           color: "text.primary",
-                          borderColor: "divider",
+                          borderColor: "black",
                           fontWeight: 600,
                           px: 1.8,
                         }}

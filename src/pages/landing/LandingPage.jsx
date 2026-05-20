@@ -617,7 +617,7 @@ export default function LandingPage() {
                           backgroundColor: colors.primarySoft,
                           display: "grid",
                           placeItems: "center",
-                          color: colors.primary,
+                          color: "black",
                         }}
                       >
                         <WarningAmberOutlinedIcon sx={{ fontSize: 28 }} />
@@ -711,7 +711,7 @@ export default function LandingPage() {
                     },
                   }}
                 >
-                  <Box sx={{ color: colors.primary, mb: 3, fontSize: 40 }}>
+                  <Box sx={{ color: "black", mb: 3, fontSize: 40 }}>
                     {module.icon}
                   </Box>
                   <Typography sx={{ fontWeight: 800, color: colors.text, mb: 2, fontSize: 20 }}>
@@ -754,7 +754,7 @@ export default function LandingPage() {
                     "&:hover": { transform: "translateY(-4px)" },
                   }}
                 >
-                  <Box sx={{ color: colors.primary, mb: 3, fontSize: 48 }}>
+                  <Box sx={{ color: "black", mb: 3, fontSize: 48 }}>
                     {tech.icon}
                   </Box>
                   <Typography sx={{ fontWeight: 800, mb: 1, color: colors.text, fontSize: 18 }}>

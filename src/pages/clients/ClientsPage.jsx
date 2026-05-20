@@ -460,7 +460,7 @@ export default function ClientsPage() {
               display: "grid",
               placeItems: "center",
               backgroundColor: "primary.light",
-              color: "primary.main",
+              color: "black",
             }}
           >
             <PersonOutlineOutlinedIcon fontSize="small" />

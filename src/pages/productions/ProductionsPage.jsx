@@ -520,7 +520,7 @@ export default function ProductionsPage() {
                               height: 36,
                               borderRadius: "12px",
                               backgroundColor: "primary.light",
-                              color: "primary.main",
+                              color: "black",
                               display: "grid",
                               placeItems: "center",
                             }}
