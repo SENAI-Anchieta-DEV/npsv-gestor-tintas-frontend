@@ -2,41 +2,29 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
-  Button,
   Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  InputAdornment,
+  IconButton,
   MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
+import PlayArrowOutlinedIcon from "@mui/icons-material/PlayArrowOutlined";
+import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+
 import AdminLayout from "../../components/layout/AdminLayout";
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppTextField from "../../components/common/AppTextField";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
-import { getProblemDetailMessage } from "../../lib/problemDetail/ProblemDetail";
+import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   cancelarProducao,
   concluirProducao,
-  getCurrentUserEmailFromToken,
   getFormulas,
-  getProducaoById,
   getProducoes,
-  getUsuarios,
   iniciarProducao,
   registrarPerdaTotal,
 } from "../../services/api";
@@ -45,21 +33,15 @@ const INITIAL_FORM = {
   formulaId: "",
 };
 
-function normalizeFormula(item) {
-  return {
-    id: item?.id,
-    codigoInterno: item?.codigoInterno || "-",
-    nomeCor: item?.nomeCor || "-",
-  };
-}
-
 function normalizeProducao(item) {
   return {
-    id: item?.id,
-    dataHora: item?.dataHora || null,
+    id: item?.id || "",
+    formulaNome:
+      item?.formula?.nomeCor || item?.formulaNome || item?.formula?.nome || "-",
+    formulaCodigo:
+      item?.formula?.codigoInterno || item?.formulaCodigo || "-",
     status: item?.status || "PENDENTE",
-    colorista: item?.colorista || null,
-    formula: item?.formula || null,
+    dataHora: item?.dataHora || "",
   };
 }
 
@@ -72,120 +54,32 @@ function formatDateTime(value) {
   }
 }
 
-function getStatusChip(status) {
-  if (status === "CONCLUIDO") {
-    return {
-      color: "success.main",
-      backgroundColor: "success.light",
-      borderColor: "success.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
-      label: "Concluído",
-    };
-  }
-
-  if (status === "CANCELADO") {
-    return {
-      color: "error.main",
-      backgroundColor: "error.light",
-      borderColor: "error.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
-      label: "Cancelado",
-    };
-  }
-
-  if (status === "PERDA_TOTAL") {
-    return {
-      color: "error.dark",
-      backgroundColor: "error.light",
-      borderColor: "error.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
-      label: "Perda total",
-    };
-  }
-
-  if (status === "PROCESSANDO") {
-    return {
-      color: "warning.dark",
-      backgroundColor: "warning.light",
-      borderColor: "warning.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
-      label: "Processando",
-    };
-  }
-
-  return {
-    color: "primary.main",
-    backgroundColor: "primary.light",
-    borderColor: "primary.light",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    label: "Pendente",
-  };
-}
-
 export default function ProductionsPage() {
   const { showSnackbar } = useAppSnackbar();
 
   const [producoes, setProducoes] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
   const [formulas, setFormulas] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("TODAS");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const [search, setSearch] = useState("");
-  const [coloristaFiltro, setColoristaFiltro] = useState("TODOS");
-  const [statusFiltro, setStatusFiltro] = useState("TODOS");
-  const [dataInicial, setDataInicial] = useState("");
-  const [dataFinal, setDataFinal] = useState("");
-
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [selectedProducao, setSelectedProducao] = useState(null);
-  const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [form, setForm] = useState(INITIAL_FORM);
 
-  const [currentUser, setCurrentUser] = useState(null);
-
-  async function loadUsuarios() {
-    try {
-      const data = await getUsuarios();
-      const usuariosData = Array.isArray(data) ? data : [];
-      setUsuarios(usuariosData);
-
-      const emailLogado = getCurrentUserEmailFromToken();
-      const usuarioLogado = usuariosData.find(
-        (u) => String(u.email || "").toLowerCase() === String(emailLogado || "").toLowerCase()
-      );
-
-      setCurrentUser(usuarioLogado || null);
-    } catch (error) {
-      showSnackbar(getProblemDetailMessage(error), "error");
-    }
-  }
-
-  async function loadFormulas() {
-    try {
-      const data = await getFormulas();
-      setFormulas(Array.isArray(data) ? data.map(normalizeFormula) : []);
-    } catch (error) {
-      showSnackbar(getProblemDetailMessage(error), "error");
-    }
-  }
-
-  async function loadProducoes() {
+  async function loadData() {
     setLoading(true);
     setErrorMessage("");
 
     try {
-      const data = await getProducoes();
-      setProducoes(Array.isArray(data) ? data.map(normalizeProducao) : []);
+      const [producoesData, formulasData] = await Promise.all([
+        getProducoes(),
+        getFormulas(),
+      ]);
+
+      setProducoes(Array.isArray(producoesData) ? producoesData.map(normalizeProducao) : []);
+      setFormulas(Array.isArray(formulasData) ? formulasData : []);
     } catch (error) {
       setErrorMessage(getProblemDetailMessage(error));
     } finally {
@@ -194,56 +88,25 @@ export default function ProductionsPage() {
   }
 
   useEffect(() => {
-    loadUsuarios();
-    loadFormulas();
-    loadProducoes();
+    loadData();
   }, []);
 
-  const coloristas = useMemo(() => {
-    return usuarios.filter((u) => u.role === "COLORISTA" || u.role === "ADMIN");
-  }, [usuarios]);
-
-  const producoesFiltradas = useMemo(() => {
-    const termo = search.trim().toLowerCase();
+  const filteredProducoes = useMemo(() => {
+    const term = search.trim().toLowerCase();
 
     return producoes.filter((producao) => {
-      const matchText =
-        !termo ||
-        String(producao.formula?.nomeCor || "").toLowerCase().includes(termo) ||
-        String(producao.colorista?.nome || "").toLowerCase().includes(termo);
+      const matchesSearch =
+        !term ||
+        producao.formulaNome.toLowerCase().includes(term) ||
+        producao.formulaCodigo.toLowerCase().includes(term) ||
+        String(producao.id).toLowerCase().includes(term);
 
-      const matchColorista =
-        coloristaFiltro === "TODOS"
-          ? true
-          : String(producao.colorista?.id || "") === String(coloristaFiltro);
+      const matchesStatus =
+        statusFilter === "TODAS" || producao.status === statusFilter;
 
-      const matchStatus =
-        statusFiltro === "TODOS" ? true : producao.status === statusFiltro;
-
-      const data = producao.dataHora ? new Date(producao.dataHora) : null;
-
-      const matchInicial =
-        !dataInicial || (data && data >= new Date(`${dataInicial}T00:00:00`));
-
-      const matchFinal =
-        !dataFinal || (data && data <= new Date(`${dataFinal}T23:59:59`));
-
-      return matchText && matchColorista && matchStatus && matchInicial && matchFinal;
+      return matchesSearch && matchesStatus;
     });
-  }, [producoes, search, coloristaFiltro, statusFiltro, dataInicial, dataFinal]);
-
-  function openCreateDialog() {
-    setForm(INITIAL_FORM);
-    setFieldErrors({});
-    setDialogOpen(true);
-  }
-
-  function closeCreateDialog() {
-    if (saving) return;
-    setDialogOpen(false);
-    setForm(INITIAL_FORM);
-    setFieldErrors({});
-  }
+  }, [producoes, search, statusFilter]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -251,13 +114,22 @@ export default function ProductionsPage() {
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
-  function validate() {
+  function openCreateDialog() {
+    setForm(INITIAL_FORM);
+    setFieldErrors({});
+    setDialogOpen(true);
+  }
+
+  function closeDialog() {
+    if (saving) return;
+    setDialogOpen(false);
+    setForm(INITIAL_FORM);
+    setFieldErrors({});
+  }
+
+  function validateForm() {
     const errors = {};
-
-    if (!form.formulaId) {
-      errors.formulaId = "Selecione a fórmula.";
-    }
-
+    if (!form.formulaId) errors.formulaId = "Selecione a fórmula.";
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   }
@@ -265,27 +137,18 @@ export default function ProductionsPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!validate()) {
-      showSnackbar("Revise os campos obrigatórios.", "error");
-      return;
-    }
-
-    if (!currentUser?.id) {
-      showSnackbar("Não foi possível identificar o usuário logado.", "error");
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
 
     try {
       await iniciarProducao({
-        coloristaId: currentUser.id,
         formulaId: form.formulaId,
       });
 
       showSnackbar("Produção iniciada com sucesso.", "success");
-      closeCreateDialog();
-      await loadProducoes();
+      closeDialog();
+      await loadData();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
     } finally {
@@ -293,437 +156,216 @@ export default function ProductionsPage() {
     }
   }
 
-  async function handleOpenDetail(producaoId) {
-    setDetailLoading(true);
+  async function handleConcluir(id) {
     try {
-      const data = await getProducaoById(producaoId);
-      setSelectedProducao(normalizeProducao(data));
-      setDetailOpen(true);
+      await concluirProducao(id);
+      showSnackbar("Produção concluída com sucesso.", "success");
+      await loadData();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
-    } finally {
-      setDetailLoading(false);
     }
   }
 
-  async function handleAction(action) {
-    if (!selectedProducao) return;
-
-    setActionLoading(true);
-
+  async function handleCancelar(id) {
     try {
-      if (action === "concluir") {
-        await concluirProducao(selectedProducao.id);
-        showSnackbar("Produção concluída com sucesso.", "success");
-      }
-
-      if (action === "cancelar") {
-        await cancelarProducao(selectedProducao.id);
-        showSnackbar("Produção cancelada com sucesso.", "success");
-      }
-
-      if (action === "perda") {
-        await registrarPerdaTotal(selectedProducao.id);
-        showSnackbar("Perda total registrada com sucesso.", "success");
-      }
-
-      setDetailOpen(false);
-      setSelectedProducao(null);
-      await loadProducoes();
+      await cancelarProducao(id);
+      showSnackbar("Produção cancelada com sucesso.", "success");
+      await loadData();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
-    } finally {
-      setActionLoading(false);
     }
   }
+
+  async function handlePerdaTotal(id) {
+    try {
+      await registrarPerdaTotal(id);
+      showSnackbar("Perda total registrada com sucesso.", "success");
+      await loadData();
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
+    }
+  }
+
+  const columns = [
+    {
+      key: "formula",
+      label: "Fórmula",
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+            {row.formulaNome}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+            {row.formulaCodigo}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      key: "dataHora",
+      label: "Data",
+      render: (row) => (
+        <Typography sx={{ color: "text.secondary" }}>
+          {formatDateTime(row.dataHora)}
+        </Typography>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row) => (
+        <Chip
+          label={row.status}
+          sx={{
+            fontWeight: 700,
+            color:
+              row.status === "CONCLUIDO"
+                ? "#FFFFFF"
+                : row.status === "PROCESSANDO"
+                ? "#FFFFFF"
+                : row.status === "PERDA_TOTAL"
+                ? "#FFFFFF"
+                : "#FFFFFF",
+            backgroundColor:
+              row.status === "CONCLUIDO"
+                ? "success.main"
+                : row.status === "PROCESSANDO"
+                ? "info.main"
+                : row.status === "PERDA_TOTAL"
+                ? "error.main"
+                : "warning.main",
+            border: "1px solid",
+            borderColor:
+              row.status === "CONCLUIDO"
+                ? "success.main"
+                : row.status === "PROCESSANDO"
+                ? "info.main"
+                : row.status === "PERDA_TOTAL"
+                ? "error.main"
+                : "warning.main",
+          }}
+        />
+      ),
+    },
+    {
+      key: "acoes",
+      label: "Ações",
+      render: (row) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          {(row.status === "PENDENTE" || row.status === "PROCESSANDO") && (
+            <IconButton color="success" onClick={() => handleConcluir(row.id)}>
+              <CheckCircleOutlineOutlinedIcon />
+            </IconButton>
+          )}
+
+          {(row.status === "PENDENTE" || row.status === "PROCESSANDO") && (
+            <IconButton color="warning" onClick={() => handlePerdaTotal(row.id)}>
+              <PlayArrowOutlinedIcon />
+            </IconButton>
+          )}
+
+          {row.status !== "CONCLUIDO" && (
+            <IconButton color="error" onClick={() => handleCancelar(row.id)}>
+              <DeleteOutlineOutlinedIcon />
+            </IconButton>
+          )}
+        </Box>
+      ),
+    },
+  ];
 
   return (
     <AdminLayout>
-      <Paper
+      <Box
         sx={{
-          borderRadius: "20px",
+          borderRadius: "18px",
+          overflow: "hidden",
           border: "1px solid",
           borderColor: "divider",
           backgroundColor: "background.paper",
-          boxShadow: (theme) =>
-            theme.palette.mode === "dark"
-              ? "0 4px 18px rgba(255,255,255,0.04)"
-              : "0 4px 18px rgba(15,23,42,0.05)",
-          overflow: "hidden",
         }}
       >
-        <Box sx={{ px: 3, py: 3 }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
-            alignItems={{ xs: "stretch", md: "center" }}
-            spacing={2}
+        <AppPageHeader
+          title="Histórico de Produção"
+          subtitle="Acompanhe o ciclo de produção das fórmulas."
+          actionLabel="Nova produção"
+          actionIcon={<AddIcon />}
+          onAction={openCreateDialog}
+        />
+
+        <Box sx={{ px: 3, pb: 2, display: "grid", gap: 2 }}>
+          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1.5fr 1fr" },
+              gap: 2,
+              alignItems: "start",
+              pt: 1.5,
+            }}
           >
-            <Box>
-              <Typography sx={{ fontSize: 18, fontWeight: 800, color: "text.primary", mb: 0.5 }}>
-                Gestão de Produções
-              </Typography>
-              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
-                Inicie, acompanhe e finalize produções no mesmo padrão visual
-              </Typography>
-            </Box>
-
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={openCreateDialog}
-              sx={{
-                borderRadius: "14px",
-                px: 2.2,
-                py: 1.1,
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #4F46E5, #4338CA)",
-                boxShadow: "0 8px 20px rgba(79, 70, 229, 0.25)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, #4338CA, #3730A3)",
-                },
-              }}
-            >
-              Nova Produção
-            </Button>
-          </Stack>
-        </Box>
-
-        <Divider />
-
-        <Box sx={{ px: 2.5, py: 2 }}>
-          <Stack direction={{ xs: "column", lg: "row" }} spacing={2}>
-            <TextField
-              fullWidth
-              placeholder="Buscar por fórmula ou colorista..."
+            <AppTextField
+              placeholder="Buscar por fórmula, código ou ID"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#9CA3AF" }} />
-                  </InputAdornment>
-                ),
-                sx: {
-                  height: 44,
-                  borderRadius: "12px",
-                  backgroundColor: "background.paper",
-                },
-              }}
+              onChange={(event) => setSearch(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
             />
 
-            <TextField
-              select
-              label="Colorista"
-              value={coloristaFiltro}
-              onChange={(e) => setColoristaFiltro(e.target.value)}
-              sx={{ minWidth: 220 }}
-            >
-              <MenuItem value="TODOS">Todos os coloristas</MenuItem>
-              {coloristas.map((usuario) => (
-                <MenuItem key={usuario.id} value={usuario.id}>
-                  {usuario.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <TextField
+            <AppTextField
               select
               label="Status"
-              value={statusFiltro}
-              onChange={(e) => setStatusFiltro(e.target.value)}
-              sx={{ minWidth: 180 }}
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
             >
-              <MenuItem value="TODOS">Todos</MenuItem>
+              <MenuItem value="TODAS">Todas</MenuItem>
               <MenuItem value="PENDENTE">Pendente</MenuItem>
               <MenuItem value="PROCESSANDO">Processando</MenuItem>
               <MenuItem value="CONCLUIDO">Concluído</MenuItem>
-              <MenuItem value="CANCELADO">Cancelado</MenuItem>
               <MenuItem value="PERDA_TOTAL">Perda total</MenuItem>
-            </TextField>
-
-            <TextField
-              label="Data inicial"
-              type="date"
-              value={dataInicial}
-              onChange={(e) => setDataInicial(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 170 }}
-            />
-
-            <TextField
-              label="Data final"
-              type="date"
-              value={dataFinal}
-              onChange={(e) => setDataFinal(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 170 }}
-            />
-          </Stack>
+            </AppTextField>
+          </Box>
         </Box>
-
-        <Divider />
 
         {loading ? (
-          <Box sx={{ minHeight: 220, display: "grid", placeItems: "center", p: 4 }}>
-            <Stack alignItems="center" spacing={2}>
-              <CircularProgress />
-              <Typography color="text.secondary">Carregando produções...</Typography>
-            </Stack>
-          </Box>
-        ) : errorMessage ? (
-          <Box sx={{ p: 3 }}>
-            <Alert severity="error">{errorMessage}</Alert>
-          </Box>
-        ) : producoesFiltradas.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: "center" }}>
-            <Typography sx={{ fontWeight: 700, color: "text.primary", mb: 1 }}>
-              Nenhuma produção encontrada
-            </Typography>
-            <Typography sx={{ color: "text.secondary" }}>
-              Inicie uma nova produção ou ajuste os filtros.
-            </Typography>
-          </Box>
+          <AppLoading message="Carregando produções..." />
         ) : (
-          <>
-            <Table>
-              <TableHead>
-                <TableRow
-                  sx={{
-                    "& th": {
-                      fontSize: 14,
-                      color: "text.secondary",
-                      fontWeight: 700,
-                      backgroundColor: "background.paper",
-                    },
-                  }}
-                >
-                  <TableCell>Fórmula</TableCell>
-                  <TableCell>Data/Hora</TableCell>
-                  <TableCell>Colorista</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Ações</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {producoesFiltradas.map((producao) => {
-                  const statusChip = getStatusChip(producao.status);
-
-                  return (
-                    <TableRow key={producao.id} hover sx={{ "& td": { borderColor: "divider", py: 1.4 } }}>
-                      <TableCell>
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: "12px",
-                              backgroundColor: "primary.light",
-                              color: "black",
-                              display: "grid",
-                              placeItems: "center",
-                            }}
-                          >
-                            <PrecisionManufacturingOutlinedIcon fontSize="small" />
-                          </Box>
-
-                          <Box>
-                            <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: 15 }}>
-                              {producao.formula?.nomeCor || "Fórmula não informada"}
-                            </Typography>
-                            <Typography sx={{ fontSize: 12.5, color: "text.secondary" }}>
-                              {producao.formula?.codigoInterno || "-"}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </TableCell>
-
-                      <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
-                        {formatDateTime(producao.dataHora)}
-                      </TableCell>
-
-                      <TableCell sx={{ color: "text.secondary", fontSize: 14 }}>
-                        {producao.colorista?.nome || "-"}
-                      </TableCell>
-
-                      <TableCell>
-                        <Chip
-                          label={statusChip.label}
-                          sx={{
-                            height: 28,
-                            fontWeight: 700,
-                            borderRadius: "999px",
-                            color: statusChip.color,
-                            backgroundColor: statusChip.backgroundColor,
-                            border: statusChip.border,
-                          }}
-                        />
-                      </TableCell>
-
-                      <TableCell align="right">
-                        <Button
-                          variant="outlined"
-                          startIcon={<VisibilityOutlinedIcon fontSize="small" />}
-                          onClick={() => handleOpenDetail(producao.id)}
-                          sx={{
-                            borderRadius: "12px",
-                            textTransform: "none",
-                            color: "text.primary",
-                            borderColor: "divider",
-                            fontWeight: 600,
-                            px: 1.8,
-                          }}
-                        >
-                          Ver detalhes
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-
-            <Divider />
-            <Box sx={{ px: 2.5, py: 2 }}>
-              <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
-                Exibindo {producoesFiltradas.length} produção(ões)
-              </Typography>
-            </Box>
-          </>
+          <AppDataTable
+            columns={columns}
+            rows={filteredProducoes}
+            emptyMessage="Nenhuma produção encontrada."
+          />
         )}
-      </Paper>
+      </Box>
 
-      <Dialog open={dialogOpen} onClose={closeCreateDialog} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 800 }}>Iniciar Produção</DialogTitle>
-        <Box component="form" onSubmit={handleSubmit}>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
-                label="Colorista responsável"
-                value={currentUser?.nome || "Usuário não identificado"}
-                InputProps={{ readOnly: true }}
-                fullWidth
-              />
-
-              <TextField
-                select
-                label="Fórmula"
-                name="formulaId"
-                value={form.formulaId}
-                onChange={handleChange}
-                required
-                error={Boolean(fieldErrors.formulaId)}
-                helperText={fieldErrors.formulaId}
-                fullWidth
-              >
-                {formulas.map((formula) => (
-                  <MenuItem key={formula.id} value={formula.id}>
-                    {formula.nomeCor} — {formula.codigoInterno}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Stack>
-          </DialogContent>
-
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button onClick={closeCreateDialog} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="contained" disabled={saving}>
-              {saving ? "Salvando..." : "Iniciar"}
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
-
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} fullWidth maxWidth="md">
-        <DialogTitle sx={{ fontWeight: 800 }}>Detalhe da Produção</DialogTitle>
-        <DialogContent>
-          {detailLoading || !selectedProducao ? (
-            <Box sx={{ minHeight: 180, display: "grid", placeItems: "center" }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Stack spacing={2.5} sx={{ mt: 1 }}>
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <TextField
-                  label="Fórmula"
-                  value={selectedProducao.formula?.nomeCor || "-"}
-                  InputProps={{ readOnly: true }}
-                  fullWidth
-                />
-                <TextField
-                  label="Código Interno"
-                  value={selectedProducao.formula?.codigoInterno || "-"}
-                  InputProps={{ readOnly: true }}
-                  fullWidth
-                />
-              </Stack>
-
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <TextField
-                  label="Colorista"
-                  value={selectedProducao.colorista?.nome || "-"}
-                  InputProps={{ readOnly: true }}
-                  fullWidth
-                />
-                <TextField
-                  label="Data/Hora"
-                  value={formatDateTime(selectedProducao.dataHora)}
-                  InputProps={{ readOnly: true }}
-                  fullWidth
-                />
-              </Stack>
-
-              <TextField
-                label="Status"
-                value={selectedProducao.status}
-                InputProps={{ readOnly: true }}
-                fullWidth
-              />
-
-              <Alert severity="info">
-                O backend atual não expõe GET de pesagens por produção. Então o detalhe mostra
-                fórmula, colorista e status, mas não lista PesagemEventos.
-              </Alert>
-            </Stack>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 3, justifyContent: "space-between" }}>
-          <Stack direction="row" spacing={1}>
-            <Button
-              color="error"
-              onClick={() => handleAction("cancelar")}
-              disabled={actionLoading || !selectedProducao}
-            >
-              Cancelar
-            </Button>
-
-            <Button
-              color="warning"
-              onClick={() => handleAction("perda")}
-              disabled={actionLoading || !selectedProducao}
-            >
-              Perda total
-            </Button>
-          </Stack>
-
-          <Stack direction="row" spacing={1}>
-            <Button onClick={() => setDetailOpen(false)} disabled={actionLoading}>
-              Fechar
-            </Button>
-            <Button
-              variant="contained"
-              onClick={() => handleAction("concluir")}
-              disabled={actionLoading || !selectedProducao}
-            >
-              {actionLoading ? "Processando..." : "Concluir"}
-            </Button>
-          </Stack>
-        </DialogActions>
-      </Dialog>
+      <AppFormDialog
+        open={dialogOpen}
+        title="Nova produção"
+        onClose={closeDialog}
+        onSubmit={handleSubmit}
+        loading={saving}
+        submitLabel="Iniciar produção"
+      >
+        <AppTextField
+          select
+          required
+          name="formulaId"
+          label="Fórmula"
+          value={form.formulaId}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.formulaId)}
+          helperText={fieldErrors.formulaId}
+        >
+          {formulas.map((formula) => (
+            <MenuItem key={formula.id} value={formula.id}>
+              {formula.nomeCor || formula.nome || formula.codigoInterno}
+            </MenuItem>
+          ))}
+        </AppTextField>
+      </AppFormDialog>
     </AdminLayout>
   );
 }

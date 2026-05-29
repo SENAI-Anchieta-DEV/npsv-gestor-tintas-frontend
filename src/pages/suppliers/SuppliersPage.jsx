@@ -3,131 +3,71 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControlLabel,
   IconButton,
-  Paper,
+  MenuItem,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
-import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 
 import AdminLayout from "../../components/layout/AdminLayout";
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppTextField from "../../components/common/AppTextField";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   createFornecedor,
   deactivateFornecedor,
+  deleteFornecedor,
   getFornecedores,
   updateFornecedor,
 } from "../../services/api";
 
-import AppDataTable from "../../components/common/AppDataTable";
-import AppFormDialog from "../../components/common/AppFormDialog";
-import AppLoading from "../../components/common/AppLoading";
-import AppPageHeader from "../../components/common/AppPageHeader";
-import AppSearchField from "../../components/common/AppSearchField";
-import AppTextField from "../../components/common/AppTextField";
-
 const INITIAL_FORM = {
+  id: "",
   razaoSocial: "",
   cnpj: "",
-  nomeContato: "",
   telefone: "",
   email: "",
   endereco: "",
+  ativo: true,
 };
-
-function onlyDigits(value) {
-  return String(value || "").replace(/\D/g, "");
-}
-
-function formatCnpj(value) {
-  const digits = onlyDigits(value).slice(0, 14);
-  return digits
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
-}
-
-function formatPhone(value) {
-  const digits = onlyDigits(value).slice(0, 11);
-
-  if (digits.length <= 10) {
-    return digits
-      .replace(/^(\d{2})(\d)/, "($1) $2")
-      .replace(/(\d{4})(\d)/, "$1-$2");
-  }
-
-  return digits
-    .replace(/^(\d{2})(\d)/, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2");
-}
-
-function isValidCnpj(cnpj) {
-  const cleaned = onlyDigits(cnpj);
-
-  if (cleaned.length !== 14 || /^(\d)\1+$/.test(cleaned)) {
-    return false;
-  }
-
-  const weightsFirst = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  const weightsSecond = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-
-  const calcDigit = (base, weights) => {
-    const sum = base.split("").reduce((acc, digit, index) => {
-      return acc + Number(digit) * weights[index];
-    }, 0);
-
-    const rest = sum % 11;
-    return rest < 2 ? 0 : 11 - rest;
-  };
-
-  const firstDigit = calcDigit(cleaned.slice(0, 12), weightsFirst);
-  const secondDigit = calcDigit(cleaned.slice(0, 12) + firstDigit, weightsSecond);
-
-  return cleaned === `${cleaned.slice(0, 12)}${firstDigit}${secondDigit}`;
-}
 
 function normalizeFornecedor(item) {
   return {
-    id: item?.id,
-    razaoSocial: item?.razaoSocial || "-",
-    cnpj: item?.cnpj || "-",
-    nomeContato: item?.nomeContato || "-",
-    telefone: item?.telefone || "-",
-    email: item?.email || "-",
-    endereco: item?.endereco || "-",
+    id: item?.id || "",
+    razaoSocial: item?.razaoSocial || "",
+    cnpj: item?.cnpj || "",
+    telefone: item?.telefone || "",
+    email: item?.email || "",
+    endereco: item?.endereco || "",
     ativo: Boolean(item?.ativo),
   };
 }
 
-function getStatusChipStyles(ativo) {
-  if (ativo) {
-    return {
-      color: "success.main",
-      backgroundColor: "success.light",
-      borderColor: "success.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
-    };
-  }
+function formatCnpj(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length !== 14) return value || "-";
+  return digits.replace(
+    /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+    "$1.$2.$3/$4-$5"
+  );
+}
 
-  return {
-    color: "text.secondary",
-    backgroundColor: "background.paper",
-    borderColor: "divider",
-    borderStyle: "solid",
-    borderWidth: "1px",
-  };
+function formatTelefone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length === 11) {
+    return digits.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+  }
+  if (digits.length === 10) {
+    return digits.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+  }
+  return value || "-";
 }
 
 export default function SuppliersPage() {
@@ -135,17 +75,14 @@ export default function SuppliersPage() {
 
   const [fornecedores, setFornecedores] = useState([]);
   const [search, setSearch] = useState("");
-  const [showOnlyActive, setShowOnlyActive] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("TODOS");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deactivating, setDeactivating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState(null);
-  const [supplierToDeactivate, setSupplierToDeactivate] = useState(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [editingId, setEditingId] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [form, setForm] = useState(INITIAL_FORM);
 
   async function loadFornecedores() {
     setLoading(true);
@@ -165,41 +102,48 @@ export default function SuppliersPage() {
     loadFornecedores();
   }, []);
 
-  const filteredSuppliers = useMemo(() => {
-    let filtered = fornecedores;
-
-    if (showOnlyActive) {
-      filtered = filtered.filter((fornecedor) => fornecedor.ativo);
-    }
-
+  const filteredFornecedores = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    if (!term) return filtered;
+    return fornecedores.filter((fornecedor) => {
+      const matchesSearch =
+        !term ||
+        fornecedor.razaoSocial.toLowerCase().includes(term) ||
+        fornecedor.email.toLowerCase().includes(term) ||
+        fornecedor.cnpj.toLowerCase().includes(term);
 
-    return filtered.filter((fornecedor) => {
-      return (
-        String(fornecedor.razaoSocial || "").toLowerCase().includes(term) ||
-        String(fornecedor.cnpj || "").toLowerCase().includes(term)
-      );
+      const matchesStatus =
+        statusFilter === "TODOS" ||
+        (statusFilter === "ATIVOS" && fornecedor.ativo) ||
+        (statusFilter === "INATIVOS" && !fornecedor.ativo);
+
+      return matchesSearch && matchesStatus;
     });
-  }, [fornecedores, search, showOnlyActive]);
+  }, [fornecedores, search, statusFilter]);
 
-  function openCreate() {
-    setEditingSupplier(null);
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  }
+
+  function openCreateDialog() {
+    setEditingId("");
     setForm(INITIAL_FORM);
     setFieldErrors({});
     setDialogOpen(true);
   }
 
-  function openEdit(fornecedor) {
-    setEditingSupplier(fornecedor);
+  function openEditDialog(fornecedor) {
+    setEditingId(fornecedor.id);
     setForm({
-      razaoSocial: fornecedor.razaoSocial || "",
-      cnpj: fornecedor.cnpj || "",
-      nomeContato: fornecedor.nomeContato || "",
-      telefone: fornecedor.telefone || "",
-      email: fornecedor.email || "",
-      endereco: fornecedor.endereco || "",
+      id: fornecedor.id,
+      razaoSocial: fornecedor.razaoSocial,
+      cnpj: fornecedor.cnpj,
+      telefone: fornecedor.telefone,
+      email: fornecedor.email,
+      endereco: fornecedor.endereco,
+      ativo: fornecedor.ativo,
     });
     setFieldErrors({});
     setDialogOpen(true);
@@ -208,69 +152,19 @@ export default function SuppliersPage() {
   function closeDialog() {
     if (saving) return;
     setDialogOpen(false);
-    setEditingSupplier(null);
+    setEditingId("");
     setForm(INITIAL_FORM);
     setFieldErrors({});
   }
 
-  function openDeactivateDialog(fornecedor) {
-    setSupplierToDeactivate(fornecedor);
-    setConfirmDialogOpen(true);
-  }
-
-  function closeDeactivateDialog() {
-    if (deactivating) return;
-    setSupplierToDeactivate(null);
-    setConfirmDialogOpen(false);
-  }
-
-  function handleChange(event) {
-    const { name, value } = event.target;
-
-    let nextValue = value;
-
-    if (name === "cnpj") {
-      nextValue = formatCnpj(value);
-    }
-
-    if (name === "telefone") {
-      nextValue = formatPhone(value);
-    }
-
-    setForm((prev) => ({ ...prev, [name]: nextValue }));
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-  }
-
-  function validate() {
+  function validateForm() {
     const errors = {};
 
-    if (!form.razaoSocial.trim()) {
-      errors.razaoSocial = "Informe a razão social.";
-    }
-
-    if (!form.cnpj.trim()) {
-      errors.cnpj = "Informe o CNPJ.";
-    } else if (!isValidCnpj(form.cnpj)) {
-      errors.cnpj = "Informe um CNPJ válido.";
-    }
-
-    if (!form.nomeContato.trim()) {
-      errors.nomeContato = "Informe o nome do contato.";
-    }
-
-    if (!form.telefone.trim()) {
-      errors.telefone = "Informe o telefone.";
-    }
-
-    if (!form.email.trim()) {
-      errors.email = "Informe o e-mail.";
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-      errors.email = "Informe um e-mail válido.";
-    }
-
-    if (!form.endereco.trim()) {
-      errors.endereco = "Informe o endereço.";
-    }
+    if (!String(form.razaoSocial).trim()) errors.razaoSocial = "Informe a razão social.";
+    if (!String(form.cnpj).trim()) errors.cnpj = "Informe o CNPJ.";
+    if (!String(form.telefone).trim()) errors.telefone = "Informe o telefone.";
+    if (!String(form.email).trim()) errors.email = "Informe o e-mail.";
+    if (!String(form.endereco).trim()) errors.endereco = "Informe o endereço.";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -279,25 +173,21 @@ export default function SuppliersPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!validate()) {
-      showSnackbar("Revise os campos obrigatórios.", "error");
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
 
-    try {
-      const payload = {
-        razaoSocial: form.razaoSocial.trim(),
-        cnpj: onlyDigits(form.cnpj),
-        nomeContato: form.nomeContato.trim(),
-        telefone: onlyDigits(form.telefone),
-        email: form.email.trim(),
-        endereco: form.endereco.trim(),
-      };
+    const payload = {
+      razaoSocial: form.razaoSocial,
+      cnpj: form.cnpj,
+      telefone: form.telefone,
+      email: form.email,
+      endereco: form.endereco,
+    };
 
-      if (editingSupplier) {
-        await updateFornecedor(editingSupplier.id, payload);
+    try {
+      if (editingId) {
+        await updateFornecedor(editingId, payload);
         showSnackbar("Fornecedor atualizado com sucesso.", "success");
       } else {
         await createFornecedor(payload);
@@ -313,20 +203,23 @@ export default function SuppliersPage() {
     }
   }
 
-  async function handleConfirmDeactivate() {
-    if (!supplierToDeactivate?.id) return;
-
-    setDeactivating(true);
-
+  async function handleDelete(fornecedor) {
     try {
-      await deactivateFornecedor(supplierToDeactivate.id);
-      showSnackbar("Fornecedor desativado com sucesso.", "success");
-      closeDeactivateDialog();
+      await deleteFornecedor(fornecedor.id);
+      showSnackbar("Fornecedor removido com sucesso.", "success");
       await loadFornecedores();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
-    } finally {
-      setDeactivating(false);
+    }
+  }
+
+  async function handleDeactivate(fornecedor) {
+    try {
+      await deactivateFornecedor(fornecedor.id);
+      showSnackbar("Fornecedor desativado com sucesso.", "success");
+      await loadFornecedores();
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
     }
   }
 
@@ -334,81 +227,82 @@ export default function SuppliersPage() {
     {
       key: "fornecedor",
       label: "Fornecedor",
-      render: (fornecedor) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "14px",
-              display: "grid",
-              placeItems: "center",
-              backgroundColor: "primary.light",
-              color: "black",
-            }}
-          >
-            <BusinessOutlinedIcon fontSize="small" />
-          </Box>
-
-          <Box>
-            <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
-              {fornecedor.razaoSocial}
-            </Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
-              {formatCnpj(fornecedor.cnpj)}
-            </Typography>
-          </Box>
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+            {row.razaoSocial}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+            {row.email || "-"}
+          </Typography>
         </Box>
       ),
     },
     {
-      key: "contato",
-      label: "Contato",
-      render: (fornecedor) => (
-        <Box>
-          <Typography sx={{ color: "text.primary", fontSize: 14 }}>
-            {fornecedor.nomeContato}
-          </Typography>
-          <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
-            {formatPhone(fornecedor.telefone)} • {fornecedor.email}
-          </Typography>
-        </Box>
+      key: "cnpj",
+      label: "CNPJ",
+      render: (row) => (
+        <Typography sx={{ color: "text.primary" }}>
+          {formatCnpj(row.cnpj)}
+        </Typography>
+      ),
+    },
+    {
+      key: "telefone",
+      label: "Telefone",
+      render: (row) => (
+        <Typography sx={{ color: "text.primary" }}>
+          {formatTelefone(row.telefone)}
+        </Typography>
       ),
     },
     {
       key: "endereco",
       label: "Endereço",
-      render: (fornecedor) => (
-        <Typography sx={{ color: "text.secondary", fontSize: 14 }}>
-          {fornecedor.endereco}
+      render: (row) => (
+        <Typography sx={{ color: "text.secondary" }}>
+          {row.endereco || "-"}
         </Typography>
       ),
     },
     {
       key: "status",
       label: "Status",
-      render: (fornecedor) => (
+      render: (row) => (
         <Chip
-          label={fornecedor.ativo ? "Ativo" : "Inativo"}
-          size="small"
-          sx={{ ...getStatusChipStyles(fornecedor.ativo), fontWeight: 700 }}
+          label={row.ativo ? "Ativo" : "Inativo"}
+          sx={{
+            fontWeight: 700,
+            color: "#FFFFFF",
+            backgroundColor: row.ativo ? "success.main" : "text.secondary",
+            border: "1px solid",
+            borderColor: row.ativo ? "success.main" : "text.secondary",
+          }}
         />
       ),
     },
     {
       key: "acoes",
       label: "Ações",
-      render: (fornecedor) => (
-        <Box sx={{ display: "flex", gap: 0.5 }}>
-          <IconButton onClick={() => openEdit(fornecedor)}>
-            <EditOutlinedIcon fontSize="small" />
+      render: (row) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={() => openEditDialog(row)}>
+            <EditOutlinedIcon />
           </IconButton>
 
-          <IconButton
-            onClick={() => openDeactivateDialog(fornecedor)}
-            disabled={!fornecedor.ativo}
-          >
-            <PersonOffOutlinedIcon fontSize="small" />
+          {row.ativo ? (
+            <Button
+              size="small"
+              color="warning"
+              onClick={() => handleDeactivate(row)}
+              sx={{ minWidth: "auto", px: 1.2 }}
+            >
+              Desativar
+            </Button>
+          ) : null}
+
+          <IconButton color="error" onClick={() => handleDelete(row)}>
+            <DeleteOutlineOutlinedIcon />
           </IconButton>
         </Box>
       ),
@@ -417,76 +311,81 @@ export default function SuppliersPage() {
 
   return (
     <AdminLayout>
-      <Paper
+      <Box
         sx={{
-          borderRadius: { xs: "16px", md: "20px" },
-          border: "none",
-          boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)",
+          borderRadius: "18px",
           overflow: "hidden",
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
         }}
       >
         <AppPageHeader
           title="Fornecedores"
-          subtitle="Cadastre, edite e desative fornecedores"
-          actionLabel="Novo Fornecedor"
+          subtitle="Gerencie os fornecedores cadastrados no sistema."
+          actionLabel="Novo fornecedor"
           actionIcon={<AddIcon />}
-          onAction={openCreate}
+          onAction={openCreateDialog}
         />
 
-        <AppSearchField
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Pesquisar por razão social ou CNPJ..."
-        />
+        <Box sx={{ px: 3, pb: 2, display: "grid", gap: 2 }}>
+          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-        <Box sx={{ px: 2.5, pb: 1 }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={showOnlyActive}
-                onChange={(e) => setShowOnlyActive(e.target.checked)}
-              />
-            }
-            label="Mostrar apenas fornecedores ativos"
-          />
-        </Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1.5fr 1fr" },
+              gap: 2,
+              alignItems: "start",
+              pt: 1.5,
+            }}
+          >
+            <AppTextField
+              placeholder="Buscar por razão social, e-mail ou CNPJ"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
+            />
 
-        {errorMessage ? (
-          <Box sx={{ px: 2.5, pb: 2 }}>
-            <Alert severity="error" sx={{ borderRadius: "14px" }}>
-              {errorMessage}
-            </Alert>
+            <AppTextField
+              select
+              label="Status"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
+            >
+              <MenuItem value="TODOS">Todos</MenuItem>
+              <MenuItem value="ATIVOS">Ativos</MenuItem>
+              <MenuItem value="INATIVOS">Inativos</MenuItem>
+            </AppTextField>
           </Box>
-        ) : null}
+        </Box>
 
         {loading ? (
           <AppLoading message="Carregando fornecedores..." />
         ) : (
           <AppDataTable
             columns={columns}
-            rows={filteredSuppliers.map((item) => ({
-              ...item,
-              key: item.id,
-            }))}
-            emptyMessage="Nenhum fornecedor encontrado com os filtros informados."
+            rows={filteredFornecedores}
+            emptyMessage="Nenhum fornecedor encontrado."
           />
         )}
-      </Paper>
+      </Box>
 
       <AppFormDialog
         open={dialogOpen}
-        title={editingSupplier ? "Editar fornecedor" : "Novo fornecedor"}
+        title={editingId ? "Editar fornecedor" : "Novo fornecedor"}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         loading={saving}
-        submitLabel={
-          editingSupplier ? "Salvar alterações" : "Cadastrar fornecedor"
-        }
+        submitLabel={editingId ? "Salvar alterações" : "Cadastrar fornecedor"}
       >
         <AppTextField
+          required
           name="razaoSocial"
           label="Razão social"
-          required
           value={form.razaoSocial}
           onChange={handleChange}
           error={Boolean(fieldErrors.razaoSocial)}
@@ -494,29 +393,19 @@ export default function SuppliersPage() {
         />
 
         <AppTextField
+          required
           name="cnpj"
           label="CNPJ"
-          required
           value={form.cnpj}
           onChange={handleChange}
           error={Boolean(fieldErrors.cnpj)}
-          helperText={fieldErrors.cnpj || "Formato: 00.000.000/0000-00"}
+          helperText={fieldErrors.cnpj}
         />
 
         <AppTextField
-          name="nomeContato"
-          label="Nome do contato"
           required
-          value={form.nomeContato}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.nomeContato)}
-          helperText={fieldErrors.nomeContato}
-        />
-
-        <AppTextField
           name="telefone"
           label="Telefone"
-          required
           value={form.telefone}
           onChange={handleChange}
           error={Boolean(fieldErrors.telefone)}
@@ -524,10 +413,9 @@ export default function SuppliersPage() {
         />
 
         <AppTextField
+          required
           name="email"
           label="E-mail"
-          type="email"
-          required
           value={form.email}
           onChange={handleChange}
           error={Boolean(fieldErrors.email)}
@@ -535,47 +423,15 @@ export default function SuppliersPage() {
         />
 
         <AppTextField
+          required
           name="endereco"
           label="Endereço"
-          required
-          multiline
-          minRows={3}
           value={form.endereco}
           onChange={handleChange}
           error={Boolean(fieldErrors.endereco)}
           helperText={fieldErrors.endereco}
         />
       </AppFormDialog>
-
-      <Dialog open={confirmDialogOpen} onClose={closeDeactivateDialog} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          Confirmar desativação
-        </DialogTitle>
-
-        <DialogContent>
-          <Typography sx={{ color: "text.secondary" }}>
-            Deseja desativar o fornecedor{" "}
-            <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
-              {supplierToDeactivate?.razaoSocial || "-"}
-            </Box>
-            ?
-          </Typography>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={closeDeactivateDialog} disabled={deactivating}>
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleConfirmDeactivate}
-            disabled={deactivating}
-          >
-            {deactivating ? "Desativando..." : "Desativar"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </AdminLayout>
   );
 }

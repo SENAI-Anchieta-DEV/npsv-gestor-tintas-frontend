@@ -11,6 +11,7 @@ import SalesHistoryPage from "./pages/sales/SalesPage";
 import ClientsPage from "./pages/clients/ClientsPage";
 import SuppliersPage from "./pages/suppliers/SuppliersPage";
 import MachinePage from "./pages/machine/MachinePage";
+import OrdersPage from "./pages/orders/OrdersPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -96,6 +97,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <SuppliersPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/pedidos"
+        element={
+          <ProtectedRoute>
+            <OrdersPage />
           </ProtectedRoute>
         }
       />

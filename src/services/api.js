@@ -385,7 +385,7 @@ export function deleteCliente(id) {
   });
 }
 
-export async function deactivateCliente(id) {
+export async function desativarCliente(id) {
   try {
     return await authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}/desativar`, {
       method: "PATCH",
@@ -408,7 +408,7 @@ export function getFornecedores() {
 }
 
 export function getFornecedorById(id) {
-  return authenticatedRequest(`/api/fornecedores/id/${encodeURIComponent(id)}`, {
+  return authenticatedRequest(`/api/fornecedores/${encodeURIComponent(id)}`, {
     method: "GET",
   });
 }
@@ -421,15 +421,21 @@ export function createFornecedor(payload) {
 }
 
 export function updateFornecedor(id, payload) {
-  return authenticatedRequest(`/api/fornecedores/id/${encodeURIComponent(id)}`, {
+  return authenticatedRequest(`/api/fornecedores/${encodeURIComponent(id)}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
-export function deactivateFornecedor(id) {
-  return authenticatedRequest(`/api/fornecedores/id/${encodeURIComponent(id)}`, {
+export function deleteFornecedor(id) {
+  return authenticatedRequest(`/api/fornecedores/${encodeURIComponent(id)}`, {
     method: "DELETE",
+  });
+}
+
+export function deactivateFornecedor(id) {
+  return authenticatedRequest(`/api/fornecedores/${encodeURIComponent(id)}/desativar`, {
+    method: "PATCH",
   });
 }
 
@@ -455,4 +461,62 @@ export function cancelProduction(producaoId) {
       method: "PATCH",
     }
   );
+}
+
+export function getPesagemAtual(id) {
+  return authenticatedRequest(`/api/producoes/${encodeURIComponent(id)}/pesagem/atual`, {
+    method: "GET",
+  });
+}
+
+export function getEventosPesagem(id) {
+  return authenticatedRequest(`/api/producoes/${encodeURIComponent(id)}/eventos-pesagem`, {
+    method: "GET",
+  });
+}
+
+/* ===================== PEDIDOS ===================== */
+
+export function getPedidos() {
+  return authenticatedRequest("/api/pedidos", {
+    method: "GET",
+  });
+}
+
+export function getPedidoById(id) {
+  return authenticatedRequest(`/api/pedidos/${encodeURIComponent(id)}`, {
+    method: "GET",
+  });
+}
+
+export function createPedido(payload) {
+  return authenticatedRequest("/api/pedidos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updatePedido(id, payload) {
+  return authenticatedRequest(`/api/pedidos/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function enviarPedido(id) {
+  return authenticatedRequest(`/api/pedidos/${encodeURIComponent(id)}/enviar`, {
+    method: "PATCH",
+  });
+}
+
+export function receberPedido(id) {
+  return authenticatedRequest(`/api/pedidos/${encodeURIComponent(id)}/receber`, {
+    method: "PATCH",
+  });
+}
+
+export function cancelarPedido(id) {
+  return authenticatedRequest(`/api/pedidos/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 }

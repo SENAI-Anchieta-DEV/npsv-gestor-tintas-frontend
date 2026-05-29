@@ -11,12 +11,10 @@ import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
-import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
-import OpacityOutlinedIcon from "@mui/icons-material/OpacityOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import OpacityOutlinedIcon from "@mui/icons-material/OpacityOutlined";
 import { useColorMode } from "../../context/ColorModeContext";
 
 const menuItems = [
@@ -31,8 +29,6 @@ const menuItems = [
   { label: "Fornecedores", path: "/fornecedores", icon: <LocalShippingOutlinedIcon /> },
   { label: "Pedidos", path: "/pedidos", icon: <ReceiptLongOutlinedIcon /> },
   { label: "Usuários", path: "/usuarios", icon: <GroupOutlinedIcon /> },
-  { label: "Relatórios", path: "/relatorios", icon: <BarChartOutlinedIcon /> },
-  { label: "Configurações", path: "/configuracoes", icon: <SettingsOutlinedIcon /> },
 ];
 
 function formatCurrentDate() {
@@ -57,12 +53,13 @@ export default function AdminLayout({ children }) {
   const currentDate = useMemo(() => formatCurrentDate(), []);
 
   function isActive(path) {
-    if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   }
 
-  const sidebarBg = theme.palette.mode === "dark" ? "#0F172A" : "#0F1E63";
-  const topbarBg = theme.palette.background.paper;
+  const sidebarBg =
+    theme.palette.mode === "dark"
+      ? "linear-gradient(180deg, #0F172A 0%, #111827 100%)"
+      : "linear-gradient(180deg, #0F1E63 0%, #162B87 100%)";
 
   return (
     <Box
@@ -74,14 +71,14 @@ export default function AdminLayout({ children }) {
     >
       <Box
         sx={{
-          width: 232,
+          width: 248,
           minHeight: "100vh",
           background: sidebarBg,
           color: "#fff",
-          display: "flex",
+          borderRight: "1px solid rgba(255,255,255,0.06)",
+          display: { xs: "none", md: "flex" },
           flexDirection: "column",
           justifyContent: "space-between",
-          borderRight: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         <Box>
@@ -98,66 +95,56 @@ export default function AdminLayout({ children }) {
                   width: 42,
                   height: 42,
                   borderRadius: "14px",
-                  background: "linear-gradient(135deg, #4F46E5, #3B82F6)",
+                  background: "linear-gradient(135deg, #4F46E5, #2B82FF)",
                   display: "grid",
                   placeItems: "center",
-                  color: "#fff",
                 }}
               >
-                <OpacityOutlinedIcon />
+                <OpacityOutlinedIcon sx={{ color: "#fff" }} />
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: 18, lineHeight: 1.1 }}>
                   Gestor Tintas
                 </Typography>
-                <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.78)" }}>
-                  v0.4 MVP
+                <Typography sx={{ fontSize: 12.5, color: "rgba(255,255,255,0.72)" }}>
+                  Painel administrativo
                 </Typography>
               </Box>
             </Stack>
           </Box>
 
-          <Stack spacing={0.5} sx={{ px: 1.8, py: 2 }}>
+          <Stack spacing={0.7} sx={{ px: 1.8, py: 2 }}>
             {menuItems.map((item) => {
               const active = isActive(item.path);
 
               return (
                 <Box
-                  key={item.label}
+                  key={item.path}
                   onClick={() => navigate(item.path)}
                   sx={{
-                    height: 42,
                     px: 1.6,
+                    py: 1.25,
                     borderRadius: "14px",
                     display: "flex",
                     alignItems: "center",
-                    gap: 1.5,
+                    gap: 1.4,
                     cursor: "pointer",
-                    color: active ? "common.white" : "rgba(255,255,255,0.88)",
+                    color: active ? "#FFFFFF" : "rgba(255,255,255,0.85)",
                     background: active
-                      ? "linear-gradient(135deg, #4F46E5, #4338CA)"
+                      ? "linear-gradient(135deg, rgba(79,70,229,0.92), rgba(59,130,246,0.78))"
                       : "transparent",
-                    boxShadow: active ? "0 8px 18px rgba(79, 70, 229, 0.28)" : "none",
+                    boxShadow: active ? "0 10px 20px rgba(15,23,42,0.18)" : "none",
                     "&:hover": {
                       background: active
-                        ? "linear-gradient(135deg, #4F46E5, #4338CA)"
+                        ? "linear-gradient(135deg, rgba(79,70,229,0.92), rgba(59,130,246,0.78))"
                         : "rgba(255,255,255,0.06)",
                     },
-                    transition: "all 0.2s ease",
+                    transition: "all .18s ease",
                   }}
                 >
-                  <Box sx={{ display: "grid", placeItems: "center", color: "inherit" }}>
-                    {item.icon}
-                  </Box>
-
-                  <Typography
-                    sx={{
-                      fontSize: 14,
-                      fontWeight: active ? 700 : 600,
-                      color: "inherit",
-                    }}
-                  >
+                  <Box sx={{ display: "grid", placeItems: "center" }}>{item.icon}</Box>
+                  <Typography sx={{ fontSize: 14, fontWeight: active ? 800 : 600 }}>
                     {item.label}
                   </Typography>
                 </Box>
@@ -168,62 +155,78 @@ export default function AdminLayout({ children }) {
 
         <Box
           sx={{
-            px: 2.5,
-            py: 2.5,
+            px: 2.2,
+            py: 2.2,
             borderTop: "1px solid rgba(255,255,255,0.08)",
-            textAlign: "center",
           }}
         >
-          <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.72)", mb: 1.8 }}>
-            Tema: {mode === "dark" ? "Escuro" : "Claro"}
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Box>
+              <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.72)" }}>
+                Tema atual
+              </Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+                {mode === "dark" ? "Escuro" : "Claro"}
+              </Typography>
+            </Box>
 
-          <IconButton
-            onClick={toggleColorMode}
-            sx={{
-              width: 40,
-              height: 40,
-              backgroundColor: "rgba(255,255,255,0.08)",
-              color: "#fff",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.14)",
-              },
-            }}
-          >
-            {mode === "dark" ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
-          </IconButton>
+            <IconButton
+              onClick={toggleColorMode}
+              sx={{
+                width: 40,
+                height: 40,
+                color: "#fff",
+                backgroundColor: "rgba(255,255,255,0.08)",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.14)",
+                },
+              }}
+            >
+              {mode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
+            </IconButton>
+          </Stack>
         </Box>
       </Box>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box
           sx={{
-            height: 62,
-            px: 3,
+            height: 68,
+            px: { xs: 2, md: 3 },
             borderBottom: "1px solid",
             borderColor: "divider",
-            backgroundColor: topbarBg,
+            backgroundColor: "background.paper",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            backdropFilter: "blur(10px)",
           }}
         >
-          <Typography sx={{ fontSize: 18, fontWeight: 800, color: "text.primary" }}>
-            Sistema de Gestão de Tintas
-          </Typography>
+          <Box>
+            <Typography sx={{ fontSize: 18, fontWeight: 800, color: "text.primary" }}>
+              Sistema de Gestão de Tintas
+            </Typography>
+            <Typography sx={{ fontSize: 12.5, color: "text.secondary" }}>
+              Operação centralizada da loja
+            </Typography>
+          </Box>
 
           <Typography
             sx={{
-              fontSize: 14,
+              fontSize: 13,
               color: "text.secondary",
               textTransform: "capitalize",
+              display: { xs: "none", md: "block" },
             }}
           >
             {currentDate}
           </Typography>
         </Box>
 
-        <Box sx={{ p: 3 }}>{children}</Box>
+        <Box sx={{ p: { xs: 2, md: 3 } }}>{children}</Box>
       </Box>
     </Box>
   );

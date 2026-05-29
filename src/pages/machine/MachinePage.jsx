@@ -24,20 +24,12 @@ import AdminLayout from "../../components/layout/AdminLayout";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
-  cancelProduction,
-  concludeProduction,
-  getActiveProduction,
+  cancelarProducao,
+  concluirProducao,
+  getEventosPesagem,
+  getPesagemAtual,
+  getProducoes,
 } from "../../services/api";
-
-const COLORS = {
-  border: "divider",
-  text: "text.primary",
-  textSoft: "text.secondary",
-  primary: "primary.main",
-  success: "success.main",
-  warning: "warning.main",
-  danger: "error.main",
-};
 
 const MQTT_URL = process.env.MQTT_URL || "ws://localhost:9001";
 const MQTT_TOPIC = process.env.MQTT_TOPIC || "gestor-tintas/pesagem";
@@ -52,15 +44,8 @@ function getDifference(actual, target) {
 
 function getStatusByDifference(diff, tolerance = 5) {
   const abs = Math.abs(diff);
-
-  if (abs <= tolerance) {
-    return "success";
-  }
-
-  if (abs <= tolerance + 5) {
-    return "warning";
-  }
-
+  if (abs <= tolerance) return "success";
+  if (abs <= tolerance + 5) return "warning";
   return "danger";
 }
 
@@ -70,50 +55,43 @@ function getStatusLabel(status) {
   return "Erro de dosagem";
 }
 
-function getStatusStyles(status) {
-  if (status === "success") {
-    return {
-      color: COLORS.success,
-      border: `1px solid ${COLORS.success}33`,
-      backgroundColor: `${COLORS.success}12`,
-    };
-  }
-
-  if (status === "warning") {
-    return {
-      color: "#D4A300",
-      border: "1px solid rgba(250, 204, 21, 0.45)",
-      backgroundColor: "rgba(250, 204, 21, 0.10)",
-    };
-  }
-
-  return {
-    color: COLORS.danger,
-    border: `1px solid ${COLORS.danger}33`,
-    backgroundColor: `${COLORS.danger}12`,
-  };
-}
-
 function normalizeProduction(data) {
-  const itens = Array.isArray(data?.itens || data?.componentes)
+  const itens = Array.isArray(data?.formula?.itens)
+    ? data.formula.itens
+    : Array.isArray(data?.itens || data?.componentes)
     ? data.itens || data.componentes
     : [];
 
   return {
     id: data?.id,
-    formulaNome: data?.formulaNome || data?.formula?.nome || "Fórmula ativa",
-    formulaCodigo: data?.formulaCodigo || data?.formula?.codigo || "",
+    formulaNome:
+      data?.formulaNome ||
+      data?.formula?.nomeCor ||
+      data?.formula?.nome ||
+      "Fórmula ativa",
+    formulaCodigo:
+      data?.formulaCodigo ||
+      data?.formula?.codigoInterno ||
+      data?.formula?.codigo ||
+      "",
     status: data?.status || "PROCESSANDO",
     itens: itens.map((item, index) => ({
       id: item?.id || `${index}`,
       nome:
+        item?.insumo?.descricao ||
         item?.nomeProduto ||
         item?.produtoNome ||
         item?.nome ||
         `Item ${index + 1}`,
-      alvo: Number(item?.pesoAlvo || item?.quantidadeAlvo || item?.alvo || 0),
+      alvo: Number(
+        item?.quantidadeNecessaria ||
+          item?.pesoAlvo ||
+          item?.quantidadeAlvo ||
+          item?.alvo ||
+          0
+      ),
       atual: Number(item?.pesoAtual || 0),
-      ordem: Number(item?.ordem || index + 1),
+      ordem: Number(item?.ordemAdicao || item?.ordem || index + 1),
     })),
   };
 }
@@ -136,8 +114,38 @@ export default function MachinePage() {
     setErrorMessage("");
 
     try {
-      const data = await getActiveProduction();
-      setProduction(normalizeProduction(data));
+      const data = await getProducoes();
+      const lista = Array.isArray(data) ? data : [];
+      const ativa = lista.find((item) =>
+        ["PENDENTE", "PROCESSANDO"].includes(item?.status)
+      );
+
+      if (!ativa) {
+        setProduction(null);
+        return;
+      }
+
+      const producaoNormalizada = normalizeProduction(ativa);
+
+      try {
+        const pesagemAtual = await getPesagemAtual(ativa.id);
+        const eventos = await getEventosPesagem(ativa.id);
+        const historico = Array.isArray(eventos) ? eventos : [];
+        const itemIndex = Math.min(
+          historico.length,
+          Math.max(producaoNormalizada.itens.length - 1, 0)
+        );
+
+        const itensAtualizados = producaoNormalizada.itens.map((item, index) => ({
+          ...item,
+          atual: index === itemIndex ? Number(pesagemAtual?.pesoLido || 0) : item.atual,
+        }));
+
+        setTimestamp(new Date().toLocaleTimeString("pt-BR"));
+        setProduction({ ...producaoNormalizada, itens: itensAtualizados });
+      } catch {
+        setProduction(producaoNormalizada);
+      }
     } catch (error) {
       setErrorMessage(getProblemDetailMessage(error));
       setProduction(null);
@@ -217,7 +225,6 @@ export default function MachinePage() {
 
   const currentItemIndex = useMemo(() => {
     if (!production?.itens?.length) return -1;
-
     return production.itens.findIndex((item) => Number(item.atual || 0) === 0);
   }, [production]);
 
@@ -242,7 +249,7 @@ export default function MachinePage() {
     setSaving(true);
 
     try {
-      await concludeProduction(production.id);
+      await concluirProducao(production.id);
       showSnackbar("Produção concluída com sucesso.", "success");
       await loadActiveProduction();
     } catch (error) {
@@ -258,7 +265,7 @@ export default function MachinePage() {
     setSaving(true);
 
     try {
-      await cancelProduction(production.id);
+      await cancelarProducao(production.id);
       showSnackbar("Produção cancelada com sucesso.", "success");
       await loadActiveProduction();
     } catch (error) {
@@ -270,106 +277,32 @@ export default function MachinePage() {
 
   return (
     <AdminLayout>
-      <Box sx={{ display: "grid", gap: 3 }}>
+      <Stack spacing={3}>
         <Paper
           sx={{
-            borderRadius: "18px",
-            border: (theme) => `1px solid ${theme.palette.divider}`,
-            boxShadow: "0 2px 10px rgba(15, 23, 42, 0.04)",
+            borderRadius: "20px",
             p: 3,
+            background:
+              "linear-gradient(135deg, rgba(79,70,229,0.10) 0%, rgba(43,130,255,0.06) 100%)",
           }}
         >
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
-            spacing={2}
-            alignItems={{ xs: "flex-start", md: "center" }}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 18,
-                  color: COLORS.text,
-                  mb: 0.5,
-                }}
-              >
-                Aba da Máquina IoT
-              </Typography>
-              <Typography sx={{ color: COLORS.textSoft }}>
-                Interface de produção em tempo real via ESP32 + MQTT
-              </Typography>
-            </Box>
-
-            <Stack alignItems={{ xs: "flex-start", md: "flex-end" }} spacing={0.5}>
-              <Typography sx={{ color: COLORS.textSoft, fontSize: 12 }}>
-                Status da Conexão
-              </Typography>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <WifiOutlinedIcon
-                  sx={{
-                    color:
-                      connectionStatus === "Conectado"
-                        ? "black"
-                        : "black",
-                    fontSize: 18,
-                  }}
-                />
-                <Typography
-                  sx={{
-                    color:
-                      connectionStatus === "Conectado"
-                        ? COLORS.success
-                        : COLORS.text,
-                    fontWeight: 700,
-                    fontSize: 14,
-                  }}
-                >
-                  {connectionStatus}
-                </Typography>
-                <Box
-                  sx={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    bgcolor:
-                      connectionStatus === "Conectado"
-                        ? COLORS.success
-                        : COLORS.warning,
-                  }}
-                />
-              </Stack>
-            </Stack>
-          </Stack>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: "text.primary", mb: 0.8 }}>
+            Aba da Máquina
+          </Typography>
+          <Typography sx={{ color: "text.secondary" }}>
+            Acompanhe a pesagem em tempo real com integração IoT.
+          </Typography>
         </Paper>
 
-        {errorMessage ? (
-          <Alert severity="error" sx={{ borderRadius: "14px" }}>
-            {errorMessage}
-          </Alert>
-        ) : null}
+        {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
         {loading ? (
-          <Paper
-            sx={{
-              minHeight: 240,
-              borderRadius: "18px",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <Stack alignItems="center" spacing={2}>
-              <CircularProgress />
-              <Typography color="text.secondary">
-                Carregando produção ativa...
-              </Typography>
-            </Stack>
-          </Paper>
+          <AppLoading message="Carregando produção ativa..." />
         ) : !production ? (
           <Paper
             sx={{
               minHeight: 240,
-              borderRadius: "18px",
+              borderRadius: "20px",
               display: "grid",
               placeItems: "center",
             }}
@@ -381,23 +314,8 @@ export default function MachinePage() {
         ) : (
           <Grid container spacing={3}>
             <Grid item xs={12} lg={4}>
-              <Paper
-                sx={{
-                  borderRadius: "18px",
-                  border: (theme) => `1px solid ${theme.palette.divider}`,
-                  p: 3,
-                  height: "100%",
-                }}
-              >
-                <Typography
-                  sx={{
-                    textAlign: "center",
-                    fontWeight: 800,
-                    color: COLORS.text,
-                    fontSize: 18,
-                    mb: 2,
-                  }}
-                >
+              <Paper sx={{ borderRadius: "20px", p: 3, height: "100%" }}>
+                <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: 18, mb: 2 }}>
                   Leitura Atual
                 </Typography>
 
@@ -406,158 +324,133 @@ export default function MachinePage() {
                     width: 150,
                     height: 150,
                     borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, #4F46E5 0%, #2E33FF 50%, #2B82FF 100%)",
+                    background: "linear-gradient(135deg, #4F46E5 0%, #2E33FF 50%, #2B82FF 100%)",
                     display: "grid",
                     placeItems: "center",
                     color: "#FFF",
                     mx: "auto",
-                    mb: 2.5,
-                    boxShadow: "0 20px 35px rgba(46, 51, 255, 0.25)",
+                    mb: 3,
+                    boxShadow: "0 18px 40px rgba(46, 51, 255, 0.28)",
                   }}
                 >
                   <Stack alignItems="center" spacing={0.5}>
                     <ScaleOutlinedIcon sx={{ fontSize: 34 }} />
-                    <Typography sx={{ fontWeight: 800, fontSize: 20 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: 28 }}>
                       {formatWeight(currentReading)}
-                    </Typography>
-                    <Typography sx={{ fontSize: 13, opacity: 0.9 }}>
-                      gramas
                     </Typography>
                   </Stack>
                 </Box>
 
-                <Stack spacing={1.5}>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      borderRadius: "14px",
-                      p: 2,
-                      textAlign: "center",
-                      backgroundColor: "background.paper",
-                    }}
-                  >
-                    <Typography sx={{ color: COLORS.textSoft, fontSize: 12 }}>
-                      Timestamp
+                <Stack spacing={1.4}>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography sx={{ color: "text.secondary" }}>Fórmula</Typography>
+                    <Typography sx={{ color: "text.primary", fontWeight: 700 }}>
+                      {production.formulaCodigo || "-"}
                     </Typography>
-                    <Typography sx={{ fontWeight: 800, color: COLORS.text }}>
-                      {timestamp}
-                    </Typography>
-                  </Paper>
+                  </Stack>
 
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      borderRadius: "14px",
-                      p: 2,
-                      textAlign: "center",
-                      backgroundColor: "background.paper",
-                    }}
-                  >
-                    <Typography sx={{ color: COLORS.textSoft, fontSize: 12 }}>
-                      Protocolo
-                    </Typography>
-                    <Typography sx={{ fontWeight: 800, color: COLORS.primary }}>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography sx={{ color: "text.secondary" }}>Protocolo</Typography>
+                    <Typography sx={{ color: "text.primary", fontWeight: 700 }}>
                       {protocolLabel}
                     </Typography>
+                  </Stack>
+
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography sx={{ color: "text.secondary" }}>Última leitura</Typography>
+                    <Typography sx={{ color: "text.primary", fontWeight: 700 }}>
+                      {timestamp}
+                    </Typography>
+                  </Stack>
+
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography sx={{ color: "text.secondary" }}>Status</Typography>
+                    <Chip
+                      size="small"
+                      label={production.status}
+                      sx={{
+                        fontWeight: 700,
+                        backgroundColor: "primary.light",
+                        color: "primary.main",
+                        border: "1px solid",
+                        borderColor: "primary.light",
+                      }}
+                    />
+                  </Stack>
+                </Stack>
+
+                <Divider sx={{ my: 2.5 }} />
+
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 1.5,
+                  }}
+                >
+                  <Paper variant="outlined" sx={{ borderRadius: "16px", p: 2, textAlign: "center" }}>
+                    <Inventory2OutlinedIcon sx={{ color: "primary.main", mb: 0.8 }} />
+                    <Typography sx={{ color: "text.secondary", fontSize: 12 }}>
+                      Itens pesados
+                    </Typography>
+                    <Typography sx={{ color: "text.primary", fontWeight: 800, fontSize: 20 }}>
+                      {weighedCount}
+                    </Typography>
                   </Paper>
 
+                  <Paper variant="outlined" sx={{ borderRadius: "16px", p: 2, textAlign: "center" }}>
+                    <HourglassEmptyOutlinedIcon sx={{ color: "warning.main", mb: 0.8 }} />
+                    <Typography sx={{ color: "text.secondary", fontSize: 12 }}>
+                      Restantes
+                    </Typography>
+                    <Typography sx={{ color: "text.primary", fontWeight: 800, fontSize: 20 }}>
+                      {Math.max((production.itens?.length || 0) - weighedCount, 0)}
+                    </Typography>
+                  </Paper>
+                </Box>
+
+                <Stack direction="row" spacing={1.5} sx={{ mt: 2.5 }}>
                   <Button
-                    variant="outlined"
-                    startIcon={<HourglassEmptyOutlinedIcon />}
-                    disabled
-                    sx={{ borderRadius: "14px", py: 1.2 }}
+                    fullWidth
+                    variant="contained"
+                    startIcon={<CheckCircleOutlineOutlinedIcon />}
+                    onClick={handleConcludeProduction}
+                    disabled={saving}
                   >
-                    Pesando...
+                    Concluir
                   </Button>
 
                   <Button
+                    fullWidth
                     variant="outlined"
                     color="error"
                     startIcon={<CancelOutlinedIcon />}
                     onClick={handleCancelProduction}
                     disabled={saving}
-                    sx={{ borderRadius: "14px", py: 1.2 }}
                   >
-                    Cancelar Produção
+                    Cancelar
                   </Button>
                 </Stack>
               </Paper>
             </Grid>
 
             <Grid item xs={12} lg={8}>
-              <Paper
-                sx={{
-                  borderRadius: "18px",
-                  border: (theme) => `1px solid ${theme.palette.divider}`,
-                  overflow: "hidden",
-                }}
-              >
-                <Box sx={{ p: 3 }}>
-                  <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                    <Box
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: "10px",
-                        display: "grid",
-                        placeItems: "center",
-                        bgcolor: "primary.light",
-                        color: "black",
-                      }}
-                    >
-                      <Inventory2OutlinedIcon fontSize="small" />
-                    </Box>
-
-                    <Box sx={{ flex: 1 }}>
-                      <Typography
-                        sx={{ fontWeight: 800, fontSize: 18, color: COLORS.text }}
-                      >
-                        Fórmula Selecionada
-                      </Typography>
-                      <Typography sx={{ color: COLORS.textSoft, fontSize: 14 }}>
-                        {production.formulaNome}
-                        {production.formulaCodigo
-                          ? ` • ${production.formulaCodigo}`
-                          : ""}
-                      </Typography>
-                    </Box>
-                  </Stack>
-
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      mt: 2.5,
-                      borderRadius: "14px",
-                      p: 2,
-                      backgroundColor: "background.paper",
-                    }}
-                  >
-                    <Typography sx={{ color: COLORS.textSoft, fontSize: 12, mb: 1 }}>
-                      Progresso da Produção
-                    </Typography>
-
-                    <LinearProgress
-                      variant="determinate"
-                      value={
-                        production.itens.length
-                          ? (weighedCount / production.itens.length) * 100
-                          : 0
-                      }
-                      sx={{
-                        height: 8,
-                        borderRadius: "999px",
-                        backgroundColor: "divider",
-                        "& .MuiLinearProgress-bar": {
-                          backgroundColor: COLORS.primary,
-                          borderRadius: "999px",
-                        },
-                      }}
-                    />
-                  </Paper>
+              <Paper sx={{ borderRadius: "20px", overflow: "hidden" }}>
+                <Box
+                  sx={{
+                    p: 2.5,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    backgroundColor: "background.paper",
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 800, color: "text.primary", fontSize: 18, mb: 0.5 }}>
+                    {production.formulaNome}
+                  </Typography>
+                  <Typography sx={{ color: "text.secondary" }}>
+                    Acompanhamento de pesagem por componente
+                  </Typography>
                 </Box>
-
-                <Divider />
 
                 <Box sx={{ p: 2.5, display: "grid", gap: 2 }}>
                   {production.itens
@@ -584,19 +477,19 @@ export default function MachinePage() {
                             p: 2,
                             borderColor:
                               status === "success"
-                                ? `${COLORS.success}55`
+                                ? "success.light"
                                 : status === "warning"
-                                ? "rgba(250,204,21,0.55)"
+                                ? "warning.light"
                                 : status === "danger"
-                                ? `${COLORS.danger}55`
+                                ? "error.light"
                                 : "divider",
                             backgroundColor:
                               status === "success"
-                                ? `${COLORS.success}08`
+                                ? "success.light"
                                 : status === "warning"
-                                ? "rgba(250,204,21,0.08)"
+                                ? "warning.light"
                                 : status === "danger"
-                                ? `${COLORS.danger}08`
+                                ? "error.light"
                                 : "background.paper",
                           }}
                         >
@@ -608,16 +501,10 @@ export default function MachinePage() {
                               spacing={1}
                             >
                               <Box>
-                                <Typography
-                                  sx={{
-                                    fontWeight: 800,
-                                    fontSize: 16,
-                                    color: COLORS.text,
-                                  }}
-                                >
+                                <Typography sx={{ fontWeight: 800, fontSize: 16, color: "text.primary" }}>
                                   {item.nome}
                                 </Typography>
-                                <Typography sx={{ color: COLORS.textSoft, fontSize: 13 }}>
+                                <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
                                   Etapa {index + 1} de {production.itens.length}
                                 </Typography>
                               </Box>
@@ -630,20 +517,20 @@ export default function MachinePage() {
                                       fontSize: 18,
                                       color:
                                         status === "success"
-                                          ? COLORS.success
+                                          ? "success.main"
                                           : status === "warning"
-                                          ? "#D4A300"
-                                          : COLORS.danger,
+                                          ? "warning.main"
+                                          : "error.main",
                                     }}
                                   >
                                     {formatWeight(item.atual)}
                                   </Typography>
-                                  <Typography sx={{ color: COLORS.textSoft, fontSize: 12 }}>
+                                  <Typography sx={{ color: "text.secondary", fontSize: 12 }}>
                                     Meta: {formatWeight(item.alvo)}
                                   </Typography>
                                 </Box>
                               ) : (
-                                <Typography sx={{ color: COLORS.textSoft, fontSize: 13 }}>
+                                <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
                                   Aguardando pesagem • Meta: {formatWeight(item.alvo)}
                                 </Typography>
                               )}
@@ -661,7 +548,7 @@ export default function MachinePage() {
                                 borderRadius: "999px",
                                 backgroundColor: "divider",
                                 "& .MuiLinearProgress-bar": {
-                                  backgroundColor: COLORS.primary,
+                                  backgroundColor: "primary.main",
                                   borderRadius: "999px",
                                 },
                               }}
@@ -669,18 +556,34 @@ export default function MachinePage() {
 
                             {Number(item.atual || 0) > 0 ? (
                               <Chip
-                                label={`${getStatusLabel(status)} (${diff >= 0 ? "+" : ""}${diff.toFixed(
-                                  1
-                                )}g)`}
+                                label={`${getStatusLabel(status)} (${diff >= 0 ? "+" : ""}${diff.toFixed(1)}g)`}
                                 size="small"
                                 sx={{
                                   alignSelf: "flex-start",
                                   fontWeight: 700,
-                                  ...getStatusStyles(status),
+                                  color:
+                                    status === "success"
+                                      ? "success.main"
+                                      : status === "warning"
+                                      ? "warning.main"
+                                      : "error.main",
+                                  backgroundColor:
+                                    status === "success"
+                                      ? "success.light"
+                                      : status === "warning"
+                                      ? "warning.light"
+                                      : "error.light",
+                                  border: "1px solid",
+                                  borderColor:
+                                    status === "success"
+                                      ? "success.light"
+                                      : status === "warning"
+                                      ? "warning.light"
+                                      : "error.light",
                                 }}
                               />
                             ) : isActive ? (
-                              <Typography sx={{ color: COLORS.textSoft, fontSize: 13 }}>
+                              <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
                                 Componente atual da pesagem.
                               </Typography>
                             ) : null}
@@ -691,108 +594,9 @@ export default function MachinePage() {
                 </Box>
               </Paper>
             </Grid>
-
-            <Grid item xs={12}>
-              <Paper
-                sx={{
-                  borderRadius: "18px",
-                  border: (theme) => `1px solid ${theme.palette.divider}`,
-                  p: 2.5,
-                }}
-              >
-                <Typography sx={{ fontWeight: 800, color: COLORS.text, mb: 2 }}>
-                  Indicadores Visuais
-                </Typography>
-
-                <Grid container spacing={2} sx={{ mb: 2 }}>
-                  <Grid item xs={12} md={3}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Box
-                        sx={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          bgcolor: COLORS.success,
-                        }}
-                      />
-                      <Typography sx={{ color: COLORS.textSoft, fontSize: 14 }}>
-                        Dentro da margem (±5g)
-                      </Typography>
-                    </Stack>
-                  </Grid>
-
-                  <Grid item xs={12} md={3}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Box
-                        sx={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          bgcolor: COLORS.warning,
-                        }}
-                      />
-                      <Typography sx={{ color: COLORS.textSoft, fontSize: 14 }}>
-                        Aproximação
-                      </Typography>
-                    </Stack>
-                  </Grid>
-
-                  <Grid item xs={12} md={3}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Box
-                        sx={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          bgcolor: COLORS.danger,
-                        }}
-                      />
-                      <Typography sx={{ color: COLORS.textSoft, fontSize: 14 }}>
-                        Erro de dosagem
-                      </Typography>
-                    </Stack>
-                  </Grid>
-
-                  <Grid item xs={12} md={3}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Box
-                        sx={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          bgcolor: COLORS.primary,
-                        }}
-                      />
-                      <Typography sx={{ color: COLORS.textSoft, fontSize: 14 }}>
-                        Em processo
-                      </Typography>
-                    </Stack>
-                  </Grid>
-                </Grid>
-
-                <Button
-                  variant="contained"
-                  startIcon={<CheckCircleOutlineOutlinedIcon />}
-                  onClick={handleConcludeProduction}
-                  disabled={saving || !production?.id}
-                  sx={{
-                    borderRadius: "14px",
-                    py: 1.2,
-                    px: 2.5,
-                    fontWeight: 800,
-                    bgcolor: COLORS.primary,
-                    "&:hover": {
-                      bgcolor: "#1F28D9",
-                    },
-                  }}
-                >
-                  Confirmar Produção Concluída
-                </Button>
-              </Paper>
-            </Grid>
           </Grid>
         )}
-      </Box>
+      </Stack>
     </AdminLayout>
   );
 }

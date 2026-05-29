@@ -1,6 +1,9 @@
 import { Box, CircularProgress, Typography } from "@mui/material";
 
-export default function AppLoading({ message = "Carregando...", minHeight = 260 }) {
+export default function AppLoading({
+  message = "Carregando...",
+  minHeight = 260,
+}) {
   return (
     <Box
       sx={{
@@ -9,7 +12,7 @@ export default function AppLoading({ message = "Carregando...", minHeight = 260 
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "column",
-        gap: 1.5,
+        gap: 1.6,
       }}
     >
       <CircularProgress size={34} />

@@ -1,22 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Avatar,
-  Box,
-  Chip,
-  IconButton,
-  MenuItem,
-  Paper,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Chip, IconButton, MenuItem, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
-import EngineeringOutlinedIcon from "@mui/icons-material/EngineeringOutlined";
-import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 
 import AdminLayout from "../../components/layout/AdminLayout";
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppTextField from "../../components/common/AppTextField";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
@@ -26,19 +19,6 @@ import {
   updateUsuario,
 } from "../../services/api";
 
-import AppDataTable from "../../components/common/AppDataTable";
-import AppFormDialog from "../../components/common/AppFormDialog";
-import AppLoading from "../../components/common/AppLoading";
-import AppPageHeader from "../../components/common/AppPageHeader";
-import AppSearchField from "../../components/common/AppSearchField";
-import AppTextField from "../../components/common/AppTextField";
-
-const ROLE_OPTIONS = [
-  { value: "ADMIN", label: "Administrador" },
-  { value: "COLORISTA", label: "Colorista" },
-  { value: "VENDEDOR", label: "Vendedor" },
-];
-
 const INITIAL_FORM = {
   nome: "",
   email: "",
@@ -46,82 +26,41 @@ const INITIAL_FORM = {
   role: "VENDEDOR",
 };
 
+function normalizeUsuario(item) {
+  return {
+    id: item?.id || "",
+    nome: item?.nome || "",
+    email: item?.email || "",
+    role: item?.role || "VENDEDOR",
+  };
+}
+
 function getRoleLabel(role) {
   if (role === "ADMIN") return "Administrador";
   if (role === "COLORISTA") return "Colorista";
   if (role === "VENDEDOR") return "Vendedor";
-  return role;
+  return role || "-";
 }
 
-function getRoleChipStyles(role) {
+function getRoleStyles(role) {
   if (role === "ADMIN") {
     return {
-      color: "black",
-      backgroundColor: "primary.light",
-      borderColor: "primary.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
+      backgroundColor: "primary.main",
+      borderColor: "primary.main",
     };
   }
 
   if (role === "COLORISTA") {
     return {
-      color: "black",
-      backgroundColor: "info.light",
-      borderColor: "info.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
+      backgroundColor: "info.main",
+      borderColor: "info.main",
     };
   }
 
   return {
-    color: "black",
-    backgroundColor: "warning.light",
-    borderColor: "warning.light",
-    borderStyle: "solid",
-    borderWidth: "1px",
+    backgroundColor: "success.main",
+    borderColor: "success.main",
   };
-}
-
-function getStatusChipStyles(ativo) {
-  if (ativo) {
-    return {
-      color: "black",
-      backgroundColor: "success.light",
-      borderColor: "success.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
-    };
-  }
-
-  return {
-    color: "text.secondary",
-    backgroundColor: "background.paper",
-    borderColor: "divider",
-    borderStyle: "solid",
-    borderWidth: "1px",
-  };
-}
-
-function getAvatarColor(index) {
-  const colors = [
-    "linear-gradient(135deg, #4F46E5, #6366F1)",
-    "linear-gradient(135deg, #06B6D4, #22C55E)",
-    "linear-gradient(135deg, #F59E0B, #EAB308)",
-    "linear-gradient(135deg, #F97316, #FACC15)",
-  ];
-
-  return colors[index % colors.length];
-}
-
-function formatDate(value) {
-  if (!value) return "--/--/----";
-
-  try {
-    return new Date(value).toLocaleDateString("pt-BR");
-  } catch {
-    return value;
-  }
 }
 
 export default function UsersPage() {
@@ -129,21 +68,22 @@ export default function UsersPage() {
 
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("TODOS");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [editingEmail, setEditingEmail] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [form, setForm] = useState(INITIAL_FORM);
 
-  async function loadUsers() {
+  async function loadUsuarios() {
     setLoading(true);
     setErrorMessage("");
 
     try {
       const data = await getUsuarios();
-      setUsuarios(Array.isArray(data) ? data : []);
+      setUsuarios(Array.isArray(data) ? data.map(normalizeUsuario) : []);
     } catch (error) {
       setErrorMessage(getProblemDetailMessage(error));
     } finally {
@@ -152,36 +92,45 @@ export default function UsersPage() {
   }
 
   useEffect(() => {
-    loadUsers();
+    loadUsuarios();
   }, []);
 
-  const filteredUsers = useMemo(() => {
+  const filteredUsuarios = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    if (!term) return usuarios;
+    return usuarios.filter((usuario) => {
+      const matchesSearch =
+        !term ||
+        usuario.nome.toLowerCase().includes(term) ||
+        usuario.email.toLowerCase().includes(term);
 
-    return usuarios.filter((user) => {
-      return (
-        String(user.nome || "").toLowerCase().includes(term) ||
-        String(user.email || "").toLowerCase().includes(term)
-      );
+      const matchesRole =
+        roleFilter === "TODOS" || usuario.role === roleFilter;
+
+      return matchesSearch && matchesRole;
     });
-  }, [usuarios, search]);
+  }, [usuarios, search, roleFilter]);
 
-  function openCreate() {
-    setEditingUser(null);
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  }
+
+  function openCreateDialog() {
+    setEditingEmail("");
     setForm(INITIAL_FORM);
     setFieldErrors({});
     setDialogOpen(true);
   }
 
-  function openEdit(user) {
-    setEditingUser(user);
+  function openEditDialog(usuario) {
+    setEditingEmail(usuario.email);
     setForm({
-      nome: user.nome || "",
-      email: user.email || "",
+      nome: usuario.nome,
+      email: usuario.email,
       senha: "",
-      role: user.role || "VENDEDOR",
+      role: usuario.role,
     });
     setFieldErrors({});
     setDialogOpen(true);
@@ -190,32 +139,18 @@ export default function UsersPage() {
   function closeDialog() {
     if (saving) return;
     setDialogOpen(false);
-    setEditingUser(null);
+    setEditingEmail("");
     setForm(INITIAL_FORM);
     setFieldErrors({});
   }
 
-  function handleChange(event) {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-  }
-
-  function validate() {
+  function validateForm() {
     const errors = {};
-
-    if (!form.nome.trim()) errors.nome = "Informe o nome.";
-    if (!form.email.trim()) {
-      errors.email = "Informe o e-mail.";
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-      errors.email = "Informe um e-mail válido.";
-    }
-
-    if (!editingUser && !form.senha.trim()) {
+    if (!String(form.nome).trim()) errors.nome = "Informe o nome.";
+    if (!String(form.email).trim()) errors.email = "Informe o e-mail.";
+    if (!editingEmail && !String(form.senha).trim()) {
       errors.senha = "Informe a senha.";
     }
-
-    if (!form.role) errors.role = "Selecione o perfil.";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -224,31 +159,30 @@ export default function UsersPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!validate()) {
-      showSnackbar("Revise os campos obrigatórios.", "error");
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
 
     try {
-      const payload = {
-        nome: form.nome.trim(),
-        email: form.email.trim(),
-        role: form.role,
-        ...(form.senha.trim() ? { senha: form.senha.trim() } : {}),
-      };
-
-      if (editingUser) {
-        await updateUsuario(editingUser.email, payload);
+      if (editingEmail) {
+        await updateUsuario(editingEmail, {
+          nome: form.nome,
+          email: form.email,
+          role: form.role,
+        });
         showSnackbar("Usuário atualizado com sucesso.", "success");
       } else {
-        await createUsuario(payload);
+        await createUsuario({
+          nome: form.nome,
+          email: form.email,
+          senha: form.senha,
+          role: form.role,
+        });
         showSnackbar("Usuário cadastrado com sucesso.", "success");
       }
 
       closeDialog();
-      await loadUsers();
+      await loadUsuarios();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
     } finally {
@@ -256,14 +190,11 @@ export default function UsersPage() {
     }
   }
 
-  async function handleDelete(user) {
-    const confirmed = window.confirm(`Deseja excluir o usuário "${user.nome}"?`);
-    if (!confirmed) return;
-
+  async function handleDelete(usuario) {
     try {
-      await deleteUsuario(user.email);
-      showSnackbar("Usuário excluído com sucesso.", "success");
-      await loadUsers();
+      await deleteUsuario(usuario.email);
+      showSnackbar("Usuário removido com sucesso.", "success");
+      await loadUsuarios();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
     }
@@ -273,70 +204,47 @@ export default function UsersPage() {
     {
       key: "usuario",
       label: "Usuário",
-      render: (user, index) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Avatar sx={{ background: getAvatarColor(index) }}>
-            {String(user.nome || "U").charAt(0).toUpperCase()}
-          </Avatar>
-
-          <Box>
-            <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
-              {user.nome || "-"}
-            </Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
-              {user.email || "-"}
-            </Typography>
-          </Box>
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+            {row.nome}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+            {row.email}
+          </Typography>
         </Box>
       ),
     },
     {
-      key: "perfil",
+      key: "role",
       label: "Perfil",
-      render: (user) => (
-        <Chip
-          icon={
-            user.role === "ADMIN" ? (
-              <ShieldOutlinedIcon sx={{ color: "white !important" }} />
-            ) : user.role === "COLORISTA" ? (
-              <EngineeringOutlinedIcon sx={{ color: "white !important" }} />
-            ) : (
-              <StorefrontOutlinedIcon sx={{ color: "white !important" }} />
-            )
-          }
-          label={getRoleLabel(user.role)}
-          size="small"
-          sx={{ ...getRoleChipStyles(user.role), fontWeight: 700 }}
-        />
-      ),
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (user) => (
-        <Chip
-          label={user.ativo ? "Ativo" : "Inativo"}
-          size="small"
-          sx={{ ...getStatusChipStyles(user.ativo), fontWeight: 700 }}
-        />
-      ),
-    },
-    {
-      key: "cadastro",
-      label: "Criado em",
-      render: (user) => formatDate(user.dataCriacao || user.criadoEm),
+      render: (row) => {
+        const styles = getRoleStyles(row.role);
+
+        return (
+          <Chip
+            label={getRoleLabel(row.role)}
+            sx={{
+              fontWeight: 700,
+              color: "#FFFFFF",
+              backgroundColor: styles.backgroundColor,
+              border: "1px solid",
+              borderColor: styles.borderColor,
+            }}
+          />
+        );
+      },
     },
     {
       key: "acoes",
       label: "Ações",
-      render: (user) => (
-        <Box sx={{ display: "flex", gap: 0.5 }}>
-          <IconButton onClick={() => openEdit(user)}>
-            <EditOutlinedIcon fontSize="small" />
+      render: (row) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={() => openEditDialog(row)}>
+            <EditOutlinedIcon />
           </IconButton>
-
-          <IconButton onClick={() => handleDelete(user)}>
-            <MoreHorizIcon fontSize="small" />
+          <IconButton color="error" onClick={() => handleDelete(row)}>
+            <DeleteOutlineOutlinedIcon />
           </IconButton>
         </Box>
       ),
@@ -345,67 +253,82 @@ export default function UsersPage() {
 
   return (
     <AdminLayout>
-      <Paper
+      <Box
         sx={{
-          borderRadius: "20px",
+          borderRadius: "18px",
+          overflow: "hidden",
           border: "1px solid",
           borderColor: "divider",
           backgroundColor: "background.paper",
-          boxShadow: (theme) =>
-            theme.palette.mode === "dark"
-              ? "0 4px 18px rgba(255,255,255,0.04)"
-              : "0 4px 18px rgba(15, 23, 42, 0.05)",
-          overflow: "hidden",
         }}
       >
         <AppPageHeader
           title="Usuários"
-          subtitle="Cadastre, edite e gerencie usuários do sistema"
-          actionLabel="Novo Usuário"
+          subtitle="Gerencie os acessos e perfis do sistema."
+          actionLabel="Novo usuário"
           actionIcon={<AddIcon />}
-          onAction={openCreate}
+          onAction={openCreateDialog}
         />
 
-        <AppSearchField
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Pesquisar por nome ou e-mail..."
-        />
+        <Box sx={{ px: 3, pb: 2, display: "grid", gap: 2 }}>
+          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-        {errorMessage ? (
-          <Box sx={{ px: 2.5, pb: 2 }}>
-            <Alert severity="error" sx={{ borderRadius: "14px" }}>
-              {errorMessage}
-            </Alert>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1.5fr 1fr" },
+              gap: 2,
+              alignItems: "start",
+              pt: 1.5,
+            }}
+          >
+            <AppTextField
+              placeholder="Buscar por nome ou e-mail"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
+            />
+
+            <AppTextField
+              select
+              label="Perfil"
+              value={roleFilter}
+              onChange={(event) => setRoleFilter(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
+            >
+              <MenuItem value="TODOS">Todos</MenuItem>
+              <MenuItem value="ADMIN">Administrador</MenuItem>
+              <MenuItem value="COLORISTA">Colorista</MenuItem>
+              <MenuItem value="VENDEDOR">Vendedor</MenuItem>
+            </AppTextField>
           </Box>
-        ) : null}
+        </Box>
 
         {loading ? (
           <AppLoading message="Carregando usuários..." />
         ) : (
           <AppDataTable
             columns={columns}
-            rows={filteredUsers.map((item) => ({
-              ...item,
-              key: item.email,
-            }))}
-            emptyMessage="Nenhum usuário encontrado com os filtros informados."
+            rows={filteredUsuarios}
+            emptyMessage="Nenhum usuário encontrado."
           />
         )}
-      </Paper>
+      </Box>
 
       <AppFormDialog
         open={dialogOpen}
-        title={editingUser ? "Editar usuário" : "Novo usuário"}
+        title={editingEmail ? "Editar usuário" : "Novo usuário"}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         loading={saving}
-        submitLabel={editingUser ? "Salvar alterações" : "Cadastrar usuário"}
+        submitLabel={editingEmail ? "Salvar alterações" : "Cadastrar usuário"}
       >
         <AppTextField
+          required
           name="nome"
           label="Nome"
-          required
           value={form.nome}
           onChange={handleChange}
           error={Boolean(fieldErrors.nome)}
@@ -413,47 +336,39 @@ export default function UsersPage() {
         />
 
         <AppTextField
+          required
           name="email"
           label="E-mail"
-          type="email"
-          required
           value={form.email}
           onChange={handleChange}
           error={Boolean(fieldErrors.email)}
           helperText={fieldErrors.email}
         />
 
-        <AppTextField
-          name="senha"
-          label={editingUser ? "Nova senha" : "Senha"}
-          type="password"
-          required={!editingUser}
-          value={form.senha}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.senha)}
-          helperText={
-            fieldErrors.senha ||
-            (editingUser
-              ? "Preencha apenas se desejar alterar a senha."
-              : " ")
-          }
-        />
+        {!editingEmail ? (
+          <AppTextField
+            required
+            name="senha"
+            label="Senha"
+            type="password"
+            value={form.senha}
+            onChange={handleChange}
+            error={Boolean(fieldErrors.senha)}
+            helperText={fieldErrors.senha}
+          />
+        ) : null}
 
         <AppTextField
           select
+          required
           name="role"
           label="Perfil"
-          required
           value={form.role}
           onChange={handleChange}
-          error={Boolean(fieldErrors.role)}
-          helperText={fieldErrors.role}
         >
-          {ROLE_OPTIONS.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
+          <MenuItem value="ADMIN">Administrador</MenuItem>
+          <MenuItem value="COLORISTA">Colorista</MenuItem>
+          <MenuItem value="VENDEDOR">Vendedor</MenuItem>
         </AppTextField>
       </AppFormDialog>
     </AdminLayout>

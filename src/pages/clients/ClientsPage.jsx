@@ -2,194 +2,69 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Button,
-  Checkbox,
-  FormControlLabel,
+  Chip,
   IconButton,
-  Paper,
+  MenuItem,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 
 import AdminLayout from "../../components/layout/AdminLayout";
-import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
-import { getProblemDetailMessage } from "../../lib/problemDetail";
-import {
-  createCliente,
-  deactivateCliente,
-  deleteCliente,
-  getClientes,
-  getVendas,
-  updateCliente,
-} from "../../services/api";
-
 import AppDataTable from "../../components/common/AppDataTable";
 import AppFormDialog from "../../components/common/AppFormDialog";
 import AppLoading from "../../components/common/AppLoading";
 import AppPageHeader from "../../components/common/AppPageHeader";
-import AppSearchField from "../../components/common/AppSearchField";
 import AppTextField from "../../components/common/AppTextField";
+import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
+import { getProblemDetailMessage } from "../../lib/problemDetail";
+import {
+  createCliente,
+  deleteCliente,
+  desativarCliente,
+  getClientes,
+  updateCliente,
+} from "../../services/api";
 
 const INITIAL_FORM = {
+  id: "",
   nome: "",
   cpf: "",
   telefone: "",
   email: "",
   endereco: "",
+  ativo: true,
 };
-
-function onlyDigits(value) {
-  return String(value || "").replace(/\D/g, "");
-}
-
-function formatCpf(value) {
-  const digits = onlyDigits(value).slice(0, 11);
-  return digits
-    .replace(/^(\d{3})(\d)/, "$1.$2")
-    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1-$2");
-}
-
-function formatPhone(value) {
-  const digits = onlyDigits(value).slice(0, 11);
-
-  if (digits.length <= 10) {
-    return digits
-      .replace(/^(\d{2})(\d)/, "($1) $2")
-      .replace(/(\d{4})(\d)/, "$1-$2");
-  }
-
-  return digits
-    .replace(/^(\d{2})(\d)/, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2");
-}
-
-function isValidCpf(cpf) {
-  const cleaned = onlyDigits(cpf);
-
-  if (cleaned.length !== 11 || /^(\d)\1+$/.test(cleaned)) {
-    return false;
-  }
-
-  let sum = 0;
-  for (let i = 0; i < 9; i += 1) {
-    sum += Number(cleaned[i]) * (10 - i);
-  }
-
-  let firstDigit = (sum * 10) % 11;
-  if (firstDigit === 10) firstDigit = 0;
-  if (firstDigit !== Number(cleaned[9])) return false;
-
-  sum = 0;
-  for (let i = 0; i < 10; i += 1) {
-    sum += Number(cleaned[i]) * (11 - i);
-  }
-
-  let secondDigit = (sum * 10) % 11;
-  if (secondDigit === 10) secondDigit = 0;
-
-  return secondDigit === Number(cleaned[10]);
-}
 
 function normalizeCliente(item) {
   return {
-    id: item?.id,
-    nome: item?.nome || "-",
-    cpf: item?.cpf || "-",
-    telefone: item?.telefone || "-",
-    email: item?.email || "-",
-    endereco: item?.endereco || "-",
+    id: item?.id || "",
+    nome: item?.nome || "",
+    cpf: item?.cpf || "",
+    telefone: item?.telefone || "",
+    email: item?.email || "",
+    endereco: item?.endereco || "",
     ativo: Boolean(item?.ativo),
   };
 }
 
-function getStatusChipStyles(ativo) {
-  if (ativo) {
-    return {
-      color: "success.main",
-      backgroundColor: "success.light",
-      borderColor: "success.light",
-      borderStyle: "solid",
-      borderWidth: "1px",
-    };
+function formatCpf(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length !== 11) return value || "-";
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+}
+
+function formatTelefone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length === 11) {
+    return digits.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
   }
-
-  return {
-    color: "text.secondary",
-    backgroundColor: "background.paper",
-    borderColor: "divider",
-    borderStyle: "solid",
-    borderWidth: "1px",
-  };
-}
-
-function getSaleClientIdentifier(venda) {
-  if (!venda) return null;
-
-  const keys = [
-    venda.clienteId,
-    venda.clientId,
-    venda.customerId,
-    venda.cliente?.id,
-    venda.cliente?.clienteId,
-    venda.cliente?.customerId,
-    venda.cliente?._id,
-    venda.cliente,
-  ];
-
-  return keys.find((value) => value !== undefined && value !== null) ?? null;
-}
-
-function getSaleClientCpf(venda) {
-  return (
-    venda.cliente?.cpf ||
-    venda.cliente?.documento ||
-    venda.cliente?.cpfCliente ||
-    venda.cliente?.cpf_cnpj ||
-    null
-  );
-}
-
-function normalizeCpf(value) {
-  return String(value || "").replace(/\D/g, "");
-}
-
-function isSaleForClient(venda, cliente) {
-  if (!cliente || !venda) return false;
-
-  const saleClientId = getSaleClientIdentifier(venda);
-  if (saleClientId && String(saleClientId) === String(cliente.id)) {
-    return true;
+  if (digits.length === 10) {
+    return digits.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
   }
-
-  const saleClientCpf = normalizeCpf(getSaleClientCpf(venda));
-  const clientCpf = normalizeCpf(cliente.cpf);
-
-  if (saleClientCpf && clientCpf && saleClientCpf === clientCpf) {
-    return true;
-  }
-
-  return false;
-}
-
-async function getAssociatedSalesCount(cliente) {
-  try {
-    const vendas = await getVendas();
-    if (!Array.isArray(vendas)) return 0;
-
-    return vendas.filter((venda) => isSaleForClient(venda, cliente)).length;
-  } catch {
-    return 0;
-  }
+  return value || "-";
 }
 
 export default function ClientsPage() {
@@ -197,22 +72,14 @@ export default function ClientsPage() {
 
   const [clientes, setClientes] = useState([]);
   const [search, setSearch] = useState("");
-  const [showOnlyActive, setShowOnlyActive] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("TODOS");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deactivating, setDeactivating] = useState(false);
-  const [checkingSales, setCheckingSales] = useState(false);
-  const [associatedSalesCount, setAssociatedSalesCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState(null);
-  const [deleteClientCandidate, setDeleteClientCandidate] = useState(null);
-  const [clientToDeactivate, setClientToDeactivate] = useState(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [editingId, setEditingId] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [form, setForm] = useState(INITIAL_FORM);
 
   async function loadClientes() {
     setLoading(true);
@@ -232,40 +99,48 @@ export default function ClientsPage() {
     loadClientes();
   }, []);
 
-  const filteredClients = useMemo(() => {
-    let filtered = clientes;
-
-    if (showOnlyActive) {
-      filtered = filtered.filter((cliente) => cliente.ativo);
-    }
-
+  const filteredClientes = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    if (!term) return filtered;
+    return clientes.filter((cliente) => {
+      const matchesSearch =
+        !term ||
+        cliente.nome.toLowerCase().includes(term) ||
+        cliente.email.toLowerCase().includes(term) ||
+        cliente.cpf.toLowerCase().includes(term);
 
-    return filtered.filter((cliente) => {
-      return (
-        String(cliente.nome || "").toLowerCase().includes(term) ||
-        String(cliente.cpf || "").toLowerCase().includes(term)
-      );
+      const matchesStatus =
+        statusFilter === "TODOS" ||
+        (statusFilter === "ATIVOS" && cliente.ativo) ||
+        (statusFilter === "INATIVOS" && !cliente.ativo);
+
+      return matchesSearch && matchesStatus;
     });
-  }, [clientes, search, showOnlyActive]);
+  }, [clientes, search, statusFilter]);
 
-  function openCreate() {
-    setEditingClient(null);
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  }
+
+  function openCreateDialog() {
+    setEditingId("");
     setForm(INITIAL_FORM);
     setFieldErrors({});
     setDialogOpen(true);
   }
 
-  function openEdit(cliente) {
-    setEditingClient(cliente);
+  function openEditDialog(cliente) {
+    setEditingId(cliente.id);
     setForm({
-      nome: cliente.nome || "",
-      cpf: cliente.cpf || "",
-      telefone: cliente.telefone || "",
-      email: cliente.email || "",
-      endereco: cliente.endereco || "",
+      id: cliente.id,
+      nome: cliente.nome,
+      cpf: cliente.cpf,
+      telefone: cliente.telefone,
+      email: cliente.email,
+      endereco: cliente.endereco,
+      ativo: cliente.ativo,
     });
     setFieldErrors({});
     setDialogOpen(true);
@@ -274,87 +149,19 @@ export default function ClientsPage() {
   function closeDialog() {
     if (saving) return;
     setDialogOpen(false);
-    setEditingClient(null);
+    setEditingId("");
     setForm(INITIAL_FORM);
     setFieldErrors({});
   }
 
-  function openDeleteDialog(cliente) {
-    setDeleteClientCandidate(cliente);
-    setDeleteDialogOpen(true);
-  }
-
-  function closeDeleteDialog() {
-    if (deleting) return;
-    setDeleteClientCandidate(null);
-    setDeleteDialogOpen(false);
-  }
-
-  async function openDeactivateDialog(cliente) {
-    setClientToDeactivate(cliente);
-    setAssociatedSalesCount(0);
-    setConfirmDialogOpen(true);
-    setCheckingSales(true);
-
-    try {
-      const count = await getAssociatedSalesCount(cliente);
-      setAssociatedSalesCount(count);
-    } finally {
-      setCheckingSales(false);
-    }
-  }
-
-  function closeDeactivateDialog() {
-    if (deactivating) return;
-    setClientToDeactivate(null);
-    setAssociatedSalesCount(0);
-    setCheckingSales(false);
-    setConfirmDialogOpen(false);
-  }
-
-  function handleChange(event) {
-    const { name, value } = event.target;
-
-    let nextValue = value;
-
-    if (name === "cpf") {
-      nextValue = formatCpf(value);
-    }
-
-    if (name === "telefone") {
-      nextValue = formatPhone(value);
-    }
-
-    setForm((prev) => ({ ...prev, [name]: nextValue }));
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-  }
-
-  function validate() {
+  function validateForm() {
     const errors = {};
 
-    if (!form.nome.trim()) {
-      errors.nome = "Informe o nome.";
-    }
-
-    if (!form.cpf.trim()) {
-      errors.cpf = "Informe o CPF.";
-    } else if (!isValidCpf(form.cpf)) {
-      errors.cpf = "Informe um CPF válido.";
-    }
-
-    if (!form.telefone.trim()) {
-      errors.telefone = "Informe o telefone.";
-    }
-
-    if (!form.email.trim()) {
-      errors.email = "Informe o e-mail.";
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-      errors.email = "Informe um e-mail válido.";
-    }
-
-    if (!form.endereco.trim()) {
-      errors.endereco = "Informe o endereço.";
-    }
+    if (!String(form.nome).trim()) errors.nome = "Informe o nome.";
+    if (!String(form.cpf).trim()) errors.cpf = "Informe o CPF.";
+    if (!String(form.telefone).trim()) errors.telefone = "Informe o telefone.";
+    if (!String(form.email).trim()) errors.email = "Informe o e-mail.";
+    if (!String(form.endereco).trim()) errors.endereco = "Informe o endereço.";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -363,24 +170,21 @@ export default function ClientsPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!validate()) {
-      showSnackbar("Revise os campos obrigatórios.", "error");
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
 
-    try {
-      const payload = {
-        nome: form.nome.trim(),
-        cpf: onlyDigits(form.cpf),
-        telefone: onlyDigits(form.telefone),
-        email: form.email.trim(),
-        endereco: form.endereco.trim(),
-      };
+    const payload = {
+      nome: form.nome,
+      cpf: form.cpf,
+      telefone: form.telefone,
+      email: form.email,
+      endereco: form.endereco,
+    };
 
-      if (editingClient) {
-        await updateCliente(editingClient.id, payload);
+    try {
+      if (editingId) {
+        await updateCliente(editingId, payload);
         showSnackbar("Cliente atualizado com sucesso.", "success");
       } else {
         await createCliente(payload);
@@ -396,53 +200,23 @@ export default function ClientsPage() {
     }
   }
 
-  async function handleConfirmDelete() {
-    if (!deleteClientCandidate?.id) return;
-
-    setDeleting(true);
-
+  async function handleDelete(cliente) {
     try {
-      await deleteCliente(deleteClientCandidate.id);
-      showSnackbar("Cliente excluído com sucesso.", "success");
-      closeDeleteDialog();
-      await loadClientes();
-    } catch (error) {
-      if (error?.status === 409) {
-        closeDeleteDialog();
-        setClientToDeactivate(deleteClientCandidate);
-        setDeleteClientCandidate(null);
-        setAssociatedSalesCount(0);
-        setConfirmDialogOpen(true);
-        setCheckingSales(true);
-
-        try {
-          const count = await getAssociatedSalesCount(deleteClientCandidate);
-          setAssociatedSalesCount(count);
-        } finally {
-          setCheckingSales(false);
-        }
-      } else {
-        showSnackbar(getProblemDetailMessage(error), "error");
-      }
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  async function handleConfirmDeactivate() {
-    if (!clientToDeactivate?.id) return;
-
-    setDeactivating(true);
-
-    try {
-      await deactivateCliente(clientToDeactivate.id);
-      showSnackbar("Cliente desativado com sucesso.", "success");
-      closeDeactivateDialog();
+      await deleteCliente(cliente.id);
+      showSnackbar("Cliente removido com sucesso.", "success");
       await loadClientes();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
-    } finally {
-      setDeactivating(false);
+    }
+  }
+
+  async function handleDeactivate(cliente) {
+    try {
+      await desativarCliente(cliente.id);
+      showSnackbar("Cliente desativado com sucesso.", "success");
+      await loadClientes();
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
     }
   }
 
@@ -450,85 +224,82 @@ export default function ClientsPage() {
     {
       key: "cliente",
       label: "Cliente",
-      render: (cliente) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "14px",
-              display: "grid",
-              placeItems: "center",
-              backgroundColor: "primary.light",
-              color: "black",
-            }}
-          >
-            <PersonOutlineOutlinedIcon fontSize="small" />
-          </Box>
-
-          <Box>
-            <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
-              {cliente.nome}
-            </Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
-              {formatCpf(cliente.cpf)}
-            </Typography>
-          </Box>
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+            {row.nome}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+            {row.email || "-"}
+          </Typography>
         </Box>
       ),
     },
     {
-      key: "contato",
-      label: "Contato",
-      render: (cliente) => (
-        <Box>
-          <Typography sx={{ color: "text.primary", fontSize: 14 }}>
-            {formatPhone(cliente.telefone)}
-          </Typography>
-          <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
-            {cliente.email}
-          </Typography>
-        </Box>
+      key: "cpf",
+      label: "CPF",
+      render: (row) => (
+        <Typography sx={{ color: "text.primary" }}>
+          {formatCpf(row.cpf)}
+        </Typography>
+      ),
+    },
+    {
+      key: "telefone",
+      label: "Telefone",
+      render: (row) => (
+        <Typography sx={{ color: "text.primary" }}>
+          {formatTelefone(row.telefone)}
+        </Typography>
       ),
     },
     {
       key: "endereco",
       label: "Endereço",
-      render: (cliente) => (
-        <Typography sx={{ color: "text.secondary", fontSize: 14 }}>
-          {cliente.endereco}
+      render: (row) => (
+        <Typography sx={{ color: "text.secondary" }}>
+          {row.endereco || "-"}
         </Typography>
       ),
     },
     {
       key: "status",
       label: "Status",
-      render: (cliente) => (
+      render: (row) => (
         <Chip
-          label={cliente.ativo ? "Ativo" : "Inativo"}
-          size="small"
-          sx={{ ...getStatusChipStyles(cliente.ativo), fontWeight: 700 }}
+          label={row.ativo ? "Ativo" : "Inativo"}
+          sx={{
+            fontWeight: 700,
+            color: "#FFFFFF",
+            backgroundColor: row.ativo ? "success.main" : "text.secondary",
+            border: "1px solid",
+            borderColor: row.ativo ? "success.main" : "text.secondary",
+          }}
         />
       ),
     },
     {
       key: "acoes",
       label: "Ações",
-      render: (cliente) => (
-        <Box sx={{ display: "flex", gap: 0.5 }}>
-          <IconButton onClick={() => openEdit(cliente)}>
-            <EditOutlinedIcon fontSize="small" />
+      render: (row) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={() => openEditDialog(row)}>
+            <EditOutlinedIcon />
           </IconButton>
 
-          <IconButton onClick={() => openDeleteDialog(cliente)}>
-            <DeleteOutlineIcon fontSize="small" />
-          </IconButton>
+          {row.ativo ? (
+            <Button
+              size="small"
+              color="warning"
+              onClick={() => handleDeactivate(row)}
+              sx={{ minWidth: "auto", px: 1.2 }}
+            >
+              Desativar
+            </Button>
+          ) : null}
 
-          <IconButton
-            onClick={() => openDeactivateDialog(cliente)}
-            disabled={!cliente.ativo}
-          >
-            <PersonOffOutlinedIcon fontSize="small" />
+          <IconButton color="error" onClick={() => handleDelete(row)}>
+            <DeleteOutlineOutlinedIcon />
           </IconButton>
         </Box>
       ),
@@ -537,74 +308,81 @@ export default function ClientsPage() {
 
   return (
     <AdminLayout>
-      <Paper
+      <Box
         sx={{
-          borderRadius: { xs: "16px", md: "20px" },
-          border: "none",
-          boxShadow: "0 4px 18px rgba(15, 23, 42, 0.05)",
+          borderRadius: "18px",
           overflow: "hidden",
+          border: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
         }}
       >
         <AppPageHeader
           title="Clientes"
-          subtitle="Cadastre, edite e desative clientes"
-          actionLabel="Novo Cliente"
+          subtitle="Gerencie os clientes cadastrados no sistema."
+          actionLabel="Novo cliente"
           actionIcon={<AddIcon />}
-          onAction={openCreate}
+          onAction={openCreateDialog}
         />
 
-        <AppSearchField
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Pesquisar por nome ou CPF..."
-        />
+        <Box sx={{ px: 3, pb: 2, display: "grid", gap: 2 }}>
+          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-        <Box sx={{ px: 2.5, pb: 1 }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={showOnlyActive}
-                onChange={(e) => setShowOnlyActive(e.target.checked)}
-              />
-            }
-            label="Mostrar apenas clientes ativos"
-          />
-        </Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1.5fr 1fr" },
+              gap: 2,
+              alignItems: "start",
+              pt: 1.5,
+            }}
+          >
+            <AppTextField
+              placeholder="Buscar por nome, e-mail ou CPF"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
+            />
 
-        {errorMessage ? (
-          <Box sx={{ px: 2.5, pb: 2 }}>
-            <Alert severity="error" sx={{ borderRadius: "14px" }}>
-              {errorMessage}
-            </Alert>
+            <AppTextField
+              select
+              label="Status"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
+            >
+              <MenuItem value="TODOS">Todos</MenuItem>
+              <MenuItem value="ATIVOS">Ativos</MenuItem>
+              <MenuItem value="INATIVOS">Inativos</MenuItem>
+            </AppTextField>
           </Box>
-        ) : null}
+        </Box>
 
         {loading ? (
           <AppLoading message="Carregando clientes..." />
         ) : (
           <AppDataTable
             columns={columns}
-            rows={filteredClients.map((item) => ({
-              ...item,
-              key: item.id,
-            }))}
-            emptyMessage="Nenhum cliente encontrado com os filtros informados."
+            rows={filteredClientes}
+            emptyMessage="Nenhum cliente encontrado."
           />
         )}
-      </Paper>
+      </Box>
 
       <AppFormDialog
         open={dialogOpen}
-        title={editingClient ? "Editar cliente" : "Novo cliente"}
+        title={editingId ? "Editar cliente" : "Novo cliente"}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         loading={saving}
-        submitLabel={editingClient ? "Salvar alterações" : "Cadastrar cliente"}
+        submitLabel={editingId ? "Salvar alterações" : "Cadastrar cliente"}
       >
         <AppTextField
+          required
           name="nome"
           label="Nome"
-          required
           value={form.nome}
           onChange={handleChange}
           error={Boolean(fieldErrors.nome)}
@@ -612,19 +390,19 @@ export default function ClientsPage() {
         />
 
         <AppTextField
+          required
           name="cpf"
           label="CPF"
-          required
           value={form.cpf}
           onChange={handleChange}
           error={Boolean(fieldErrors.cpf)}
-          helperText={fieldErrors.cpf || "Formato: 000.000.000-00"}
+          helperText={fieldErrors.cpf}
         />
 
         <AppTextField
+          required
           name="telefone"
           label="Telefone"
-          required
           value={form.telefone}
           onChange={handleChange}
           error={Boolean(fieldErrors.telefone)}
@@ -632,10 +410,9 @@ export default function ClientsPage() {
         />
 
         <AppTextField
+          required
           name="email"
           label="E-mail"
-          type="email"
-          required
           value={form.email}
           onChange={handleChange}
           error={Boolean(fieldErrors.email)}
@@ -643,94 +420,15 @@ export default function ClientsPage() {
         />
 
         <AppTextField
+          required
           name="endereco"
           label="Endereço"
-          required
-          multiline
-          minRows={3}
           value={form.endereco}
           onChange={handleChange}
           error={Boolean(fieldErrors.endereco)}
           helperText={fieldErrors.endereco}
         />
       </AppFormDialog>
-
-      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          Confirmar exclusão
-        </DialogTitle>
-
-        <DialogContent>
-          <Typography sx={{ color: "text.secondary" }}>
-            Deseja excluir o cliente{" "}
-            <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
-              {deleteClientCandidate?.nome || "-"}
-            </Box>
-            ?
-          </Typography>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={closeDeleteDialog} disabled={deleting}>
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleConfirmDelete}
-            disabled={deleting}
-          >
-            {deleting ? "Excluindo..." : "Excluir"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={confirmDialogOpen} onClose={closeDeactivateDialog} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          Confirmar desativação
-        </DialogTitle>
-
-        <DialogContent>
-          {checkingSales ? (
-            <Typography sx={{ color: "text.secondary" }}>
-              Verificando vendas associadas...
-            </Typography>
-          ) : associatedSalesCount > 0 ? (
-            <Typography sx={{ color: "text.secondary" }}>
-              O cliente{" "}
-              <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
-                {clientToDeactivate?.nome || "-"}
-              </Box>
-              {" "}possui {associatedSalesCount} venda(s) associada(s). Deseja desativar o cliente mesmo assim?
-            </Typography>
-          ) : (
-            <Typography sx={{ color: "text.secondary" }}>
-              Deseja desativar o cliente{" "}
-              <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
-                {clientToDeactivate?.nome || "-"}
-              </Box>
-              ?
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={closeDeactivateDialog} disabled={deactivating || checkingSales}>
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleConfirmDeactivate}
-            disabled={deactivating || checkingSales}
-          >
-            {deactivating
-              ? "Desativando..."
-              : associatedSalesCount > 0
-              ? "Desativar mesmo assim"
-              : "Desativar"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </AdminLayout>
   );
 }

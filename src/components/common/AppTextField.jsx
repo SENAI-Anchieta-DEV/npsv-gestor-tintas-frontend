@@ -7,7 +7,9 @@ export default function AppTextField({
   InputLabelProps,
   ...props
 }) {
-  const resolvedHelperText = error ? helperText || requiredMessage : helperText || " ";
+  const resolvedHelperText = error
+    ? helperText || requiredMessage
+    : helperText || " ";
 
   return (
     <TextField
@@ -20,6 +22,9 @@ export default function AppTextField({
       sx={{
         "& .MuiOutlinedInput-root": {
           borderRadius: "14px",
+        },
+        "& .MuiFormHelperText-root": {
+          ml: 0.3,
         },
       }}
       {...props}

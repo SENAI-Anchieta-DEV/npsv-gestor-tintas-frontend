@@ -1,4 +1,13 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 export default function AppFormDialog({
   open,
@@ -13,13 +22,26 @@ export default function AppFormDialog({
   return (
     <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm">
       <form onSubmit={onSubmit}>
-        <DialogTitle sx={{ fontWeight: 800 }}>{title}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            {children}
-          </Stack>
+        <DialogTitle sx={{ px: 3, pt: 3, pb: 1 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: 20 }}>{title}</Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3 }}>
+          <Box
+            sx={{
+              mt: 1,
+              p: 2.2,
+              borderRadius: "18px",
+              backgroundColor: "background.default",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Stack spacing={2}>{children}</Stack>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+
+        <DialogActions sx={{ px: 3, pb: 2.5, pt: 1.5 }}>
           <Button onClick={onClose} disabled={loading} color="inherit">
             {cancelLabel}
           </Button>

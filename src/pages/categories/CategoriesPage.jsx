@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Box, IconButton, Paper, Typography } from "@mui/material";
+import { Alert, Box, IconButton, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+
 import AdminLayout from "../../components/layout/AdminLayout";
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppSearchField from "../../components/common/AppSearchField";
+import AppTextField from "../../components/common/AppTextField";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
@@ -13,34 +19,33 @@ import {
   getCategoriasProdutos,
   updateCategoriaProduto,
 } from "../../services/api";
-import AppDataTable from "../../components/common/AppDataTable";
-import AppFormDialog from "../../components/common/AppFormDialog";
-import AppLoading from "../../components/common/AppLoading";
-import AppPageHeader from "../../components/common/AppPageHeader";
-import AppSearchField from "../../components/common/AppSearchField";
-import AppTextField from "../../components/common/AppTextField";
 
-const INITIAL_FORM = { nome: "", descricao: "" };
+const INITIAL_FORM = {
+  id: "",
+  nome: "",
+  descricao: "",
+};
 
 function normalizeCategoria(item) {
   return {
-    id: item?.id,
-    nome: item?.nome || "-",
-    descricao: item?.descricao || "-",
+    id: item?.id || "",
+    nome: item?.nome || "",
+    descricao: item?.descricao || "",
   };
 }
 
 export default function CategoriesPage() {
   const { showSnackbar } = useAppSnackbar();
+
   const [categorias, setCategorias] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [editingId, setEditingId] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [form, setForm] = useState(INITIAL_FORM);
 
   async function loadCategorias() {
     setLoading(true);
@@ -60,37 +65,17 @@ export default function CategoriesPage() {
     loadCategorias();
   }, []);
 
-  const categoriasFiltradas = useMemo(() => {
+  const filteredCategorias = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return categorias;
 
-    return categorias.filter((categoria) =>
-      String(categoria.nome || "").toLowerCase().includes(term) ||
-      String(categoria.descricao || "").toLowerCase().includes(term)
-    );
+    return categorias.filter((categoria) => {
+      return (
+        !term ||
+        categoria.nome.toLowerCase().includes(term) ||
+        categoria.descricao.toLowerCase().includes(term)
+      );
+    });
   }, [categorias, search]);
-
-  function openCreate() {
-    setEditingCategory(null);
-    setForm(INITIAL_FORM);
-    setFieldErrors({});
-    setDialogOpen(true);
-  }
-
-  function openEdit(categoria) {
-    setEditingCategory(categoria);
-    setForm({ nome: categoria.nome || "", descricao: categoria.descricao || "" });
-    setFieldErrors({});
-    setDialogOpen(true);
-  }
-
-  function closeDialog() {
-    if (saving) return;
-    setDialogOpen(false);
-    setEditingCategory(null);
-    setForm(INITIAL_FORM);
-    setFieldErrors({});
-  }
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -98,31 +83,62 @@ export default function CategoriesPage() {
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
-  function validate() {
+  function openCreateDialog() {
+    setEditingId("");
+    setForm(INITIAL_FORM);
+    setFieldErrors({});
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(categoria) {
+    setEditingId(categoria.id);
+    setForm({
+      id: categoria.id,
+      nome: categoria.nome,
+      descricao: categoria.descricao,
+    });
+    setFieldErrors({});
+    setDialogOpen(true);
+  }
+
+  function closeDialog() {
+    if (saving) return;
+    setDialogOpen(false);
+    setEditingId("");
+    setForm(INITIAL_FORM);
+    setFieldErrors({});
+  }
+
+  function validateForm() {
     const errors = {};
-    if (!form.nome.trim()) errors.nome = "Informe o nome da categoria.";
-    if (!form.descricao.trim()) errors.descricao = "Informe a descrição da categoria.";
+    if (!String(form.nome).trim()) errors.nome = "Informe o nome.";
+    if (!String(form.descricao).trim()) errors.descricao = "Informe a descrição.";
+
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (!validate()) {
-      showSnackbar("Revise os campos obrigatórios.", "error");
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
+
     try {
-      const payload = { nome: form.nome.trim(), descricao: form.descricao.trim() };
-      if (editingCategory) {
-        await updateCategoriaProduto(editingCategory.id, payload);
+      if (editingId) {
+        await updateCategoriaProduto(editingId, {
+          nome: form.nome,
+          descricao: form.descricao,
+        });
         showSnackbar("Categoria atualizada com sucesso.", "success");
       } else {
-        await createCategoriaProduto(payload);
+        await createCategoriaProduto({
+          nome: form.nome,
+          descricao: form.descricao,
+        });
         showSnackbar("Categoria cadastrada com sucesso.", "success");
       }
+
       closeDialog();
       await loadCategorias();
     } catch (error) {
@@ -133,11 +149,9 @@ export default function CategoriesPage() {
   }
 
   async function handleDelete(categoria) {
-    if (!window.confirm(`Deseja excluir a categoria \"${categoria.nome}\"?`)) return;
-
     try {
       await deleteCategoriaProduto(categoria.id);
-      showSnackbar("Categoria excluída com sucesso.", "success");
+      showSnackbar("Categoria removida com sucesso.", "success");
       await loadCategorias();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
@@ -146,32 +160,33 @@ export default function CategoriesPage() {
 
   const columns = [
     {
-      key: "categoria",
+      key: "nome",
       label: "Categoria",
-      render: (categoria) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "primary.light", color: "black" }}>
-            <CategoryOutlinedIcon fontSize="small" />
-          </Box>
-          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>{categoria.nome}</Typography>
-        </Box>
+      render: (row) => (
+        <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+          {row.nome}
+        </Typography>
       ),
     },
     {
       key: "descricao",
       label: "Descrição",
-      render: (categoria) => <Typography sx={{ color: "text.secondary" }}>{categoria.descricao}</Typography>,
+      render: (row) => (
+        <Typography sx={{ color: "text.secondary" }}>
+          {row.descricao}
+        </Typography>
+      ),
     },
     {
       key: "acoes",
       label: "Ações",
-      render: (categoria) => (
-        <Box sx={{ display: "flex", gap: 0.5 }}>
-          <IconButton onClick={() => openEdit(categoria)}>
-            <EditOutlinedIcon fontSize="small" />
+      render: (row) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={() => openEditDialog(row)}>
+            <EditOutlinedIcon />
           </IconButton>
-          <IconButton onClick={() => handleDelete(categoria)}>
-            <DeleteOutlineIcon fontSize="small" />
+          <IconButton color="error" onClick={() => handleDelete(row)}>
+            <DeleteOutlineOutlinedIcon />
           </IconButton>
         </Box>
       ),
@@ -180,77 +195,73 @@ export default function CategoriesPage() {
 
   return (
     <AdminLayout>
-      <Paper
+      <Box
         sx={{
-          borderRadius: "20px",
+          borderRadius: "18px",
+          overflow: "hidden",
           border: "1px solid",
           borderColor: "divider",
           backgroundColor: "background.paper",
-          boxShadow: (theme) =>
-            theme.palette.mode === "dark"
-              ? "0 4px 18px rgba(255,255,255,0.04)"
-              : "0 4px 18px rgba(15, 23, 42, 0.05)",
-          overflow: "hidden",
         }}
       >
         <AppPageHeader
-          title="Categorias de Produtos"
-          subtitle="Cadastre, edite e exclua categorias de produto"
-          actionLabel="Nova Categoria"
+          title="Categorias"
+          subtitle="Gerencie as categorias dos produtos."
+          actionLabel="Nova categoria"
           actionIcon={<AddIcon />}
-          onAction={openCreate}
+          onAction={openCreateDialog}
         />
 
-        <AppSearchField
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Pesquisar por nome ou descrição..."
-        />
+        <Box sx={{ px: 3, pb: 2 }}>
+          {errorMessage ? <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert> : null}
 
-        {errorMessage ? (
-          <Box sx={{ px: 2.5, pb: 2 }}>
-            <Alert severity="error" sx={{ borderRadius: "14px" }}>{errorMessage}</Alert>
-          </Box>
-        ) : null}
+          <AppSearchField
+            placeholder="Buscar por nome ou descrição"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            sx={{ px: 0, py: 0 }}
+          />
+        </Box>
 
         {loading ? (
           <AppLoading message="Carregando categorias..." />
         ) : (
           <AppDataTable
             columns={columns}
-            rows={categoriasFiltradas.map((item) => ({ ...item, key: item.id }))}
-            emptyMessage="Nenhuma categoria encontrada com os filtros informados."
+            rows={filteredCategorias}
+            emptyMessage="Nenhuma categoria encontrada."
           />
         )}
-      </Paper>
+      </Box>
 
       <AppFormDialog
         open={dialogOpen}
-        title={editingCategory ? "Editar categoria" : "Nova categoria"}
+        title={editingId ? "Editar categoria" : "Nova categoria"}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         loading={saving}
-        submitLabel={editingCategory ? "Salvar alterações" : "Cadastrar categoria"}
+        submitLabel={editingId ? "Salvar alterações" : "Cadastrar categoria"}
       >
         <AppTextField
+          required
           name="nome"
           label="Nome"
-          required
           value={form.nome}
           onChange={handleChange}
           error={Boolean(fieldErrors.nome)}
           helperText={fieldErrors.nome}
         />
+
         <AppTextField
+          required
           name="descricao"
           label="Descrição"
-          required
-          multiline
-          minRows={3}
           value={form.descricao}
           onChange={handleChange}
           error={Boolean(fieldErrors.descricao)}
           helperText={fieldErrors.descricao}
+          multiline
+          minRows={3}
         />
       </AppFormDialog>
     </AdminLayout>

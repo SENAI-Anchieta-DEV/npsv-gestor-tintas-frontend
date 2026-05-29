@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Chip, IconButton, MenuItem, Paper, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Chip,
+  IconButton,
+  MenuItem,
+  Typography,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+
 import AdminLayout from "../../components/layout/AdminLayout";
+import AppDataTable from "../../components/common/AppDataTable";
+import AppFormDialog from "../../components/common/AppFormDialog";
+import AppLoading from "../../components/common/AppLoading";
+import AppPageHeader from "../../components/common/AppPageHeader";
+import AppTextField from "../../components/common/AppTextField";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
@@ -14,71 +26,105 @@ import {
   getProdutos,
   updateProduto,
 } from "../../services/api";
-import AppDataTable from "../../components/common/AppDataTable";
-import AppFormDialog from "../../components/common/AppFormDialog";
-import AppLoading from "../../components/common/AppLoading";
-import AppPageHeader from "../../components/common/AppPageHeader";
-import AppSearchField from "../../components/common/AppSearchField";
-import AppTextField from "../../components/common/AppTextField";
-
-const UNIDADE_OPTIONS = [
-  { value: "UN", label: "UN" },
-  { value: "G", label: "g" },
-  { value: "KG", label: "kg" },
-  { value: "ML", label: "ml" },
-  { value: "L", label: "L" },
-];
 
 const INITIAL_FORM = {
+  id: "",
   codigoBarras: "",
   descricao: "",
   quantidadeEstoque: "",
-  estoqueMinimo: "",
   precoCusto: "",
   precoVenda: "",
   unidadeMedida: "UN",
   categoriaId: "",
+  estoqueMinimo: "",
 };
+
+const UNIDADES = [
+  { value: "UN", label: "Unidade" },
+  { value: "KG", label: "Quilograma" },
+  { value: "G", label: "Grama" },
+  { value: "L", label: "Litro" },
+  { value: "ML", label: "Mililitro" },
+];
+
+function formatMoney(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
 
 function normalizeProduto(item) {
   return {
-    id: item?.id,
-    codigoBarras: item?.codigoBarras || "-",
-    descricao: item?.descricao || "-",
-    quantidadeEstoque: item?.quantidadeEstoque ?? 0,
-    estoqueMinimo: item?.estoqueMinimo ?? 0,
-    precoCusto: item?.precoCusto ?? 0,
-    precoVenda: item?.precoVenda ?? 0,
+    id: item?.id || "",
+    codigoBarras: item?.codigoBarras || "",
+    descricao: item?.descricao || "",
+    quantidadeEstoque: Number(item?.quantidadeEstoque || 0),
+    precoCusto: Number(item?.precoCusto || 0),
+    precoVenda: Number(item?.precoVenda || 0),
     unidadeMedida: item?.unidadeMedida || "UN",
-    categoria: item?.categoria || null,
+    categoriaId: item?.categoria?.id || item?.categoriaId || "",
+    categoriaNome: item?.categoria?.nome || item?.categoriaNome || "-",
+    estoqueMinimo: Number(item?.estoqueMinimo || 0),
+    estoqueEmAlerta: Boolean(item?.estoqueEmAlerta),
   };
 }
 
-function formatMoney(value) {
-  return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function getStockChip(row) {
+  if (row.quantidadeEstoque <= 0) {
+    return {
+      label: "Sem estoque",
+      color: "error.main",
+    };
+  }
+
+  if (
+    row.estoqueEmAlerta ||
+    row.quantidadeEstoque <= row.estoqueMinimo
+  ) {
+    return {
+      label: "Estoque baixo",
+      color: "warning.main",
+    };
+  }
+
+  return {
+    label: "Disponível",
+    color: "success.main",
+  };
 }
 
 export default function ProductsPage() {
   const { showSnackbar } = useAppSnackbar();
+
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [search, setSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState("TODOS");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState("");
-  const [categoriaFiltro, setCategoriaFiltro] = useState("TODAS");
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [editingId, setEditingId] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [form, setForm] = useState(INITIAL_FORM);
 
-  async function loadProdutos() {
+  async function loadData() {
     setLoading(true);
     setErrorMessage("");
 
     try {
-      const data = await getProdutos();
-      setProdutos(Array.isArray(data) ? data.map(normalizeProduto) : []);
+      const [produtosData, categoriasData] = await Promise.all([
+        getProdutos(),
+        getCategoriasProdutos(),
+      ]);
+
+      setProdutos(
+        Array.isArray(produtosData)
+          ? produtosData.map(normalizeProduto)
+          : []
+      );
+      setCategorias(Array.isArray(categoriasData) ? categoriasData : []);
     } catch (error) {
       setErrorMessage(getProblemDetailMessage(error));
     } finally {
@@ -86,55 +132,60 @@ export default function ProductsPage() {
     }
   }
 
-  async function loadCategorias() {
-    try {
-      const data = await getCategoriasProdutos();
-      setCategorias(Array.isArray(data) ? data : []);
-    } catch (error) {
-      showSnackbar(getProblemDetailMessage(error), "error");
-    }
-  }
-
   useEffect(() => {
-    loadProdutos();
-    loadCategorias();
+    loadData();
   }, []);
 
-  const produtosFiltrados = useMemo(() => {
+  const filteredProdutos = useMemo(() => {
     const term = search.trim().toLowerCase();
 
     return produtos.filter((produto) => {
-      const matchSearch =
+      const matchesSearch =
         !term ||
-        String(produto.descricao || "").toLowerCase().includes(term) ||
-        String(produto.codigoBarras || "").toLowerCase().includes(term) ||
-        String(produto.categoria?.nome || "").toLowerCase().includes(term);
+        produto.descricao.toLowerCase().includes(term) ||
+        produto.codigoBarras.toLowerCase().includes(term) ||
+        produto.categoriaNome.toLowerCase().includes(term);
 
-      const matchCategoria =
-        categoriaFiltro === "TODAS" || String(produto.categoria?.id) === String(categoriaFiltro);
+      const stockStatus =
+        produto.quantidadeEstoque <= 0
+          ? "SEM_ESTOQUE"
+          : produto.estoqueEmAlerta ||
+            produto.quantidadeEstoque <= produto.estoqueMinimo
+          ? "BAIXO"
+          : "DISPONIVEL";
 
-      return matchSearch && matchCategoria;
+      const matchesStock =
+        stockFilter === "TODOS" || stockFilter === stockStatus;
+
+      return matchesSearch && matchesStock;
     });
-  }, [produtos, search, categoriaFiltro]);
+  }, [produtos, search, stockFilter]);
 
-  function openCreate() {
-    setEditingProduct(null);
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  }
+
+  function openCreateDialog() {
+    setEditingId("");
     setForm(INITIAL_FORM);
     setFieldErrors({});
     setDialogOpen(true);
   }
 
-  function openEdit(produto) {
-    setEditingProduct(produto);
+  function openEditDialog(produto) {
+    setEditingId(produto.id);
     setForm({
-      codigoBarras: produto.codigoBarras || "",
-      descricao: produto.descricao || "",
-      quantidadeEstoque: String(produto.quantidadeEstoque ?? ""),
-      estoqueMinimo: String(produto.estoqueMinimo ?? ""),
-      precoCusto: String(produto.precoCusto ?? ""),
-      precoVenda: String(produto.precoVenda ?? ""),
-      unidadeMedida: produto.unidadeMedida || "UN",
-      categoriaId: String(produto.categoria?.id ?? ""),
+      id: produto.id,
+      codigoBarras: produto.codigoBarras,
+      descricao: produto.descricao,
+      quantidadeEstoque: String(produto.quantidadeEstoque),
+      precoCusto: String(produto.precoCusto),
+      precoVenda: String(produto.precoVenda),
+      unidadeMedida: produto.unidadeMedida,
+      categoriaId: produto.categoriaId,
+      estoqueMinimo: String(produto.estoqueMinimo),
     });
     setFieldErrors({});
     setDialogOpen(true);
@@ -143,32 +194,35 @@ export default function ProductsPage() {
   function closeDialog() {
     if (saving) return;
     setDialogOpen(false);
-    setEditingProduct(null);
+    setEditingId("");
     setForm(INITIAL_FORM);
     setFieldErrors({});
   }
 
-  function handleChange(event) {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-  }
-
-  function validate() {
+  function validateForm() {
     const errors = {};
 
-    if (!form.codigoBarras.trim()) errors.codigoBarras = "Informe o código de barras.";
-    if (!form.descricao.trim()) errors.descricao = "Informe a descrição.";
-    if (form.quantidadeEstoque === "") errors.quantidadeEstoque = "Informe a quantidade em estoque.";
-    else if (Number(form.quantidadeEstoque) < 0) errors.quantidadeEstoque = "A quantidade deve ser maior ou igual a zero.";
-    if (form.estoqueMinimo === "") errors.estoqueMinimo = "Informe o estoque mínimo.";
-    else if (Number(form.estoqueMinimo) < 0) errors.estoqueMinimo = "O estoque mínimo deve ser maior ou igual a zero.";
-    if (form.precoCusto === "") errors.precoCusto = "Informe o preço de custo.";
-    else if (Number(form.precoCusto) <= 0) errors.precoCusto = "O preço de custo deve ser maior que zero.";
-    if (form.precoVenda === "") errors.precoVenda = "Informe o preço de venda.";
-    else if (Number(form.precoVenda) <= 0) errors.precoVenda = "O preço de venda deve ser maior que zero.";
-    if (!form.unidadeMedida) errors.unidadeMedida = "Selecione a unidade de medida.";
-    if (!form.categoriaId) errors.categoriaId = "Selecione a categoria.";
+    if (!String(form.codigoBarras).trim()) {
+      errors.codigoBarras = "Informe o código de barras.";
+    }
+    if (!String(form.descricao).trim()) {
+      errors.descricao = "Informe a descrição.";
+    }
+    if (!String(form.quantidadeEstoque).trim()) {
+      errors.quantidadeEstoque = "Informe o estoque.";
+    }
+    if (!String(form.precoCusto).trim()) {
+      errors.precoCusto = "Informe o preço de custo.";
+    }
+    if (!String(form.precoVenda).trim()) {
+      errors.precoVenda = "Informe o preço de venda.";
+    }
+    if (!String(form.categoriaId).trim()) {
+      errors.categoriaId = "Selecione a categoria.";
+    }
+    if (!String(form.estoqueMinimo).trim()) {
+      errors.estoqueMinimo = "Informe o estoque mínimo.";
+    }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -177,26 +231,24 @@ export default function ProductsPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!validate()) {
-      showSnackbar("Revise os campos obrigatórios.", "error");
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
-    try {
-      const payload = {
-        codigoBarras: form.codigoBarras.trim(),
-        descricao: form.descricao.trim(),
-        quantidadeEstoque: Number(form.quantidadeEstoque),
-        estoqueMinimo: Number(form.estoqueMinimo),
-        precoCusto: Number(form.precoCusto),
-        precoVenda: Number(form.precoVenda),
-        unidadeMedida: form.unidadeMedida,
-        categoriaId: form.categoriaId,
-      };
 
-      if (editingProduct) {
-        await updateProduto(editingProduct.id, payload);
+    const payload = {
+      codigoBarras: form.codigoBarras,
+      descricao: form.descricao,
+      quantidadeEstoque: Number(form.quantidadeEstoque),
+      precoCusto: Number(form.precoCusto),
+      precoVenda: Number(form.precoVenda),
+      unidadeMedida: form.unidadeMedida,
+      categoriaId: form.categoriaId,
+      estoqueMinimo: Number(form.estoqueMinimo),
+    };
+
+    try {
+      if (editingId) {
+        await updateProduto(editingId, payload);
         showSnackbar("Produto atualizado com sucesso.", "success");
       } else {
         await createProduto(payload);
@@ -204,7 +256,7 @@ export default function ProductsPage() {
       }
 
       closeDialog();
-      await loadProdutos();
+      await loadData();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
     } finally {
@@ -213,12 +265,10 @@ export default function ProductsPage() {
   }
 
   async function handleDelete(produto) {
-    if (!window.confirm(`Deseja excluir o produto \"${produto.descricao}\"?`)) return;
-
     try {
       await deleteProduto(produto.id);
-      showSnackbar("Produto excluído com sucesso.", "success");
-      await loadProdutos();
+      showSnackbar("Produto removido com sucesso.", "success");
+      await loadData();
     } catch (error) {
       showSnackbar(getProblemDetailMessage(error), "error");
     }
@@ -228,134 +278,78 @@ export default function ProductsPage() {
     {
       key: "produto",
       label: "Produto",
-      render: (produto) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, borderRadius: "14px", display: "grid", placeItems: "center", backgroundColor: "primary.light", color: "black" }}>
-            <Inventory2OutlinedIcon fontSize="small" />
-          </Box>
-          <Box>
-            <Typography sx={{ fontWeight: 700, color: "text.primary" }}>{produto.descricao}</Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: 13 }}>{produto.codigoBarras}</Typography>
-          </Box>
+      render: (row) => (
+        <Box>
+          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+            {row.descricao}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+            {row.codigoBarras}
+          </Typography>
         </Box>
       ),
     },
     {
       key: "categoria",
       label: "Categoria",
-      render: (produto) => <Typography>{produto.categoria?.nome || "-"}</Typography>,
-    },
-    {
-      key: "quantidadeEstoque",
-      label: "Estoque",
-      render: (produto) => {
-        const quantidade = Number(produto?.quantidadeEstoque ?? 0);
-
-        return (
-          <Chip
-            label={`${quantidade}`}
-            size="small"
-            sx={{ fontWeight: 700 }}
-          />
-        );
-      }
-    },
-    {
-      key: "estoqueMinimo",
-      label: "Estoque mínimo",
-      render: (produto) => (
-        <Typography sx={{ fontWeight: 700, color: "text.secondary" }}>
-          {produto.estoqueMinimo ?? 0}
+      render: (row) => (
+        <Typography sx={{ color: "text.primary" }}>
+          {row.categoriaNome}
         </Typography>
       ),
     },
     {
-      key: "unidadeMedida",
-      label: "Unidade de medida",
-      render: (produto) => (
-        <Chip
-          label={produto.unidadeMedida || "UN"}
-          size="small"
-          sx={{ fontWeight: 700 }}
-        />
+      key: "estoque",
+      label: "Estoque",
+      render: (row) => (
+        <Typography sx={{ color: "text.primary", fontWeight: 700 }}>
+          {row.quantidadeEstoque} {row.unidadeMedida}
+        </Typography>
       ),
     },
     {
-      key: "statusEstoque",
-      label: "Status do estoque",
-      render: (produto) => {
-        const quantidade = Number(produto.quantidadeEstoque || 0);
-
-        if (quantidade === 0) {
-          return (
-            <Chip
-              label="Sem estoque"
-              size="small"
-              sx={{
-                fontWeight: 700,
-                color: "black",
-                backgroundColor: "error.light",
-                borderColor: "error.light",
-                borderStyle: "solid",
-                borderWidth: "1px",
-              }}
-            />
-          );
-        }
-
-        if (quantidade <= 10) {
-          return (
-            <Chip
-              label="Estoque baixo"
-              size="small"
-              sx={{
-                fontWeight: 700,
-                color: "black",
-                backgroundColor: "warning.light",
-                borderColor: "warning.light",
-                borderStyle: "solid",
-                borderWidth: "1px",
-              }}
-            />
-          );
-        }
-
+      key: "precos",
+      label: "Preços",
+      render: (row) => (
+        <Box>
+          <Typography sx={{ color: "text.primary", fontSize: 13 }}>
+            Custo: {formatMoney(row.precoCusto)}
+          </Typography>
+          <Typography sx={{ color: "text.secondary", fontSize: 12 }}>
+            Venda: {formatMoney(row.precoVenda)}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row) => {
+        const chip = getStockChip(row);
         return (
           <Chip
-            label="Disponível"
-            size="small"
+            label={chip.label}
             sx={{
               fontWeight: 700,
-              color: "black",
-              backgroundColor: "success.light",
-              borderColor: "success.light",
-              borderStyle: "solid",
-              borderWidth: "1px",
+              color: "#FFFFFF",
+              backgroundColor: chip.color,
+              border: "1px solid",
+              borderColor: chip.color,
             }}
           />
         );
       },
     },
     {
-      key: "precoCusto",
-      label: "Preço de custo",
-      render: (produto) => formatMoney(produto.precoCusto),
-    },
-    {
-      key: "precoVenda",
-      label: "Preço de venda",
-      render: (produto) => formatMoney(produto.precoVenda),
-    },
-    {
       key: "acoes",
       label: "Ações",
-      render: (produto) => (
-        <Box sx={{ display: "flex", gap: 0.5 }}>
-          <IconButton onClick={() => openEdit(produto)}>
-            <EditOutlinedIcon fontSize="small" />
+      render: (row) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={() => openEditDialog(row)}>
+            <EditOutlinedIcon />
           </IconButton>
-          <IconButton onClick={() => handleDelete(produto)}>
-            <DeleteOutlineIcon fontSize="small" />
+          <IconButton color="error" onClick={() => handleDelete(row)}>
+            <DeleteOutlineOutlinedIcon />
           </IconButton>
         </Box>
       ),
@@ -364,79 +358,82 @@ export default function ProductsPage() {
 
   return (
     <AdminLayout>
-      <Paper
+      <Box
         sx={{
-          borderRadius: "20px",
+          borderRadius: "18px",
+          overflow: "hidden",
           border: "1px solid",
           borderColor: "divider",
           backgroundColor: "background.paper",
-          boxShadow: (theme) =>
-            theme.palette.mode === "dark"
-              ? "0 4px 18px rgba(255,255,255,0.04)"
-              : "0 4px 18px rgba(15, 23, 42, 0.05)",
-          overflow: "hidden",
         }}
       >
         <AppPageHeader
-          title="Gerenciar Produtos"
-          subtitle="Cadastre, edite e exclua produtos e insumos"
-          actionLabel="Novo Produto"
+          title="Produtos"
+          subtitle="Gerencie os produtos e acompanhe o estoque."
+          actionLabel="Novo produto"
           actionIcon={<AddIcon />}
-          onAction={openCreate}
+          onAction={openCreateDialog}
         />
 
-        <AppSearchField
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Pesquisar por descrição, código de barras ou categoria..."
-        />
+        <Box sx={{ px: 3, pb: 2, display: "grid", gap: 2 }}>
+          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-        <Box sx={{ px: 2.5, pb: 2 }}>
-          <AppTextField
-            select
-            label="Filtrar por categoria"
-            value={categoriaFiltro}
-            onChange={(e) => setCategoriaFiltro(e.target.value)}
-            helperText=" "
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1.5fr 1fr" },
+              gap: 2,
+              alignItems: "start",
+              pt: 1.5,
+            }}
           >
-            <MenuItem value="TODAS">Todas</MenuItem>
-            {categorias.map((categoria) => (
-              <MenuItem key={categoria.id} value={String(categoria.id)}>
-                {categoria.nome}
-              </MenuItem>
-            ))}
-          </AppTextField>
-        </Box>
+            <AppTextField
+              placeholder="Buscar por descrição, código ou categoria"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
+            />
 
-        {errorMessage ? (
-          <Box sx={{ px: 2.5, pb: 2 }}>
-            <Alert severity="error" sx={{ borderRadius: "14px" }}>{errorMessage}</Alert>
+            <AppTextField
+              select
+              label="Estoque"
+              value={stockFilter}
+              onChange={(event) => setStockFilter(event.target.value)}
+              helperText=" "
+              sx={{ mt: 0.5 }}
+            >
+              <MenuItem value="TODOS">Todos</MenuItem>
+              <MenuItem value="DISPONIVEL">Disponível</MenuItem>
+              <MenuItem value="BAIXO">Estoque baixo</MenuItem>
+              <MenuItem value="SEM_ESTOQUE">Sem estoque</MenuItem>
+            </AppTextField>
           </Box>
-        ) : null}
+        </Box>
 
         {loading ? (
           <AppLoading message="Carregando produtos..." />
         ) : (
           <AppDataTable
             columns={columns}
-            rows={produtosFiltrados.map((item) => ({ ...item, key: item.id }))}
-            emptyMessage="Nenhum produto encontrado com os filtros informados."
+            rows={filteredProdutos}
+            emptyMessage="Nenhum produto encontrado."
           />
         )}
-      </Paper>
+      </Box>
 
       <AppFormDialog
         open={dialogOpen}
-        title={editingProduct ? "Editar produto" : "Novo produto"}
+        title={editingId ? "Editar produto" : "Novo produto"}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         loading={saving}
-        submitLabel={editingProduct ? "Salvar alterações" : "Cadastrar produto"}
+        submitLabel={editingId ? "Salvar alterações" : "Cadastrar produto"}
       >
         <AppTextField
+          required
           name="codigoBarras"
           label="Código de barras"
-          required
           value={form.codigoBarras}
           onChange={handleChange}
           error={Boolean(fieldErrors.codigoBarras)}
@@ -444,92 +441,106 @@ export default function ProductsPage() {
         />
 
         <AppTextField
+          required
           name="descricao"
           label="Descrição"
-          required
           value={form.descricao}
           onChange={handleChange}
           error={Boolean(fieldErrors.descricao)}
           helperText={fieldErrors.descricao}
         />
 
-        <AppTextField
-          name="quantidadeEstoque"
-          label="Quantidade em estoque"
-          type="number"
-          required
-          value={form.quantidadeEstoque}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.quantidadeEstoque)}
-          helperText={fieldErrors.quantidadeEstoque}
-        />
-
-        <AppTextField
-          name="estoqueMinimo"
-          label="Estoque mínimo"
-          type="number"
-          required
-          value={form.estoqueMinimo}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.estoqueMinimo)}
-          helperText={fieldErrors.estoqueMinimo}
-        />
-
-        <AppTextField
-          name="precoCusto"
-          label="Preço de custo"
-          type="number"
-          required
-          value={form.precoCusto}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.precoCusto)}
-          helperText={fieldErrors.precoCusto}
-        />
-
-        <AppTextField
-          name="precoVenda"
-          label="Preço de venda"
-          type="number"
-          required
-          value={form.precoVenda}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.precoVenda)}
-          helperText={fieldErrors.precoVenda}
-        />
-
-        <AppTextField
-          select
-          name="unidadeMedida"
-          label="Unidade de medida"
-          required
-          value={form.unidadeMedida}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.unidadeMedida)}
-          helperText={fieldErrors.unidadeMedida}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gap: 2,
+          }}
         >
-          {UNIDADE_OPTIONS.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </AppTextField>
+          <AppTextField
+            required
+            name="quantidadeEstoque"
+            label="Quantidade em estoque"
+            type="number"
+            value={form.quantidadeEstoque}
+            onChange={handleChange}
+            error={Boolean(fieldErrors.quantidadeEstoque)}
+            helperText={fieldErrors.quantidadeEstoque}
+          />
+
+          <AppTextField
+            select
+            required
+            name="unidadeMedida"
+            label="Unidade de medida"
+            value={form.unidadeMedida}
+            onChange={handleChange}
+          >
+            {UNIDADES.map((item) => (
+              <MenuItem key={item.value} value={item.value}>
+                {item.label}
+              </MenuItem>
+            ))}
+          </AppTextField>
+        </Box>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gap: 2,
+          }}
+        >
+          <AppTextField
+            required
+            name="precoCusto"
+            label="Preço de custo"
+            type="number"
+            value={form.precoCusto}
+            onChange={handleChange}
+            error={Boolean(fieldErrors.precoCusto)}
+            helperText={fieldErrors.precoCusto}
+          />
+
+          <AppTextField
+            required
+            name="precoVenda"
+            label="Preço de venda"
+            type="number"
+            value={form.precoVenda}
+            onChange={handleChange}
+            error={Boolean(fieldErrors.precoVenda)}
+            helperText={fieldErrors.precoVenda}
+          />
+        </Box>
 
         <AppTextField
           select
+          required
           name="categoriaId"
           label="Categoria"
-          required
           value={form.categoriaId}
           onChange={handleChange}
           error={Boolean(fieldErrors.categoriaId)}
           helperText={fieldErrors.categoriaId}
         >
           {categorias.map((categoria) => (
-            <MenuItem key={categoria.id} value={String(categoria.id)}>
+            <MenuItem key={categoria.id} value={categoria.id}>
               {categoria.nome}
             </MenuItem>
           ))}
         </AppTextField>
+
+        <AppTextField
+          required
+          name="estoqueMinimo"
+          label="Estoque mínimo"
+          type="number"
+          value={form.estoqueMinimo}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.estoqueMinimo)}
+          helperText={fieldErrors.estoqueMinimo}
+        />
       </AppFormDialog>
     </AdminLayout>
   );
