@@ -31,6 +31,7 @@ import {
 const INITIAL_FORM = {
   id: "",
   razaoSocial: "",
+  nomeContato: "",
   cnpj: "",
   telefone: "",
   email: "",
@@ -42,6 +43,7 @@ function normalizeFornecedor(item) {
   return {
     id: item?.id || "",
     razaoSocial: item?.razaoSocial || "",
+    nomeContato: item?.nomeContato || "",
     cnpj: item?.cnpj || "",
     telefone: item?.telefone || "",
     email: item?.email || "",
@@ -52,22 +54,35 @@ function normalizeFornecedor(item) {
 
 function formatCnpj(value) {
   const digits = String(value || "").replace(/\D/g, "");
-  if (digits.length !== 14) return value || "-";
+
+  if (!digits) return value || "-";
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return digits.replace(/(\d{2})(\d+)/, "$1.$2");
+  if (digits.length <= 8) return digits.replace(/(\d{2})(\d{3})(\d+)/, "$1.$2.$3");
+  if (digits.length <= 12) return digits.replace(/(\d{2})(\d{3})(\d{3})(\d+)/, "$1.$2.$3/$4");
+
   return digits.replace(
-    /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+    /(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2}).*/,
     "$1.$2.$3/$4-$5"
   );
 }
 
+function normalizeCnpjValue(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
 function formatTelefone(value) {
   const digits = String(value || "").replace(/\D/g, "");
-  if (digits.length === 11) {
-    return digits.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-  }
-  if (digits.length === 10) {
-    return digits.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
-  }
-  return value || "-";
+
+  if (!digits) return value || "-";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return digits.replace(/(\d{2})(\d+)/, "($1) $2");
+  const normalized = digits.slice(0, 11);
+  return normalized.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
+}
+
+function normalizeTelefoneValue(value) {
+  return String(value || "").replace(/\D/g, "");
 }
 
 export default function SuppliersPage() {
@@ -123,7 +138,14 @@ export default function SuppliersPage() {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const nextValue =
+      name === "cnpj"
+        ? formatCnpj(value)
+        : name === "telefone"
+        ? formatTelefone(value)
+        : value;
+
+    setForm((prev) => ({ ...prev, [name]: nextValue }));
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
@@ -139,7 +161,8 @@ export default function SuppliersPage() {
     setForm({
       id: fornecedor.id,
       razaoSocial: fornecedor.razaoSocial,
-      cnpj: fornecedor.cnpj,
+      nomeContato: fornecedor.nomeContato || "",
+      cnpj: formatCnpj(fornecedor.cnpj),
       telefone: fornecedor.telefone,
       email: fornecedor.email,
       endereco: fornecedor.endereco,
@@ -161,6 +184,7 @@ export default function SuppliersPage() {
     const errors = {};
 
     if (!String(form.razaoSocial).trim()) errors.razaoSocial = "Informe a razão social.";
+    if (!String(form.nomeContato).trim()) errors.nomeContato = "Informe o nome do contato.";
     if (!String(form.cnpj).trim()) errors.cnpj = "Informe o CNPJ.";
     if (!String(form.telefone).trim()) errors.telefone = "Informe o telefone.";
     if (!String(form.email).trim()) errors.email = "Informe o e-mail.";
@@ -179,8 +203,9 @@ export default function SuppliersPage() {
 
     const payload = {
       razaoSocial: form.razaoSocial,
-      cnpj: form.cnpj,
-      telefone: form.telefone,
+      nomeContato: form.nomeContato,
+      cnpj: normalizeCnpjValue(form.cnpj),
+      telefone: normalizeTelefoneValue(form.telefone),
       email: form.email,
       endereco: form.endereco,
     };
@@ -236,6 +261,15 @@ export default function SuppliersPage() {
             {row.email || "-"}
           </Typography>
         </Box>
+      ),
+    },
+    {
+      key: "contato",
+      label: "Contato",
+      render: (row) => (
+        <Typography sx={{ color: "text.primary" }}>
+          {row.nomeContato || "-"}
+        </Typography>
       ),
     },
     {
@@ -390,6 +424,16 @@ export default function SuppliersPage() {
           onChange={handleChange}
           error={Boolean(fieldErrors.razaoSocial)}
           helperText={fieldErrors.razaoSocial}
+        />
+
+        <AppTextField
+          required
+          name="nomeContato"
+          label="Nome do contato"
+          value={form.nomeContato}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.nomeContato)}
+          helperText={fieldErrors.nomeContato}
         />
 
         <AppTextField

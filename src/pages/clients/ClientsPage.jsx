@@ -52,19 +52,30 @@ function normalizeCliente(item) {
 
 function formatCpf(value) {
   const digits = String(value || "").replace(/\D/g, "");
-  if (digits.length !== 11) return value || "-";
-  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+
+  if (!digits) return value || "-";
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return digits.replace(/(\d{3})(\d+)/, "$1.$2");
+  if (digits.length <= 9) return digits.replace(/(\d{3})(\d{3})(\d+)/, "$1.$2.$3");
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2}).*/, "$1.$2.$3-$4");
+}
+
+function normalizeCpfValue(value) {
+  return String(value || "").replace(/\D/g, "");
 }
 
 function formatTelefone(value) {
   const digits = String(value || "").replace(/\D/g, "");
-  if (digits.length === 11) {
-    return digits.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-  }
-  if (digits.length === 10) {
-    return digits.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
-  }
-  return value || "-";
+
+  if (!digits) return value || "-";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return digits.replace(/(\d{2})(\d+)/, "($1) $2");
+  const normalized = digits.slice(0, 11);
+  return normalized.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
+}
+
+function normalizeTelefoneValue(value) {
+  return String(value || "").replace(/\D/g, "");
 }
 
 export default function ClientsPage() {
@@ -120,7 +131,14 @@ export default function ClientsPage() {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const nextValue =
+      name === "cpf"
+        ? formatCpf(value)
+        : name === "telefone"
+        ? formatTelefone(value)
+        : value;
+
+    setForm((prev) => ({ ...prev, [name]: nextValue }));
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
@@ -136,7 +154,7 @@ export default function ClientsPage() {
     setForm({
       id: cliente.id,
       nome: cliente.nome,
-      cpf: cliente.cpf,
+      cpf: formatCpf(cliente.cpf),
       telefone: cliente.telefone,
       email: cliente.email,
       endereco: cliente.endereco,
@@ -176,8 +194,8 @@ export default function ClientsPage() {
 
     const payload = {
       nome: form.nome,
-      cpf: form.cpf,
-      telefone: form.telefone,
+      cpf: normalizeCpfValue(form.cpf),
+      telefone: normalizeTelefoneValue(form.telefone),
       email: form.email,
       endereco: form.endereco,
     };

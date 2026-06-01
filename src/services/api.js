@@ -164,6 +164,12 @@ export function getUsuarios() {
   });
 }
 
+export function getUsuarioByEmail(email) {
+  return authenticatedRequest(`/api/usuarios/email/${encodeURIComponent(email)}`, {
+    method: "GET",
+  });
+}
+
 export function createUsuario(payload) {
   return authenticatedRequest("/api/usuarios", {
     method: "POST",

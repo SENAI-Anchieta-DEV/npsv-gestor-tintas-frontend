@@ -20,18 +20,19 @@ import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   concluirVenda,
-  getClientes,
   getCurrentUserEmailFromToken,
+  getCurrentUserRoleFromToken,
   getProdutos,
+  getUsuarioByEmail,
   getVendas,
   getVendasByVendedor,
   iniciarVenda,
 } from "../../services/api";
 
 const INITIAL_FORM = {
-  clienteId: "",
   produtoId: "",
   quantidade: "1",
+  formaPagamento: "",
 };
 
 function formatMoney(value) {
@@ -41,31 +42,93 @@ function formatMoney(value) {
   });
 }
 
-function normalizeVenda(item) {
-  return {
-    id: item?.id || "",
-    clienteNome: item?.cliente?.nome || item?.clienteNome || "-",
-    vendedorNome: item?.vendedor?.nome || item?.vendedorNome || "-",
-    valorTotal: Number(item?.valorTotal || 0),
-    status: item?.status || "PENDENTE",
-    dataHora: item?.dataHora || "",
-  };
-}
-
 function formatDateTime(value) {
   if (!value) return "-";
   try {
     return new Date(value).toLocaleString("pt-BR");
   } catch {
-    return value;
+    return value || "-";
   }
+}
+
+function getStatusStyles(status) {
+  if (status === "CONCLUIDA") {
+    return {
+      backgroundColor: "success.main",
+      borderColor: "success.main",
+    };
+  }
+
+  if (status === "CANCELADA") {
+    return {
+      backgroundColor: "error.main",
+      borderColor: "error.main",
+    };
+  }
+
+  if (status === "ABERTA") {
+    return {
+      backgroundColor: "info.main",
+      borderColor: "info.main",
+    };
+  }
+
+  return {
+    backgroundColor: "warning.main",
+    borderColor: "warning.main",
+  };
+}
+
+function getStatusLabel(status) {
+  if (status === "ABERTA") return "Aberta";
+  if (status === "PENDENTE") return "Pendente";
+  if (status === "CONCLUIDA") return "Concluída";
+  if (status === "CANCELADA") return "Cancelada";
+  return status || "-";
+}
+
+function normalizeVenda(item) {
+  return {
+    id: item?.id || "",
+    vendedorNome:
+      item?.nomeVendedor ||
+      item?.vendedor?.nome ||
+      item?.vendedorNome ||
+      "-",
+    valorTotal: Number(item?.valorTotal || 0),
+    status: item?.status || "PENDENTE",
+    dataAbertura:
+      item?.dataAbertura ||
+      item?.dataHora ||
+      item?.dataCriacao ||
+      "",
+    itens: Array.isArray(item?.itens) ? item.itens : [],
+  };
+}
+
+function normalizeProduto(item) {
+  return {
+    id: item?.id || "",
+    descricao: item?.descricao || "-",
+    unidadeMedida: item?.unidadeMedida || "UN",
+    precoVenda: Number(item?.precoVenda || 0),
+  };
+}
+
+function getUsuarioIdFromResponse(usuario) {
+  return (
+    usuario?.id ||
+    usuario?.usuarioId ||
+    usuario?.data?.id ||
+    usuario?.data?.usuarioId ||
+    ""
+  );
 }
 
 export default function SalesPage() {
   const { showSnackbar } = useAppSnackbar();
 
   const [vendas, setVendas] = useState([]);
-  const [clientes, setClientes] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("TODAS");
@@ -76,21 +139,53 @@ export default function SalesPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [form, setForm] = useState(INITIAL_FORM);
 
+  async function getUsuarioLogadoId() {
+    const emailUsuarioLogado = getCurrentUserEmailFromToken();
+
+    if (!emailUsuarioLogado) {
+      throw new Error("Não foi possível identificar o usuário logado.");
+    }
+
+    const usuarioLogado = await getUsuarioByEmail(emailUsuarioLogado);
+    const vendedorId = getUsuarioIdFromResponse(usuarioLogado);
+
+    if (!vendedorId) {
+      throw new Error("Não foi possível localizar o ID do vendedor logado.");
+    }
+
+    return vendedorId;
+  }
+
+  async function loadVendas() {
+    const role = getCurrentUserRoleFromToken();
+
+    if (role === "VENDEDOR") {
+      try {
+        const vendedorId = await getUsuarioLogadoId();
+        const vendasByVendedor = await getVendasByVendedor(vendedorId);
+        return Array.isArray(vendasByVendedor) ? vendasByVendedor : [];
+      } catch {
+        const vendasFallback = await getVendas();
+        return Array.isArray(vendasFallback) ? vendasFallback : [];
+      }
+    }
+
+    const vendasData = await getVendas();
+    return Array.isArray(vendasData) ? vendasData : [];
+  }
+
   async function loadData() {
     setLoading(true);
     setErrorMessage("");
 
     try {
-      const email = getCurrentUserEmailFromToken();
-      const [vendasData, clientesData, produtosData] = await Promise.all([
-        email ? getVendasByVendedor(email) : getVendas(),
-        getClientes(),
+      const [vendasData, produtosData] = await Promise.all([
+        loadVendas(),
         getProdutos(),
       ]);
 
-      setVendas(Array.isArray(vendasData) ? vendasData.map(normalizeVenda) : []);
-      setClientes(Array.isArray(clientesData) ? clientesData : []);
-      setProdutos(Array.isArray(produtosData) ? produtosData : []);
+      setVendas(vendasData.map(normalizeVenda));
+      setProdutos(Array.isArray(produtosData) ? produtosData.map(normalizeProduto) : []);
     } catch (error) {
       setErrorMessage(getProblemDetailMessage(error));
     } finally {
@@ -108,7 +203,6 @@ export default function SalesPage() {
     return vendas.filter((venda) => {
       const matchesSearch =
         !term ||
-        venda.clienteNome.toLowerCase().includes(term) ||
         venda.vendedorNome.toLowerCase().includes(term) ||
         String(venda.id).toLowerCase().includes(term);
 
@@ -140,10 +234,17 @@ export default function SalesPage() {
 
   function validateForm() {
     const errors = {};
-    if (!form.clienteId) errors.clienteId = "Selecione o cliente.";
-    if (!form.produtoId) errors.produtoId = "Selecione o produto.";
+
+    if (!form.produtoId) {
+      errors.produtoId = "Selecione o produto.";
+    }
+
     if (!String(form.quantidade).trim() || Number(form.quantidade) <= 0) {
       errors.quantidade = "Informe uma quantidade válida.";
+    }
+
+    if (!form.formaPagamento) {
+      errors.formaPagamento = "Selecione a forma de pagamento.";
     }
 
     setFieldErrors(errors);
@@ -158,8 +259,18 @@ export default function SalesPage() {
     setSaving(true);
 
     try {
-      const venda = await iniciarVenda({
-        clienteId: form.clienteId,
+      const vendedorId = await getUsuarioLogadoId();
+
+      const vendaAberta = await iniciarVenda({
+        vendedorId,
+      });
+
+      if (!vendaAberta?.id) {
+        throw new Error("Não foi possível iniciar a venda.");
+      }
+
+      await concluirVenda(vendaAberta.id, {
+        formaPagamento: form.formaPagamento,
         itens: [
           {
             produtoId: form.produtoId,
@@ -168,7 +279,6 @@ export default function SalesPage() {
         ],
       });
 
-      await concluirVenda(venda?.id, {});
       showSnackbar("Venda registrada com sucesso.", "success");
       closeDialog();
       await loadData();
@@ -181,15 +291,15 @@ export default function SalesPage() {
 
   const columns = [
     {
-      key: "cliente",
-      label: "Cliente",
+      key: "id",
+      label: "Venda",
       render: (row) => (
         <Box>
           <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
-            {row.clienteNome}
+            {row.id}
           </Typography>
           <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
-            {row.id}
+            {row.itens.length} item(ns)
           </Typography>
         </Box>
       ),
@@ -198,15 +308,17 @@ export default function SalesPage() {
       key: "vendedor",
       label: "Vendedor",
       render: (row) => (
-        <Typography sx={{ color: "text.primary" }}>{row.vendedorNome}</Typography>
+        <Typography sx={{ color: "text.primary" }}>
+          {row.vendedorNome}
+        </Typography>
       ),
     },
     {
-      key: "dataHora",
+      key: "dataAbertura",
       label: "Data",
       render: (row) => (
         <Typography sx={{ color: "text.secondary" }}>
-          {formatDateTime(row.dataHora)}
+          {formatDateTime(row.dataAbertura)}
         </Typography>
       ),
     },
@@ -222,20 +334,22 @@ export default function SalesPage() {
     {
       key: "status",
       label: "Status",
-      render: (row) => (
-        <Chip
-          label={row.status}
-          sx={{
-            fontWeight: 700,
-            color: "#FFFFFF",
-            backgroundColor:
-              row.status === "CONCLUIDA" ? "success.main" : "warning.main",
-            border: "1px solid",
-            borderColor:
-              row.status === "CONCLUIDA" ? "success.main" : "warning.main",
-          }}
-        />
-      ),
+      render: (row) => {
+        const styles = getStatusStyles(row.status);
+
+        return (
+          <Chip
+            label={getStatusLabel(row.status)}
+            sx={{
+              fontWeight: 700,
+              color: "#FFFFFF",
+              backgroundColor: styles.backgroundColor,
+              border: "1px solid",
+              borderColor: styles.borderColor,
+            }}
+          />
+        );
+      },
     },
     {
       key: "acoes",
@@ -280,7 +394,7 @@ export default function SalesPage() {
             }}
           >
             <AppTextField
-              placeholder="Buscar por cliente, vendedor ou ID"
+              placeholder="Buscar por vendedor ou ID da venda"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               helperText=" "
@@ -296,8 +410,10 @@ export default function SalesPage() {
               sx={{ mt: 0.5 }}
             >
               <MenuItem value="TODAS">Todas</MenuItem>
+              <MenuItem value="ABERTA">Aberta</MenuItem>
               <MenuItem value="PENDENTE">Pendente</MenuItem>
               <MenuItem value="CONCLUIDA">Concluída</MenuItem>
+              <MenuItem value="CANCELADA">Cancelada</MenuItem>
             </AppTextField>
           </Box>
         </Box>
@@ -324,23 +440,6 @@ export default function SalesPage() {
         <AppTextField
           select
           required
-          name="clienteId"
-          label="Cliente"
-          value={form.clienteId}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.clienteId)}
-          helperText={fieldErrors.clienteId}
-        >
-          {clientes.map((cliente) => (
-            <MenuItem key={cliente.id} value={cliente.id}>
-              {cliente.nome}
-            </MenuItem>
-          ))}
-        </AppTextField>
-
-        <AppTextField
-          select
-          required
           name="produtoId"
           label="Produto"
           value={form.produtoId}
@@ -353,6 +452,24 @@ export default function SalesPage() {
               {produto.descricao}
             </MenuItem>
           ))}
+        </AppTextField>
+
+        <AppTextField
+          select
+          required
+          name="formaPagamento"
+          label="Forma de pagamento"
+          value={form.formaPagamento}
+          onChange={handleChange}
+          error={Boolean(fieldErrors.formaPagamento)}
+          helperText={fieldErrors.formaPagamento}
+        >
+          <MenuItem value="DINHEIRO">Dinheiro</MenuItem>
+          <MenuItem value="PIX">Pix</MenuItem>
+          <MenuItem value="CARTAO_DEBITO">Cartão de débito</MenuItem>
+          <MenuItem value="CARTAO_CREDITO">Cartão de crédito</MenuItem>
+          <MenuItem value="BOLETO">Boleto</MenuItem>
+          <MenuItem value="OUTROS">Outros</MenuItem>
         </AppTextField>
 
         <AppTextField
