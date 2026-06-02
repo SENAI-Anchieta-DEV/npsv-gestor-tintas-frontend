@@ -14,7 +14,6 @@ import {
   Typography,
 } from "@mui/material";
 import ScaleOutlinedIcon from "@mui/icons-material/ScaleOutlined";
-import WifiOutlinedIcon from "@mui/icons-material/WifiOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";

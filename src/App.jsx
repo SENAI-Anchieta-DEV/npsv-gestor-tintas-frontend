@@ -113,7 +113,7 @@ export default function App() {
       <Route
         path="/aba-maquina"
         element={
-          <ProtectedRoute allowedRoles={["COLORISTA"]}>
+          <ProtectedRoute allowedRoles={["COLORISTA", "ADMIN"]}>
             <MachinePage />
           </ProtectedRoute>
         }

@@ -184,6 +184,13 @@ export function updateUsuario(email, payload) {
   });
 }
 
+export function updateSenhaUsuario(email, payload) {
+  return authenticatedRequest(`/api/usuarios/${encodeURIComponent(email)}/senha`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function deleteUsuario(email) {
   return authenticatedRequest(`/api/usuarios/email/${encodeURIComponent(email)}`, {
     method: "DELETE",

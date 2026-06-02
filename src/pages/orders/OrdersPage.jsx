@@ -5,6 +5,7 @@ import {
   Chip,
   IconButton,
   MenuItem,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -300,30 +301,36 @@ export default function OrdersPage() {
       },
     },
     {
-      key: "acoes",
-      label: "Ações",
-      render: (row) => (
-        <Box sx={{ display: "flex", gap: 1 }}>
-          {row.status === "PENDENTE" ? (
-            <IconButton color="info" onClick={() => handleEnviar(row.id)}>
-              <LocalShippingOutlinedIcon />
-            </IconButton>
-          ) : null}
+  key: "acoes",
+  label: "Ações",
+  render: (row) => (
+    <Box sx={{ display: "flex", gap: 1 }}>
+      {row.status === "PENDENTE" ? (
+        <Tooltip title="Enviar pedido" arrow>
+          <IconButton color="info" onClick={() => handleEnviar(row.id)}>
+            <LocalShippingOutlinedIcon />
+          </IconButton>
+        </Tooltip>
+      ) : null}
 
-          {row.status === "ENVIADO" ? (
-            <IconButton color="success" onClick={() => handleReceber(row.id)}>
-              <CheckCircleOutlineOutlinedIcon />
-            </IconButton>
-          ) : null}
+      {row.status === "ENVIADO" ? (
+        <Tooltip title="Receber pedido" arrow>
+          <IconButton color="success" onClick={() => handleReceber(row.id)}>
+            <CheckCircleOutlineOutlinedIcon />
+          </IconButton>
+        </Tooltip>
+      ) : null}
 
-          {row.status !== "RECEBIDO" && row.status !== "CANCELADO" ? (
-            <IconButton color="error" onClick={() => handleCancelar(row.id)}>
-              <DeleteOutlineOutlinedIcon />
-            </IconButton>
-          ) : null}
-        </Box>
-      ),
-    },
+      {row.status !== "RECEBIDO" && row.status !== "CANCELADO" ? (
+        <Tooltip title="Cancelar pedido" arrow>
+          <IconButton color="error" onClick={() => handleCancelar(row.id)}>
+            <DeleteOutlineOutlinedIcon />
+          </IconButton>
+        </Tooltip>
+      ) : null}
+    </Box>
+  ),
+},
   ];
 
   return (

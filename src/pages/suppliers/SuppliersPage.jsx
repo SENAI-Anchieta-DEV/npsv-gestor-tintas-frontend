@@ -327,9 +327,19 @@ export default function SuppliersPage() {
           {row.ativo ? (
             <Button
               size="small"
-              color="warning"
               onClick={() => handleDeactivate(row)}
-              sx={{ minWidth: "auto", px: 1.2 }}
+              sx={{
+                minWidth: "auto",
+                px: 1.4,
+                color: "#FFFFFF",
+                backgroundColor: "#F59E0B",
+                borderRadius: "10px",
+                textTransform: "none",
+                fontWeight: 700,
+                "&:hover": {
+                  backgroundColor: "#D97706",
+                },
+              }}
             >
               Desativar
             </Button>

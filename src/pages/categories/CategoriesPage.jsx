@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Box, IconButton, Typography } from "@mui/material";
+import { Alert, Box, IconButton, Tooltip, Typography } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -182,12 +182,17 @@ export default function CategoriesPage() {
       label: "Ações",
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton onClick={() => openEditDialog(row)}>
-            <EditOutlinedIcon />
-          </IconButton>
-          <IconButton color="error" onClick={() => handleDelete(row)}>
-            <DeleteOutlineOutlinedIcon />
-          </IconButton>
+          <Tooltip title="Editar categoria" arrow>
+            <IconButton onClick={() => openEditDialog(row)}>
+              <EditOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Excluir categoria" arrow>
+            <IconButton color="error" onClick={() => handleDelete(row)}>
+              <DeleteOutlineOutlinedIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },

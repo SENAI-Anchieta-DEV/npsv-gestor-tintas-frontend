@@ -1,5 +1,6 @@
+import LockResetOutlinedIcon from "@mui/icons-material/LockResetOutlined";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Chip, IconButton, MenuItem, Typography } from "@mui/material";
+import { Alert, Box, Chip, IconButton, MenuItem, Tooltip, Typography } from "@mui/material";;
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -16,6 +17,7 @@ import {
   createUsuario,
   deleteUsuario,
   getUsuarios,
+  updateSenhaUsuario,
   updateUsuario,
 } from "../../services/api";
 
@@ -65,6 +67,11 @@ function getRoleStyles(role) {
 
 export default function UsersPage() {
   const { showSnackbar } = useAppSnackbar();
+
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordTargetEmail, setPasswordTargetEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
@@ -200,6 +207,76 @@ export default function UsersPage() {
     }
   }
 
+  async function handleChangePassword() {
+  if (!editingEmail) {
+    showSnackbar("Selecione um usuário para alterar a senha.", "error");
+    return;
+  }
+
+  if (!String(form.senha).trim()) {
+    setFieldErrors((prev) => ({
+      ...prev,
+      senha: "Informe a nova senha.",
+    }));
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    await updateSenhaUsuario(editingEmail, {
+      senha: form.senha,
+    });
+
+    showSnackbar("Senha alterada com sucesso.", "success");
+    setForm((prev) => ({ ...prev, senha: "" }));
+    setFieldErrors((prev) => ({ ...prev, senha: "" }));
+  } catch (error) {
+    showSnackbar(getProblemDetailMessage(error), "error");
+  } finally {
+    setSaving(false);
+  }
+}
+
+function openPasswordDialog(usuario) {
+  setPasswordTargetEmail(usuario.email);
+  setNewPassword("");
+  setPasswordError("");
+  setPasswordDialogOpen(true);
+}
+
+function closePasswordDialog() {
+  if (saving) return;
+  setPasswordDialogOpen(false);
+  setPasswordTargetEmail("");
+  setNewPassword("");
+  setPasswordError("");
+}
+
+async function handleSubmitPassword(event) {
+  event.preventDefault();
+
+  if (!String(newPassword).trim()) {
+    setPasswordError("Informe a nova senha.");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    await updateSenhaUsuario(passwordTargetEmail, {
+      senha: newPassword,
+    });
+
+    showSnackbar("Senha alterada com sucesso.", "success");
+    closePasswordDialog();
+  } catch (error) {
+    setPasswordError(getProblemDetailMessage(error));
+  } finally {
+    setSaving(false);
+  }
+}
+
   const columns = [
     {
       key: "usuario",
@@ -240,12 +317,45 @@ export default function UsersPage() {
       label: "Ações",
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton onClick={() => openEditDialog(row)}>
-            <EditOutlinedIcon />
-          </IconButton>
-          <IconButton color="error" onClick={() => handleDelete(row)}>
-            <DeleteOutlineOutlinedIcon />
-          </IconButton>
+          <Tooltip title="Editar usuário" arrow>
+            <IconButton onClick={() => openEditDialog(row)}>
+              <EditOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+
+           <Box
+            onClick={() => openPasswordDialog(row)}
+            sx={{
+              px: 1.4,
+              py: 0.7,
+              minWidth: 120,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              borderRadius: "999px",
+              backgroundColor: "rgba(245, 158, 11, 0.12)",
+              color: "#D97706",
+              fontSize: 12.5,
+              fontWeight: 800,
+              lineHeight: 1,
+              cursor: "pointer",
+              userSelect: "none",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                backgroundColor: "rgba(245, 158, 11, 0.22)",
+                color: "#B45309",
+              },
+            }}
+          >
+            Alterar senha
+          </Box>
+
+          <Tooltip title="Excluir usuário" arrow>
+            <IconButton color="error" onClick={() => handleDelete(row)}>
+              <DeleteOutlineOutlinedIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },
@@ -357,6 +467,28 @@ export default function UsersPage() {
             helperText={fieldErrors.senha}
           />
         ) : null}
+
+        <AppFormDialog
+          open={passwordDialogOpen}
+          title="Alterar senha"
+          onClose={closePasswordDialog}
+          onSubmit={handleSubmitPassword}
+          loading={saving}
+          submitLabel="Salvar nova senha"
+        >
+          <AppTextField
+            required
+            label="Nova senha"
+            type="password"
+            value={newPassword}
+            onChange={(event) => {
+              setNewPassword(event.target.value);
+              setPasswordError("");
+            }}
+            error={Boolean(passwordError)}
+            helperText={passwordError}
+          />
+        </AppFormDialog>
 
         <AppTextField
           select

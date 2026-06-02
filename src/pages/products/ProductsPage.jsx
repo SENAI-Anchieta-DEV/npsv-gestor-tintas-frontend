@@ -5,6 +5,7 @@ import {
   Chip,
   IconButton,
   MenuItem,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -345,12 +346,17 @@ export default function ProductsPage() {
       label: "Ações",
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton onClick={() => openEditDialog(row)}>
-            <EditOutlinedIcon />
-          </IconButton>
-          <IconButton color="error" onClick={() => handleDelete(row)}>
-            <DeleteOutlineOutlinedIcon />
-          </IconButton>
+          <Tooltip title="Editar produto" arrow>
+            <IconButton onClick={() => openEditDialog(row)}>
+              <EditOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Excluir produto" arrow>
+            <IconButton color="error" onClick={() => handleDelete(row)}>
+              <DeleteOutlineOutlinedIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },

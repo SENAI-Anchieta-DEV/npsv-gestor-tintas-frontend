@@ -8,6 +8,7 @@ import {
   MenuItem,
   Paper,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -347,12 +348,17 @@ export default function FormulasPage() {
       label: "Ações",
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton onClick={() => openEdit(row)}>
-            <EditOutlinedIcon />
-          </IconButton>
-          <IconButton color="error" onClick={() => handleDelete(row)}>
-            <DeleteOutlineOutlinedIcon />
-          </IconButton>
+          <Tooltip title="Editar fórmula" arrow>
+            <IconButton onClick={() => openEdit(row)}>
+              <EditOutlinedIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Excluir fórmula" arrow>
+            <IconButton color="error" onClick={() => handleDelete(row)}>
+              <DeleteOutlineOutlinedIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },

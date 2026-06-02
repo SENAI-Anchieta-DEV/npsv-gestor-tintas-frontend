@@ -5,6 +5,7 @@ import {
   Chip,
   IconButton,
   MenuItem,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -355,9 +356,13 @@ export default function SalesPage() {
       key: "acoes",
       label: "Ações",
       render: () => (
-        <IconButton disabled>
-          <ReceiptLongOutlinedIcon />
-        </IconButton>
+        <Tooltip title="Visualização indisponível" arrow>
+          <span>
+            <IconButton disabled>
+              <ReceiptLongOutlinedIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
       ),
     },
   ];

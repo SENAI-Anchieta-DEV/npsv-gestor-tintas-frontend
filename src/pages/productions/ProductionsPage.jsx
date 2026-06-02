@@ -5,6 +5,7 @@ import {
   Chip,
   IconButton,
   MenuItem,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -253,21 +254,27 @@ export default function ProductionsPage() {
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1 }}>
           {(row.status === "PENDENTE" || row.status === "PROCESSANDO") && (
-            <IconButton color="success" onClick={() => handleConcluir(row.id)}>
-              <CheckCircleOutlineOutlinedIcon />
-            </IconButton>
+            <Tooltip title="Concluir produção" arrow>
+              <IconButton color="success" onClick={() => handleConcluir(row.id)}>
+                <CheckCircleOutlineOutlinedIcon />
+              </IconButton>
+            </Tooltip>
           )}
 
           {(row.status === "PENDENTE" || row.status === "PROCESSANDO") && (
-            <IconButton color="warning" onClick={() => handlePerdaTotal(row.id)}>
-              <PlayArrowOutlinedIcon />
-            </IconButton>
+            <Tooltip title="Registrar perda total" arrow>
+              <IconButton color="warning" onClick={() => handlePerdaTotal(row.id)}>
+                <PlayArrowOutlinedIcon />
+              </IconButton>
+            </Tooltip>
           )}
 
           {row.status !== "CONCLUIDO" && (
-            <IconButton color="error" onClick={() => handleCancelar(row.id)}>
-              <DeleteOutlineOutlinedIcon />
-            </IconButton>
+            <Tooltip title="Cancelar produção" arrow>
+              <IconButton color="error" onClick={() => handleCancelar(row.id)}>
+                <DeleteOutlineOutlinedIcon />
+              </IconButton>
+            </Tooltip>
           )}
         </Box>
       ),
