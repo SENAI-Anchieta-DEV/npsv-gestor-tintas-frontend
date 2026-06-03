@@ -207,18 +207,18 @@ export default function AdminLayout({ children }) {
               gap: 1.4,
               cursor: "pointer",
               color: "#FFFFFF",
-              background: "rgba(239, 68, 68, 0.14)",
-              border: "1px solid rgba(239, 68, 68, 0.24)",
+              backgroundColor: "#DC2626",
+              border: "1px solid rgba(220, 38, 38, 0.9)",
               "&:hover": {
-                background: "rgba(239, 68, 68, 0.22)",
+                backgroundColor: "#B91C1C",
               },
               transition: "all .18s ease",
             }}
           >
-            <Box sx={{ display: "grid", placeItems: "center" }}>
+            <Box sx={{ display: "grid", placeItems: "center", color: "#FFFFFF" }}>
               <LogoutOutlinedIcon />
             </Box>
-            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
+            <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>
               Sair
             </Typography>
           </Box>

@@ -1,22 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Fragment } from "react";
 import {
   Alert,
   Box,
   Button,
   Chip,
+  Collapse,
   IconButton,
   MenuItem,
   Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Tooltip,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
+import KeyboardArrowUpOutlinedIcon from "@mui/icons-material/KeyboardArrowUpOutlined";
 
 import AdminLayout from "../../components/layout/AdminLayout";
-import AppDataTable from "../../components/common/AppDataTable";
 import AppFormDialog from "../../components/common/AppFormDialog";
 import AppLoading from "../../components/common/AppLoading";
 import AppPageHeader from "../../components/common/AppPageHeader";
@@ -294,75 +302,19 @@ export default function FormulasPage() {
     }
   }
 
-  const columns = [
-    {
-      key: "formula",
-      label: "Fórmula",
-      render: (row) => (
-        <Box>
-          <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
-            {row.nomeCor}
-          </Typography>
-          <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
-            {row.codigoInterno}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      key: "itens",
-      label: "Itens",
-      render: (row) => (
-        <Typography sx={{ color: "text.primary" }}>
-          {row.itens?.length || 0}
-        </Typography>
-      ),
-    },
-    {
-      key: "datas",
-      label: "Última atualização",
-      render: (row) => (
-        <Typography sx={{ color: "text.secondary" }}>
-          {formatDateTime(row.dataAtualizacao || row.dataCriacao)}
-        </Typography>
-      ),
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: () => (
-        <Chip
-          label="Ativa"
-          sx={{
-            fontWeight: 700,
-            color: "#FFFFFF",
-            backgroundColor: "success.main",
-            border: "1px solid",
-            borderColor: "success.main",
-          }}
-        />
-      ),
-    },
-    {
-      key: "acoes",
-      label: "Ações",
-      render: (row) => (
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Tooltip title="Editar fórmula" arrow>
-            <IconButton onClick={() => openEdit(row)}>
-              <EditOutlinedIcon />
-            </IconButton>
-          </Tooltip>
+  const [expandedFormulas, setExpandedFormulas] = useState([]);
 
-          <Tooltip title="Excluir fórmula" arrow>
-            <IconButton color="error" onClick={() => handleDelete(row)}>
-              <DeleteOutlineOutlinedIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      ),
-    },
-  ];
+  function toggleFormulaDetails(id) {
+    setExpandedFormulas((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  }
+
+  function getItemLabel(item) {
+    return (
+      item?.insumo?.descricao || item?.insumo?.nome || item?.insumoId || "-"
+    );
+  }
 
   return (
     <AdminLayout>
@@ -408,11 +360,198 @@ export default function FormulasPage() {
         {loading ? (
           <AppLoading message="Carregando fórmulas..." />
         ) : (
-          <AppDataTable
-            columns={columns}
-            rows={formulasFiltradas}
-            emptyMessage="Nenhuma fórmula encontrada."
-          />
+          <TableContainer
+            component={Paper}
+            elevation={0}
+            sx={{
+              borderRadius: 0,
+              backgroundColor: "transparent",
+              borderTop: "1px solid",
+              borderTopColor: "divider",
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ width: 48 }} />
+                  <TableCell sx={{ fontWeight: 800, color: "text.primary", py: 1.8 }}>
+                    Fórmula
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, color: "text.primary", py: 1.8 }}>
+                    Itens
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, color: "text.primary", py: 1.8 }}>
+                    Última atualização
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, color: "text.primary", py: 1.8 }}>
+                    Status
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, color: "text.primary", py: 1.8 }}>
+                    Ações
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {formulasFiltradas.length > 0 ? (
+                  formulasFiltradas.map((row) => {
+                    const open = expandedFormulas.includes(row.id);
+
+                    return (
+                      <Fragment key={row.id || row.codigoInterno}>
+                        <TableRow
+                          hover
+                          sx={{
+                            "&:hover": {
+                              backgroundColor: "action.hover",
+                            },
+                          }}
+                        >
+                          <TableCell sx={{ py: 0.5 }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => toggleFormulaDetails(row.id)}
+                            >
+                              {open ? (
+                                <KeyboardArrowUpOutlinedIcon />
+                              ) : (
+                                <KeyboardArrowDownOutlinedIcon />
+                              )}
+                            </IconButton>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.6 }}>
+                            <Box>
+                              <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
+                                {row.nomeCor}
+                              </Typography>
+                              <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                                {row.codigoInterno}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.6 }}>
+                            <Typography sx={{ color: "text.primary" }}>
+                              {row.itens?.length || 0}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.6 }}>
+                            <Typography sx={{ color: "text.secondary" }}>
+                              {formatDateTime(row.dataAtualizacao || row.dataCriacao)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.6 }}>
+                            <Chip
+                              label="Ativa"
+                              sx={{
+                                fontWeight: 700,
+                                color: "#FFFFFF",
+                                backgroundColor: "success.main",
+                                border: "1px solid",
+                                borderColor: "success.main",
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell sx={{ py: 1.6 }}>
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                              <Tooltip title="Editar fórmula" arrow>
+                                <IconButton onClick={() => openEdit(row)}>
+                                  <EditOutlinedIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Excluir fórmula" arrow>
+                                <IconButton color="error" onClick={() => handleDelete(row)}>
+                                  <DeleteOutlineOutlinedIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell colSpan={6} sx={{ px: 3, py: 0 }}>
+                            <Collapse in={open} timeout="auto" unmountOnExit>
+                              <Box sx={{ py: 2 }}>
+                                <Box
+                                  sx={{
+                                    px: 2,
+                                    py: 2,
+                                    borderRadius: "18px",
+                                    backgroundColor: "background.default",
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                  }}
+                                >
+                                  <Typography sx={{ fontWeight: 700, mb: 1 }}>
+                                    Detalhes da fórmula
+                                  </Typography>
+
+                                  <TableContainer sx={{ backgroundColor: "transparent" }}>
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>
+                                            Insumo
+                                          </TableCell>
+                                          <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>
+                                            Categoria
+                                          </TableCell>
+                                          <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>
+                                            Quantidade necessária
+                                          </TableCell>
+                                          <TableCell sx={{ fontWeight: 700, color: "text.secondary" }}>
+                                            Ordem
+                                          </TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {row.itens?.map((item, index) => (
+                                          <TableRow key={`detail-${row.id}-${index}`}>
+                                            <TableCell sx={{ py: 1.2 }}>
+                                              <Typography sx={{ color: "text.primary" }}>
+                                                {getItemLabel(item)}
+                                              </Typography>
+                                            </TableCell>
+                                            <TableCell sx={{ py: 1.2 }}>
+                                              <Typography sx={{ color: "text.secondary" }}>
+                                                {item?.insumo?.categoria?.nome || "-"}
+                                              </Typography>
+                                            </TableCell>
+                                            <TableCell sx={{ py: 1.2 }}>
+                                              <Typography sx={{ color: "text.primary" }}>
+                                                {item?.quantidadeNecessaria || "-"}
+                                              </Typography>
+                                            </TableCell>
+                                            <TableCell sx={{ py: 1.2 }}>
+                                              <Typography sx={{ color: "text.secondary" }}>
+                                                {item?.ordemAdicao || index + 1}
+                                              </Typography>
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                </Box>
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </Fragment>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <Box sx={{ py: 7, textAlign: "center" }}>
+                        <Typography sx={{ color: "text.secondary", fontSize: 14 }}>
+                          Nenhuma fórmula encontrada.
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </Box>
 
@@ -461,10 +600,21 @@ export default function FormulasPage() {
 
             <Button
               type="button"
-              variant="outlined"
+              variant="contained"
               startIcon={<AddIcon />}
               onClick={handleAddItem}
-              sx={{ borderRadius: "14px", textTransform: "none" }}
+              sx={{
+                borderRadius: "14px",
+                textTransform: "none",
+                fontWeight: 700,
+                color: "#FFFFFF",
+                background: "linear-gradient(135deg, #4F46E5, #2B82FF)",
+                boxShadow: "0 10px 24px rgba(43, 130, 255, 0.22)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #4338CA, #2563EB)",
+                  boxShadow: "0 12px 26px rgba(43, 130, 255, 0.28)",
+                },
+              }}
             >
               Adicionar item
             </Button>
@@ -525,13 +675,24 @@ export default function FormulasPage() {
 
                   <Button
                     type="button"
+                    variant="contained"
                     color="error"
                     onClick={() => handleRemoveItem(index)}
                     sx={{
-                      alignSelf: { xs: "start", md: "end" },
+                      alignSelf: { xs: "stretch", md: "center" },
+                      justifySelf: { xs: "stretch", md: "end" },
+                      minWidth: { xs: "100%", md: 150 },
+                      height: 44,
+                      mt: { xs: 0, md: 3 },
+                      px: 2,
                       borderRadius: "14px",
                       textTransform: "none",
-                      minWidth: 120,
+                      fontWeight: 700,
+                      color: "#FFFFFF",
+                      boxShadow: "none",
+                      "&:hover": {
+                        boxShadow: "none",
+                      },
                     }}
                   >
                     Remover
