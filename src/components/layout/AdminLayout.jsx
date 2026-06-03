@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Box, IconButton, Stack, Typography, useTheme } from "@mui/material";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
@@ -55,6 +56,14 @@ export default function AdminLayout({ children }) {
   function isActive(path) {
     return location.pathname.startsWith(path);
   }
+
+  function handleLogout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("usuarioLogado");
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("usuarioLogado");
+  navigate("/login", { replace: true });
+}
 
   const sidebarBg =
     theme.palette.mode === "dark"
@@ -160,6 +169,7 @@ export default function AdminLayout({ children }) {
             borderTop: "1px solid rgba(255,255,255,0.08)",
           }}
         >
+        <Stack spacing={1.6}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Box>
               <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.72)" }}>
@@ -185,8 +195,36 @@ export default function AdminLayout({ children }) {
               {mode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
             </IconButton>
           </Stack>
-        </Box>
+
+          <Box
+            onClick={handleLogout}
+            sx={{
+              px: 1.6,
+              py: 1.25,
+              borderRadius: "14px",
+              display: "flex",
+              alignItems: "center",
+              gap: 1.4,
+              cursor: "pointer",
+              color: "#FFFFFF",
+              background: "rgba(239, 68, 68, 0.14)",
+              border: "1px solid rgba(239, 68, 68, 0.24)",
+              "&:hover": {
+                background: "rgba(239, 68, 68, 0.22)",
+              },
+              transition: "all .18s ease",
+            }}
+          >
+            <Box sx={{ display: "grid", placeItems: "center" }}>
+              <LogoutOutlinedIcon />
+            </Box>
+            <Typography sx={{ fontSize: 14, fontWeight: 700 }}>
+              Sair
+            </Typography>
+          </Box>
+        </Stack>
       </Box>
+    </Box>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box
