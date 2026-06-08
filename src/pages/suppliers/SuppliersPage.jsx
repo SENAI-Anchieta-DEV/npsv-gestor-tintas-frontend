@@ -39,6 +39,14 @@ const INITIAL_FORM = {
   ativo: true,
 };
 
+function normalizeAtivo(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value == null) return false;
+
+  const normalized = String(value).trim().toLowerCase();
+  return ["true", "1", "sim", "s", "yes", "y", "ativo", "ativado"].includes(normalized);
+}
+
 function normalizeFornecedor(item) {
   return {
     id: item?.id || "",
@@ -48,7 +56,7 @@ function normalizeFornecedor(item) {
     telefone: item?.telefone || "",
     email: item?.email || "",
     endereco: item?.endereco || "",
-    ativo: Boolean(item?.ativo),
+    ativo: normalizeAtivo(item?.ativo),
   };
 }
 

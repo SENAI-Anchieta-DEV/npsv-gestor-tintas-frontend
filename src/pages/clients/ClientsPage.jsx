@@ -25,6 +25,8 @@ import {
   deleteCliente,
   desativarCliente,
   getClientes,
+  getVendas,
+  getVendasByCliente,
   updateCliente,
 } from "../../services/api";
 
@@ -46,7 +48,7 @@ function normalizeCliente(item) {
     telefone: item?.telefone || "",
     email: item?.email || "",
     endereco: item?.endereco || "",
-    ativo: Boolean(item?.ativo),
+    ativo: normalizeAtivo(item?.ativo),
   };
 }
 
@@ -64,6 +66,14 @@ function normalizeCpfValue(value) {
   return String(value || "").replace(/\D/g, "");
 }
 
+function normalizeAtivo(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value == null) return false;
+
+  const normalized = String(value).trim().toLowerCase();
+  return ["true", "1", "sim", "s", "yes", "y", "ativo", "ativado"].includes(normalized);
+}
+
 function formatTelefone(value) {
   const digits = String(value || "").replace(/\D/g, "");
 
@@ -76,6 +86,61 @@ function formatTelefone(value) {
 
 function normalizeTelefoneValue(value) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function getClienteIdFromVenda(venda) {
+  if (!venda) return "";
+
+  const cliente = venda?.cliente;
+
+  if (cliente && typeof cliente === "object") {
+    return (
+      cliente?.id ||
+      cliente?.clienteId ||
+      cliente?.idCliente ||
+      ""
+    );
+  }
+
+  return (
+    venda?.clienteId ||
+    venda?.idCliente ||
+    String(cliente || "")
+  );
+}
+
+async function getVendasVinculadasCount(cliente) {
+  if (!cliente?.id) return 0;
+
+  const clienteId = String(cliente.id);
+
+  try {
+    const vendas = await getVendas();
+    if (Array.isArray(vendas)) {
+      return vendas.reduce((count, venda) => {
+        const vendaClienteId = String(getClienteIdFromVenda(venda));
+        const matches = vendaClienteId && vendaClienteId === clienteId;
+        return matches ? count + 1 : count;
+      }, 0);
+    }
+  } catch (error) {
+    if (error?.status !== 404) {
+      throw error;
+    }
+  }
+
+  try {
+    const vendasByCliente = await getVendasByCliente(clienteId);
+    if (Array.isArray(vendasByCliente)) {
+      return vendasByCliente.length;
+    }
+  } catch (error) {
+    if (error?.status !== 404) {
+      throw error;
+    }
+  }
+
+  return 0;
 }
 
 export default function ClientsPage() {
@@ -230,6 +295,23 @@ export default function ClientsPage() {
 
   async function handleDeactivate(cliente) {
     try {
+      const vendasVinculadas = await getVendasVinculadasCount(cliente);
+
+      if (vendasVinculadas === 0) {
+        const confirmed = window.confirm(
+          `${cliente.nome} não tem vendas vinculadas. Deseja excluir o cliente do sistema?`
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        await deleteCliente(cliente.id);
+        showSnackbar("Cliente excluído com sucesso.", "success");
+        await loadClientes();
+        return;
+      }
+
       await desativarCliente(cliente.id);
       showSnackbar("Cliente desativado com sucesso.", "success");
       await loadClientes();

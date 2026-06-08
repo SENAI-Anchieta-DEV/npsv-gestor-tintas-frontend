@@ -313,6 +313,12 @@ export function getVendasByVendedor(vendedorId) {
   });
 }
 
+export function getVendasByCliente(clienteId) {
+  return authenticatedRequest(`/api/vendas/cliente/${encodeURIComponent(clienteId)}`, {
+    method: "GET",
+  });
+}
+
 export function iniciarVenda(payload) {
   return authenticatedRequest("/api/vendas/iniciar", {
     method: "POST",
@@ -373,9 +379,19 @@ export function getClientes() {
 }
 
 export function getClienteById(id) {
-  return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
-    method: "GET",
-  });
+  try {
+    return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
+      method: "GET",
+    });
+  } catch (error) {
+    if (error?.status === 404) {
+      return authenticatedRequest(`/api/clientes/${encodeURIComponent(id)}`, {
+        method: "GET",
+      });
+    }
+
+    throw error;
+  }
 }
 
 export function createCliente(payload) {
@@ -386,16 +402,37 @@ export function createCliente(payload) {
 }
 
 export function updateCliente(id, payload) {
-  return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+  try {
+    return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (error?.status === 404) {
+      return authenticatedRequest(`/api/clientes/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+    }
+
+    throw error;
+  }
 }
 
-export function deleteCliente(id) {
-  return authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-  });
+export async function deleteCliente(id) {
+  try {
+    return await authenticatedRequest(`/api/clientes/id/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    if (error?.status === 404) {
+      return await authenticatedRequest(`/api/clientes/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+    }
+
+    throw error;
+  }
 }
 
 export async function desativarCliente(id) {
