@@ -18,9 +18,10 @@ export default function AppFormDialog({
   submitLabel = "Salvar",
   cancelLabel = "Cancelar",
   children,
+  maxWidth = "sm",
 }) {
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth={maxWidth}>
       <form onSubmit={onSubmit}>
         <DialogTitle sx={{ px: 3, pt: 3, pb: 1 }}>
           <Typography sx={{ fontWeight: 800, fontSize: 20 }}>{title}</Typography>

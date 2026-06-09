@@ -24,6 +24,8 @@ import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
   cancelarProducao,
   concluirProducao,
+  getCurrentUserEmailFromToken,
+  getUsuarioByEmail,
   getFormulas,
   getProducoes,
   iniciarProducao,
@@ -135,27 +137,57 @@ export default function ProductionsPage() {
     return Object.keys(errors).length === 0;
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  function getUsuarioIdFromResponse(usuario) {
+  return (
+    usuario?.id ||
+    usuario?.usuarioId ||
+    usuario?.data?.id ||
+    usuario?.data?.usuarioId ||
+    ""
+  );
+}
 
-    if (!validateForm()) return;
+async function getUsuarioLogadoId() {
+  const emailUsuarioLogado = getCurrentUserEmailFromToken();
 
-    setSaving(true);
-
-    try {
-      await iniciarProducao({
-        formulaId: form.formulaId,
-      });
-
-      showSnackbar("Produção iniciada com sucesso.", "success");
-      closeDialog();
-      await loadData();
-    } catch (error) {
-      showSnackbar(getProblemDetailMessage(error), "error");
-    } finally {
-      setSaving(false);
-    }
+  if (!emailUsuarioLogado) {
+    throw new Error("Não foi possível identificar o usuário logado.");
   }
+
+  const usuarioLogado = await getUsuarioByEmail(emailUsuarioLogado);
+  const usuarioId = getUsuarioIdFromResponse(usuarioLogado);
+
+  if (!usuarioId) {
+    throw new Error("Não foi possível localizar o ID do usuário logado.");
+  }
+
+  return usuarioId;
+}
+
+  async function handleSubmit(event) {
+  event.preventDefault();
+
+  if (!validateForm()) return;
+
+  setSaving(true);
+
+  try {
+    const usuarioId = await getUsuarioLogadoId();
+
+    await iniciarProducao({
+      formulaId: form.formulaId,
+      coloristaId: usuarioId,
+    });
+
+    showSnackbar("Produção iniciada com sucesso.", "success");
+    closeDialog();
+    await loadData();
+  } catch (error) {
+    showSnackbar(getProblemDetailMessage(error), "error");
+  } finally {
+    setSaving(false);
+  }
+}
 
   async function handleConcluir(id) {
     try {

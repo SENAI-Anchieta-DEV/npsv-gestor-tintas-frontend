@@ -333,6 +333,32 @@ export function concluirVenda(id, payload) {
   });
 }
 
+export function cancelarVenda(id) {
+  return authenticatedRequest(`/api/vendas/${encodeURIComponent(id)}/cancelar`, {
+    method: "PATCH",
+  });
+}
+
+export function deletarVenda(id) {
+  return authenticatedRequest(`/api/vendas/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export function atualizarVenda(id, payload) {
+  return authenticatedRequest(`/api/vendas/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function editarVenda(id, payload) {
+  return authenticatedRequest(`/api/vendas/${encodeURIComponent(id)}/editar`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
 /* ===================== PRODUÇÕES ===================== */
 
 export function getProducoes() {

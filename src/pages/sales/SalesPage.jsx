@@ -1,15 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Autocomplete,
   Box,
+  Button,
   Chip,
   IconButton,
   MenuItem,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
+  Divider,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import EditIcon from "@mui/icons-material/Edit";
+import BlockIcon from "@mui/icons-material/Block";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 import AdminLayout from "../../components/layout/AdminLayout";
 import AppDataTable from "../../components/common/AppDataTable";
@@ -20,7 +30,11 @@ import AppTextField from "../../components/common/AppTextField";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
 import {
+  cancelarVenda,
+  atualizarVenda,
   concluirVenda,
+  deletarVenda,
+  getClientes,
   getCurrentUserEmailFromToken,
   getCurrentUserRoleFromToken,
   getProdutos,
@@ -89,8 +103,20 @@ function getStatusLabel(status) {
 }
 
 function normalizeVenda(item) {
+  const dataAbertura =
+    item?.dataAbertura ||
+    item?.dataHora ||
+    item?.dataCriacao ||
+    "";
+
   return {
     id: item?.id || "",
+    clienteId: item?.clienteId || item?.cliente?.id || "",
+    clienteNome:
+      item?.nomeCliente ||
+      item?.cliente?.nome ||
+      item?.clienteNome ||
+      "-",
     vendedorNome:
       item?.nomeVendedor ||
       item?.vendedor?.nome ||
@@ -98,12 +124,26 @@ function normalizeVenda(item) {
       "-",
     valorTotal: Number(item?.valorTotal || 0),
     status: item?.status || "PENDENTE",
-    dataAbertura:
-      item?.dataAbertura ||
-      item?.dataHora ||
-      item?.dataCriacao ||
-      "",
-    itens: Array.isArray(item?.itens) ? item.itens : [],
+    formaPagamento: item?.formaPagamento || "",
+    dataAbertura,
+    dataAberturaTimestamp: dataAbertura ? new Date(dataAbertura).getTime() : 0,
+    itens: Array.isArray(item?.itens)
+      ? item.itens.map((it) => ({
+          produtoId: it?.produtoId || it?.produto?.id || "",
+          descricao:
+            it?.nomeProduto ||
+            it?.produto?.descricao ||
+            it?.descricao ||
+            "Produto",
+          quantidade: Number(it?.quantidade || 0),
+          precoVenda: Number(
+            it?.precoPraticado ||
+            it?.precoVenda ||
+            it?.produto?.precoVenda ||
+            0
+          ),
+        }))
+      : [],
   };
 }
 
@@ -131,14 +171,21 @@ export default function SalesPage() {
 
   const [vendas, setVendas] = useState([]);
   const [produtos, setProdutos] = useState([]);
+  const [clientes, setClientes] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("TODAS");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingVendaId, setEditingVendaId] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [form, setForm] = useState(INITIAL_FORM);
+  const [items, setItems] = useState([]);
+  const [selectedProduto, setSelectedProduto] = useState(null);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [selectedQuantidade, setSelectedQuantidade] = useState(1);
 
   async function getUsuarioLogadoId() {
     const emailUsuarioLogado = getCurrentUserEmailFromToken();
@@ -180,13 +227,15 @@ export default function SalesPage() {
     setErrorMessage("");
 
     try {
-      const [vendasData, produtosData] = await Promise.all([
+      const [vendasData, produtosData, clientesData] = await Promise.all([
         loadVendas(),
         getProdutos(),
+        getClientes(),
       ]);
 
       setVendas(vendasData.map(normalizeVenda));
       setProdutos(Array.isArray(produtosData) ? produtosData.map(normalizeProduto) : []);
+      setClientes(Array.isArray(clientesData) ? clientesData : []);
     } catch (error) {
       setErrorMessage(getProblemDetailMessage(error));
     } finally {
@@ -201,7 +250,7 @@ export default function SalesPage() {
   const filteredVendas = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    return vendas.filter((venda) => {
+    const filtered = vendas.filter((venda) => {
       const matchesSearch =
         !term ||
         venda.vendedorNome.toLowerCase().includes(term) ||
@@ -212,6 +261,11 @@ export default function SalesPage() {
 
       return matchesSearch && matchesStatus;
     });
+
+    // Ordenar do mais recente para o mais antigo (usando timestamp)
+    return filtered.sort((a, b) => {
+      return b.dataAberturaTimestamp - a.dataAberturaTimestamp;
+    });
   }, [vendas, search, statusFilter]);
 
   function handleChange(event) {
@@ -220,9 +274,69 @@ export default function SalesPage() {
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
+  async function handleCancelarVenda(vendaId) {
+    if (!window.confirm("Tem certeza que deseja cancelar esta venda?")) return;
+
+    try {
+      await cancelarVenda(vendaId);
+      showSnackbar("Venda cancelada com sucesso.", "success");
+      await loadData();
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
+    }
+  }
+
+  async function handleDeletarVenda(vendaId) {
+    if (!window.confirm("Tem certeza que deseja deletar esta venda? Esta ação não pode ser desfeita.")) return;
+
+    try {
+      await deletarVenda(vendaId);
+      showSnackbar("Venda deletada com sucesso.", "success");
+      await loadData();
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
+    }
+  }
+
   function openCreateDialog() {
     setForm(INITIAL_FORM);
     setFieldErrors({});
+    setItems([]);
+    setSelectedProduto(null);
+    setSelectedCliente(null);
+    setSelectedQuantidade(1);
+    setIsEditMode(false);
+    setEditingVendaId(null);
+    setDialogOpen(true);
+  }
+
+  async function openEditDialog(venda) {
+    setSelectedCliente(
+      clientes.find((c) => c.id === venda.clienteId) || null
+    );
+
+    setItems(
+      Array.isArray(venda.itens)
+        ? venda.itens.map((it) => ({
+            id: it.id,
+            descricao: it.descricao,
+            quantidade: Number(it.quantidade || 1),
+            precoVenda: Number(it.precoVenda || 0),
+          }))
+        : []
+    );
+
+    setForm({
+      produtoId: "",
+      quantidade: "1",
+      formaPagamento: venda.formaPagamento || "",
+    });
+
+    setFieldErrors({});
+    setSelectedProduto(null);
+    setSelectedQuantidade(1);
+    setIsEditMode(true);
+    setEditingVendaId(venda.id);
     setDialogOpen(true);
   }
 
@@ -231,17 +345,19 @@ export default function SalesPage() {
     setDialogOpen(false);
     setForm(INITIAL_FORM);
     setFieldErrors({});
+    setItems([]);
+    setSelectedProduto(null);
+    setSelectedCliente(null);
+    setSelectedQuantidade(1);
+    setIsEditMode(false);
+    setEditingVendaId(null);
   }
 
   function validateForm() {
     const errors = {};
 
-    if (!form.produtoId) {
-      errors.produtoId = "Selecione o produto.";
-    }
-
-    if (!String(form.quantidade).trim() || Number(form.quantidade) <= 0) {
-      errors.quantidade = "Informe uma quantidade válida.";
+    if (!items || items.length === 0) {
+      errors.itens = "Adicione pelo menos um item.";
     }
 
     if (!form.formaPagamento) {
@@ -260,27 +376,35 @@ export default function SalesPage() {
     setSaving(true);
 
     try {
-      const vendedorId = await getUsuarioLogadoId();
+      if (isEditMode && editingVendaId) {
+        // Editar venda existente
+        await atualizarVenda(editingVendaId, {
+          clienteId: selectedCliente?.id,
+          formaPagamento: form.formaPagamento,
+          itens: items.map((it) => ({
+            produtoId: it.id,
+            quantidade: Number(it.quantidade),
+          })),
+        });
 
-      const vendaAberta = await iniciarVenda({
-        vendedorId,
-      });
+        showSnackbar("Venda atualizada com sucesso.", "success");
+      } else {
+        // Iniciar nova venda com um único POST
+        const vendedorId = await getUsuarioLogadoId();
 
-      if (!vendaAberta?.id) {
-        throw new Error("Não foi possível iniciar a venda.");
+        await iniciarVenda({
+          vendedorId,
+          clienteId: selectedCliente?.id,
+          formaPagamento: form.formaPagamento,
+          itens: items.map((it) => ({
+            produtoId: it.id,
+            quantidade: Number(it.quantidade),
+          })),
+        });
+
+        showSnackbar("Venda iniciada com sucesso. Clique em 'Concluir' para finalizar.", "success");
       }
 
-      await concluirVenda(vendaAberta.id, {
-        formaPagamento: form.formaPagamento,
-        itens: [
-          {
-            produtoId: form.produtoId,
-            quantidade: Number(form.quantidade),
-          },
-        ],
-      });
-
-      showSnackbar("Venda registrada com sucesso.", "success");
       closeDialog();
       await loadData();
     } catch (error) {
@@ -290,14 +414,61 @@ export default function SalesPage() {
     }
   }
 
+  async function handleConcluirVenda(venda) {
+    if (!window.confirm("Tem certeza que deseja concluir esta venda?")) return;
+
+    try {
+      await concluirVenda(venda.id, {
+        clienteId: venda.clienteId || null,
+        formaPagamento: venda.formaPagamento || null,
+        itens: (venda.itens || []).map((it) => ({
+          produtoId: it.produtoId,
+          quantidade: Number(it.quantidade),
+        })),
+      });
+
+      showSnackbar("Venda concluída com sucesso.", "success");
+      await loadData();
+    } catch (error) {
+      showSnackbar(getProblemDetailMessage(error), "error");
+    }
+  }
+
+  function handleAddItem() {
+    if (!selectedProduto) return;
+    const produto = selectedProduto;
+
+    setItems((prev) => [
+      ...prev,
+      {
+        id: produto.id,
+        descricao: produto.descricao,
+        quantidade: Number(selectedQuantidade) || 1,
+        precoVenda: produto.precoVenda || 0,
+      },
+    ]);
+
+    setSelectedProduto(null);
+    setSelectedQuantidade(1);
+    setFieldErrors((prev) => ({ ...prev, itens: "" }));
+  }
+
+  function handleRemoveItem(index) {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  const total = useMemo(() => {
+    return items.reduce((sum, it) => sum + (Number(it.precoVenda || 0) * Number(it.quantidade || 0)), 0);
+  }, [items]);
+
   const columns = [
     {
-      key: "id",
-      label: "Venda",
+      key: "cliente",
+      label: "Cliente",
       render: (row) => (
         <Box>
           <Typography sx={{ fontWeight: 700, color: "text.primary" }}>
-            {row.id}
+            {row.clienteNome || "-"}
           </Typography>
           <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
             {row.itens.length} item(ns)
@@ -355,14 +526,55 @@ export default function SalesPage() {
     {
       key: "acoes",
       label: "Ações",
-      render: () => (
-        <Tooltip title="Visualização indisponível" arrow>
-          <span>
-            <IconButton disabled>
-              <ReceiptLongOutlinedIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
+      render: (row) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Tooltip title="Concluir venda" arrow>
+            <span>
+              <IconButton 
+                size="small"
+                disabled={row.status !== "ABERTA"}
+                onClick={() => handleConcluirVenda(row)}
+                sx={{ color: "success.main" }}
+              >
+                <CheckCircleIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Editar venda" arrow>
+            <span>
+              <IconButton 
+                size="small" 
+                disabled={row.status !== "ABERTA"}
+                onClick={() => openEditDialog(row)}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Cancelar venda" arrow>
+            <span>
+              <IconButton 
+                size="small"
+                disabled={row.status === "CANCELADA" || row.status === "CONCLUIDA"}
+                onClick={() => handleCancelarVenda(row)}
+                sx={{ color: "warning.main" }}
+              >
+                <BlockIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Deletar venda" arrow>
+            <span>
+              <IconButton 
+                size="small"
+                onClick={() => handleDeletarVenda(row)}
+                sx={{ color: "error.main" }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
       ),
     },
   ];
@@ -381,7 +593,7 @@ export default function SalesPage() {
         <AppPageHeader
           title="Vendas"
           subtitle="Gerencie e acompanhe o histórico de vendas."
-          actionLabel="Nova venda"
+          actionLabel="Iniciar venda"
           actionIcon={<AddIcon />}
           onAction={openCreateDialog}
         />
@@ -436,58 +648,150 @@ export default function SalesPage() {
 
       <AppFormDialog
         open={dialogOpen}
-        title="Nova venda"
+        title={isEditMode ? "Editar venda" : "Iniciar venda"}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         loading={saving}
-        submitLabel="Registrar venda"
+        submitLabel={isEditMode ? "Atualizar venda" : "Iniciar venda"}
+        maxWidth="md"
       >
-        <AppTextField
-          select
-          required
-          name="produtoId"
-          label="Produto"
-          value={form.produtoId}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.produtoId)}
-          helperText={fieldErrors.produtoId}
-        >
-          {produtos.map((produto) => (
-            <MenuItem key={produto.id} value={produto.id}>
-              {produto.descricao}
-            </MenuItem>
-          ))}
-        </AppTextField>
+        {/* Header: Data e Total */}
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, mb: 4, p: 3, backgroundColor: "action.hover", borderRadius: 1 }}>
+          <Box>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>Data</Typography>
+            <Typography sx={{ fontWeight: 600, fontSize: "1.1rem" }}>{formatDateTime(new Date())}</Typography>
+          </Box>
+          <Box sx={{ textAlign: "right" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>Valor Total</Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: "1.5rem", color: "primary.main" }}>{formatMoney(total)}</Typography>
+          </Box>
+        </Box>
 
-        <AppTextField
-          select
-          required
-          name="formaPagamento"
-          label="Forma de pagamento"
-          value={form.formaPagamento}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.formaPagamento)}
-          helperText={fieldErrors.formaPagamento}
-        >
-          <MenuItem value="DINHEIRO">Dinheiro</MenuItem>
-          <MenuItem value="PIX">Pix</MenuItem>
-          <MenuItem value="CARTAO_DEBITO">Cartão de débito</MenuItem>
-          <MenuItem value="CARTAO_CREDITO">Cartão de crédito</MenuItem>
-          <MenuItem value="BOLETO">Boleto</MenuItem>
-          <MenuItem value="OUTROS">Outros</MenuItem>
-        </AppTextField>
+        {/* Cliente */}
+        <Box sx={{ mb: 4 }}>
+          <Autocomplete
+            options={clientes}
+            getOptionLabel={(option) => option.nome || option.email || ""}
+            value={selectedCliente}
+            onChange={(e, newValue) => {
+              setSelectedCliente(newValue);
+              setFieldErrors((prev) => ({ ...prev, cliente: "" }));
+            }}
+            isOptionEqualToValue={(option, value) => option.id === value?.id}
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                label="Cliente" 
+                variant="outlined"
+                error={Boolean(fieldErrors.cliente)}
+                helperText={fieldErrors.cliente}
+              />
+            )}
+          />
+        </Box>
 
-        <AppTextField
-          required
-          name="quantidade"
-          label="Quantidade"
-          type="number"
-          value={form.quantidade}
-          onChange={handleChange}
-          error={Boolean(fieldErrors.quantidade)}
-          helperText={fieldErrors.quantidade}
-          inputProps={{ min: 1, step: 1 }}
-        />
+        {/* Adicionar Item */}
+        <Box sx={{ mb: 4, p: 3, backgroundColor: "background.default", borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ mb: 2.5, fontWeight: 600, fontSize: "1.05rem" }}>Itens</Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "2fr 100px 1fr" }, gap: 2, alignItems: "flex-end" }}>
+            <Box>
+              <Autocomplete
+                options={produtos}
+                getOptionLabel={(option) => option.descricao || ""}
+                value={selectedProduto}
+                onChange={(e, newValue) => setSelectedProduto(newValue)}
+                isOptionEqualToValue={(option, value) => option.id === value?.id}
+                renderInput={(params) => (
+                  <TextField {...params} label="Pesquise e adicione produtos..." size="small" fullWidth />
+                )}
+              />
+            </Box>
+
+            <TextField
+              type="number"
+              value={selectedQuantidade}
+              onChange={(e) => setSelectedQuantidade(e.target.value)}
+              inputProps={{ min: 1, step: 1 }}
+              size="small"
+              fullWidth
+              variant="outlined"
+            />
+
+            <Button variant="contained" onClick={handleAddItem} fullWidth sx={{ height: 40, fontSize: "1rem" }}>
+              Adicionar
+            </Button>
+          </Box>
+          {fieldErrors.itens ? <Typography color="error" variant="caption" sx={{ mt: 1, display: "block" }}>{fieldErrors.itens}</Typography> : null}
+        </Box>
+
+        {/* Lista de Itens */}
+        <Box sx={{ mb: 4 }}>
+          {items.length === 0 ? (
+            <Box sx={{ p: 3, textAlign: "center", backgroundColor: "action.hover", borderRadius: 1 }}>
+              <Typography color="text.secondary">Nenhum item adicionado.</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              {items.map((it, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    p: 2,
+                    backgroundColor: "background.default",
+                    borderRadius: 1,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: "1rem" }}>{it.descricao}</Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      {it.quantidade} × {formatMoney(it.precoVenda)} = <strong>{formatMoney(it.precoVenda * it.quantidade)}</strong>
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" onClick={() => handleRemoveItem(idx)} sx={{ color: "error.main" }}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        {/* Pagamento */}
+        <Divider sx={{ mb: 3 }} />
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, fontSize: "1.05rem" }}>Pagamento</Typography>
+          <ToggleButtonGroup
+            value={form.formaPagamento}
+            exclusive
+            onChange={(e, value) => setForm((prev) => ({ ...prev, formaPagamento: value || "" }))}
+            aria-label="forma pagamento"
+            fullWidth
+            size="small"
+          >
+            <ToggleButton value="DINHEIRO" sx={{ flex: 1 }}>Dinheiro</ToggleButton>
+            <ToggleButton value="PIX" sx={{ flex: 1 }}>PIX</ToggleButton>
+            <ToggleButton value="CARTAO_CREDITO" sx={{ flex: 1 }}>Crédito</ToggleButton>
+          </ToggleButtonGroup>
+          <ToggleButtonGroup
+            value={form.formaPagamento}
+            exclusive
+            onChange={(e, value) => setForm((prev) => ({ ...prev, formaPagamento: value || "" }))}
+            aria-label="forma pagamento"
+            fullWidth
+            size="small"
+            sx={{ mt: 1.5 }}
+          >
+            <ToggleButton value="CARTAO_DEBITO" sx={{ flex: 1 }}>Débito</ToggleButton>
+            <ToggleButton value="BOLETO" sx={{ flex: 1 }}>Boleto</ToggleButton>
+            <ToggleButton value="OUTROS" sx={{ flex: 1 }}>Outros</ToggleButton>
+          </ToggleButtonGroup>
+          {fieldErrors.formaPagamento ? <Typography color="error" variant="caption" sx={{ mt: 1, display: "block" }}>{fieldErrors.formaPagamento}</Typography> : null}
+        </Box>
       </AppFormDialog>
     </AdminLayout>
   );
