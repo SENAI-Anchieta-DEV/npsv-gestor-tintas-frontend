@@ -12,7 +12,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import qrCodeApp from "../../assets/qrcode-app.png";
+import qrCodeApp from "../../../dist/qrcode-app.a176cb5b.png";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
@@ -24,6 +24,10 @@ import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutli
 import StorageOutlinedIcon from "@mui/icons-material/StorageOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
+import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
+import SyncAltOutlinedIcon from "@mui/icons-material/SyncAltOutlined";
+import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
+import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionManufacturingOutlined";
 import { useNavigate } from "react-router-dom";
 
 const colors = {
@@ -48,19 +52,19 @@ const colors = {
 
 const problems = [
   {
-    title: "Estoque fantasma",
+    title: "Estoque desatualizado",
     description:
-      "Sem atualização automática, o sistema deixa de refletir a realidade da loja e prejudica compras, produção e vendas.",
+      "Sem integração entre vendas, produção e reposição, a loja perde visibilidade real do que entrou, saiu ou já foi comprometido.",
   },
   {
-    title: "Retrabalho e desperdício",
+    title: "Desperdício e retrabalho",
     description:
-      "Fórmulas, baixa de insumos e reposição sem integração geram erros operacionais e perda financeira.",
+      "Falhas no controle de fórmulas, insumos e processos operacionais aumentam perdas, afetam prazo e reduzem margem.",
   },
   {
-    title: "Processos desconectados",
+    title: "Decisão sem base confiável",
     description:
-      "Clientes, fornecedores, vendas e estoque em fluxos separados dificultam controle e tomada de decisão.",
+      "Quando dados ficam espalhados em planilhas, sistemas isolados ou processos manuais, a gestão perde velocidade e segurança para agir.",
   },
 ];
 
@@ -78,16 +82,16 @@ const modules = [
       "Registro de vendas com cliente, validação de disponibilidade e histórico por vendedor e período.",
   },
   {
-    icon: <ReceiptLongOutlinedIcon />,
-    title: "Pedidos a Fornecedores",
+    icon: <PrecisionManufacturingOutlinedIcon />,
+    title: "Produção e Fórmulas",
     description:
-      "Criação, acompanhamento e recebimento de pedidos com atualização automática do estoque.",
+      "Organização de fórmulas, consumo de insumos e apoio à operação de produção com maior precisão e controle.",
   },
   {
     icon: <GroupsOutlinedIcon />,
     title: "Gestão de Clientes",
     description:
-      "Cadastro, edição e associação de clientes às vendas para manter histórico e relacionamento.",
+      "Cadastro, edição e associação de clientes às vendas para fortalecer relacionamento e histórico comercial.",
   },
   {
     icon: <LocalShippingOutlinedIcon />,
@@ -96,10 +100,10 @@ const modules = [
       "Cadastro e acompanhamento de parceiros comerciais integrados ao fluxo de reposição.",
   },
   {
-    icon: <PhoneAndroidOutlinedIcon />,
-    title: "App Mobile",
+    icon: <ReceiptLongOutlinedIcon />,
+    title: "Pedidos de Compra",
     description:
-      "Consulta de estoque, preços e informações operacionais no celular, com foco em praticidade.",
+      "Criação, acompanhamento e recebimento de pedidos com atualização automática do estoque.",
   },
 ];
 
@@ -110,6 +114,33 @@ const techs = [
   { icon: <SecurityOutlinedIcon />, title: "JWT + Security", subtitle: "Autenticação" },
   { icon: <StorageOutlinedIcon />, title: "MySQL", subtitle: "Banco de Dados" },
   { icon: <HubOutlinedIcon />, title: "MQTT", subtitle: "Mensageria IoT" },
+];
+
+const impacts = [
+  {
+    icon: <TrendingUpOutlinedIcon />,
+    title: "Mais eficiência operacional",
+    description:
+      "Fluxos integrados reduzem tarefas duplicadas, aceleram atendimento e tornam a operação mais previsível.",
+  },
+  {
+    icon: <WarningAmberOutlinedIcon />,
+    title: "Menos perdas e desperdícios",
+    description:
+      "Com controle mais rigoroso de fórmulas, insumos e movimentações, o sistema ajuda a diminuir erros e retrabalho.",
+  },
+  {
+    icon: <QueryStatsOutlinedIcon />,
+    title: "Decisões com mais clareza",
+    description:
+      "Dados consolidados ajudam a gestão a acompanhar o que realmente acontece na operação e agir com mais rapidez.",
+  },
+  {
+    icon: <SyncAltOutlinedIcon />,
+    title: "Base para crescimento",
+    description:
+      "Ao organizar os processos em uma única plataforma, a loja ganha estrutura para escalar com mais segurança.",
+  },
 ];
 
 const sprints = [
@@ -212,7 +243,7 @@ function SectionTitle({ eyebrow, title, description, light = false }) {
           lineHeight: 1.06,
           fontWeight: 800,
           color: light ? "#FFFFFF" : colors.text,
-          maxWidth: 760,
+          maxWidth: 860,
           mb: 2,
           mx: "auto",
         }}
@@ -223,7 +254,7 @@ function SectionTitle({ eyebrow, title, description, light = false }) {
       {description ? (
         <Typography
           sx={{
-            maxWidth: 760,
+            maxWidth: 800,
             color: light ? "rgba(255,255,255,0.72)" : colors.textSoft,
             fontSize: { xs: 16, md: 18 },
             lineHeight: 1.8,
@@ -270,9 +301,9 @@ export default function LandingPage() {
 
   const navItems = [
     { label: "O problema", href: "#problema" },
+    { label: "Por que existe", href: "#proposito" },
     { label: "Solução", href: "#solucao" },
-    { label: "Progresso", href: "#progresso" },
-    { label: "Equipe", href: "#equipe" },
+    { label: "Impacto", href: "#impacto" },
     { label: "App", href: "#app" },
   ];
 
@@ -357,40 +388,38 @@ export default function LandingPage() {
                     borderRadius: "20px",
                   }}
                 >
-                  TCC SENAI — Desenvolvimento de Sistemas
+                  Projeto aplicado de gestão operacional
                 </Typography>
               </Stack>
 
               <Typography
                 sx={{
-                  fontSize: { xs: 48, md: 80 },
-                  lineHeight: 1.1,
+                  fontSize: { xs: 46, md: 80 },
+                  lineHeight: 1.08,
                   fontWeight: 900,
                   color: colors.text,
-                  maxWidth: 800,
+                  maxWidth: 820,
                   background: `linear-gradient(135deg, ${colors.text} 0%, ${colors.primary} 100%)`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Gestão{" "}
-                <Box component="span" sx={{ fontStyle: "italic" }}>
-                  inteligente
-                </Box>{" "}
-                para lojas de tintas.
+                Gestão integrada para transformar a operação de lojas de tintas.
               </Typography>
 
               <Typography
                 sx={{
-                  fontSize: { xs: 18, md: 24 },
+                  fontSize: { xs: 18, md: 23 },
                   color: colors.textSoft,
-                  lineHeight: 1.6,
-                  maxWidth: 600,
+                  lineHeight: 1.75,
+                  maxWidth: 700,
                 }}
               >
-                O Gestor Tintas centraliza estoque, vendas, clientes, fornecedores
-                e pedidos em uma única plataforma, conectando operação, rastreabilidade
-                e tomada de decisão.
+                O Gestor Tintas foi concebido para enfrentar problemas reais do setor:
+                estoque desatualizado, perda de insumos, retrabalho, processos isolados
+                e dificuldade para tomar decisões com segurança. A plataforma conecta
+                vendas, produção, clientes, fornecedores, pedidos e estoque em um único
+                ecossistema, com foco em controle, eficiência e crescimento sustentável.
               </Typography>
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={3}>
@@ -414,7 +443,7 @@ export default function LandingPage() {
                     transition: "all 0.3s ease",
                   }}
                 >
-                  Ver o sistema →
+                  Conhecer a solução →
                 </Button>
 
                 <Button
@@ -437,8 +466,26 @@ export default function LandingPage() {
                     transition: "all 0.3s ease",
                   }}
                 >
-                  Baixar app
+                  Explorar aplicação mobile
                 </Button>
+              </Stack>
+
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={3} useFlexGap flexWrap="wrap">
+                <Chip
+                  icon={<CheckCircleOutlineOutlinedIcon sx={{ color: `${colors.success} !important` }} />}
+                  label="Operação centralizada"
+                  sx={{ backgroundColor: "#ECFDF5", color: colors.text, fontWeight: 700 }}
+                />
+                <Chip
+                  icon={<CheckCircleOutlineOutlinedIcon sx={{ color: `${colors.info} !important` }} />}
+                  label="Mais rastreabilidade"
+                  sx={{ backgroundColor: "#EFF6FF", color: colors.text, fontWeight: 700 }}
+                />
+                <Chip
+                  icon={<CheckCircleOutlineOutlinedIcon sx={{ color: `${colors.warning} !important` }} />}
+                  label="Menos desperdício"
+                  sx={{ backgroundColor: "#FFFBEB", color: colors.text, fontWeight: 700 }}
+                />
               </Stack>
             </Stack>
           </Grid>
@@ -446,7 +493,7 @@ export default function LandingPage() {
           <Grid item xs={12} md={6}>
             <Box
               sx={{
-                minHeight: 600,
+                minHeight: 620,
                 display: "grid",
                 placeItems: "center",
                 position: "relative",
@@ -455,7 +502,8 @@ export default function LandingPage() {
               <Card
                 sx={{
                   width: "100%",
-                  maxWidth: 420,
+                  maxWidth: 540,
+                  mx: "auto",
                   borderRadius: "32px",
                   boxShadow: "0 32px 80px rgba(15,23,42,0.15)",
                   p: 4,
@@ -470,7 +518,7 @@ export default function LandingPage() {
                         Gestor Tintas
                       </Typography>
                       <Typography sx={{ color: colors.textSoft, fontSize: 14, mt: 0.5 }}>
-                        Interface limpa para controlar estoque, vendas e pedidos.
+                        Plataforma para controlar estoque, vendas, produção e reposição.
                       </Typography>
                     </Box>
                     <Box
@@ -487,7 +535,7 @@ export default function LandingPage() {
                         boxShadow: `0 8px 24px rgba(79, 70, 229, 0.3)`,
                       }}
                     >
-                      UI
+                      GT
                     </Box>
                   </Stack>
 
@@ -503,31 +551,82 @@ export default function LandingPage() {
                     <Stack spacing={3}>
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <Box>
-                          <Typography sx={{ color: colors.textSoft, fontSize: 13 }}>Saldo de estoque</Typography>
-                          <Typography sx={{ color: colors.text, fontWeight: 900, fontSize: 32 }}>1.245</Typography>
+                          <Typography sx={{ color: colors.textSoft, fontSize: 13 }}>Controle operacional</Typography>
+                          <Typography sx={{ color: colors.text, fontWeight: 900, fontSize: 30 }}>
+                            Integrado
+                          </Typography>
                         </Box>
-                        <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: colors.success, boxShadow: `0 0 0 3px rgba(16, 185, 129, 0.2)` }} />
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            backgroundColor: colors.success,
+                            boxShadow: `0 0 0 3px rgba(16, 185, 129, 0.2)`,
+                          }}
+                        />
                       </Box>
+
                       <Box sx={{ display: "flex", gap: 2 }}>
-                        <Box sx={{ flex: 1, borderRadius: "24px", backgroundColor: colors.surfaceAlt, p: 3, border: `1px solid ${colors.border}` }}>
-                          <Typography sx={{ color: colors.textSoft, fontSize: 13 }}>Pedidos</Typography>
-                          <Typography sx={{ color: colors.text, fontWeight: 700, fontSize: 20 }}>36</Typography>
+                        <Box
+                          sx={{
+                            flex: 1,
+                            borderRadius: "24px",
+                            backgroundColor: colors.surfaceAlt,
+                            p: 3,
+                            border: `1px solid ${colors.border}`,
+                          }}
+                        >
+                          <Typography sx={{ color: colors.textSoft, fontSize: 13 }}>Estoque</Typography>
+                          <Typography sx={{ color: colors.text, fontWeight: 700, fontSize: 20 }}>
+                            Atualizado
+                          </Typography>
                         </Box>
-                        <Box sx={{ flex: 1, borderRadius: "24px", backgroundColor: colors.surfaceAlt, p: 3, border: `1px solid ${colors.border}` }}>
-                          <Typography sx={{ color: colors.textSoft, fontSize: 13 }}>Vendas</Typography>
-                          <Typography sx={{ color: colors.text, fontWeight: 700, fontSize: 20 }}>R$ 8,2k</Typography>
+
+                        <Box
+                          sx={{
+                            flex: 1,
+                            borderRadius: "24px",
+                            backgroundColor: colors.surfaceAlt,
+                            p: 3,
+                            border: `1px solid ${colors.border}`,
+                          }}
+                        >
+                          <Typography sx={{ color: colors.textSoft, fontSize: 13 }}>Reposição</Typography>
+                          <Typography sx={{ color: colors.text, fontWeight: 700, fontSize: 20 }}>
+                            Rastreável
+                          </Typography>
                         </Box>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          borderRadius: "24px",
+                          background: "linear-gradient(135deg, rgba(79,70,229,0.10), rgba(43,130,255,0.08))",
+                          p: 3,
+                          border: `1px solid ${colors.border}`,
+                        }}
+                      >
+                        <Typography sx={{ color: colors.text, fontWeight: 800, mb: 1.2 }}>
+                          O que a solução entrega
+                        </Typography>
+                        <Typography sx={{ color: colors.textSoft, lineHeight: 1.7, fontSize: 14 }}>
+                          Mais controle sobre insumos, menor risco de ruptura, apoio à decisão
+                          e uma operação mais organizada do balcão à produção.
+                        </Typography>
                       </Box>
                     </Stack>
                   </Box>
 
                   <Stack spacing={2}>
-                    <Typography sx={{ fontWeight: 700, color: colors.text, fontSize: 16 }}>Resumo rápido</Typography>
+                    <Typography sx={{ fontWeight: 700, color: colors.text, fontSize: 16 }}>
+                      Benefícios percebidos
+                    </Typography>
                     <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                       {[
-                        { label: "Estoque", value: "Atual", icon: "📦" },
-                        { label: "Pedidos", value: "Pendentes", icon: "📋" },
-                        { label: "Clientes", value: "Ativos", icon: "👥" },
+                        { label: "Menos perda", value: "mais controle", icon: "📉" },
+                        { label: "Mais agilidade", value: "menos retrabalho", icon: "⚡" },
+                        { label: "Mais visão", value: "dados centralizados", icon: "📊" },
                       ].map((item) => (
                         <Box
                           key={item.label}
@@ -588,14 +687,14 @@ export default function LandingPage() {
         <Container maxWidth="xl">
           <SectionTitle
             eyebrow="O problema"
-            title="Operações desorganizadas geram perda sem aviso."
-            description="Quando estoque, vendas e reposição não conversam entre si, a loja perde controle, agilidade e dinheiro."
+            title="Problemas operacionais pequenos geram perdas grandes."
+            description="No setor de tintas, falhas de controle não afetam apenas o processo: afetam custo, prazo, atendimento e confiança na operação."
           />
 
-          <Grid container spacing={4}>
+          <Grid container spacing={4} alignItems="stretch">
             <Grid item xs={12} md={7}>
               <Stack spacing={3}>
-                {problems.map((item, index) => (
+                {problems.map((item) => (
                   <Card
                     key={item.title}
                     sx={{
@@ -639,10 +738,10 @@ export default function LandingPage() {
             <Grid item xs={12} md={5}>
               <Grid container spacing={3}>
                 {[
-                  { value: "4+", text: "módulos integrados no mesmo fluxo operacional", icon: "🔗" },
-                  { value: "100%", text: "mais rastreabilidade das movimentações", icon: "📊" },
-                  { value: "0", text: "papel no fluxo digital centralizado", icon: "📱" },
-                  { value: "1", text: "plataforma conectando operação e gestão", icon: "🏢" },
+                  { value: "4+", text: "frentes críticas ligadas entre si na operação", icon: "🔗" },
+                  { value: "1", text: "plataforma conectando gestão e execução", icon: "🏢" },
+                  { value: "100%", text: "mais visibilidade sobre fluxos e movimentações", icon: "📊" },
+                  { value: "0", text: "dependência ideal de controles dispersos", icon: "📱" },
                 ].map((item) => (
                   <Grid item xs={12} sm={6} key={item.value}>
                     <Card
@@ -682,6 +781,81 @@ export default function LandingPage() {
         </Container>
       </Box>
 
+      <Box id="proposito" sx={{ py: { xs: 10, md: 16 }, backgroundColor: colors.surface }}>
+        <Container maxWidth="lg">
+          <SectionTitle
+            eyebrow="Por que este projeto existe"
+            title="Uma resposta prática para um setor que ainda sofre com controles frágeis."
+            description="O Gestor Tintas foi idealizado para enfrentar um cenário recorrente em lojas do segmento: processos manuais, baixa integração entre áreas, falhas no controle de estoque e pouca visibilidade sobre o que realmente acontece no dia a dia."
+          />
+
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={4}>
+              <Card
+                sx={{
+                  p: 4,
+                  borderRadius: "24px",
+                  border: `1px solid ${colors.border}`,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+                  height: "100%",
+                }}
+              >
+                <Typography sx={{ fontWeight: 800, color: colors.text, mb: 2, fontSize: 20 }}>
+                  Intenção do projeto
+                </Typography>
+                <Typography sx={{ color: colors.textSoft, lineHeight: 1.8 }}>
+                  Mais do que informatizar tarefas, a proposta é estruturar uma operação mais confiável,
+                  inteligente e preparada para crescer, reduzindo dependência de controles paralelos e de
+                  decisões baseadas em percepção.
+                </Typography>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Card
+                sx={{
+                  p: 4,
+                  borderRadius: "24px",
+                  border: `1px solid ${colors.border}`,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+                  height: "100%",
+                }}
+              >
+                <Typography sx={{ fontWeight: 800, color: colors.text, mb: 2, fontSize: 20 }}>
+                  Problema central
+                </Typography>
+                <Typography sx={{ color: colors.textSoft, lineHeight: 1.8 }}>
+                  Quando vendas, fórmulas, estoque e reposição não se comunicam, a empresa perde tempo,
+                  precisão e margem. O impacto aparece em desperdício, compra errada, falta de material
+                  e menor qualidade no atendimento.
+                </Typography>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Card
+                sx={{
+                  p: 4,
+                  borderRadius: "24px",
+                  border: `1px solid ${colors.border}`,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+                  height: "100%",
+                }}
+              >
+                <Typography sx={{ fontWeight: 800, color: colors.text, mb: 2, fontSize: 20 }}>
+                  O que pretendemos solucionar
+                </Typography>
+                <Typography sx={{ color: colors.textSoft, lineHeight: 1.8 }}>
+                  O projeto busca consolidar uma plataforma capaz de integrar controle operacional,
+                  rastreabilidade e apoio à decisão, permitindo que a loja trabalhe com mais
+                  previsibilidade, menos desperdício e maior capacidade de resposta ao cliente.
+                </Typography>
+              </Card>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
       <Box id="solucao" sx={{ py: { xs: 10, md: 16 } }}>
         <Container maxWidth="xl">
           <SectionTitle
@@ -689,6 +863,28 @@ export default function LandingPage() {
             title="Um sistema centralizado para gerir a loja inteira."
             description="O Gestor Tintas conecta os principais fluxos do negócio para reduzir erros, melhorar a visibilidade e acelerar a operação."
           />
+
+          <Box
+            sx={{
+              maxWidth: 920,
+              mx: "auto",
+              mb: 6,
+              p: 4,
+              borderRadius: "24px",
+              backgroundColor: colors.primarySoft,
+              border: `1px solid ${colors.border}`,
+              textAlign: "center",
+            }}
+          >
+            <Typography sx={{ fontWeight: 800, color: colors.text, fontSize: 24, mb: 2 }}>
+              Não é apenas um sistema de cadastro.
+            </Typography>
+            <Typography sx={{ color: colors.textSoft, lineHeight: 1.8, fontSize: 17 }}>
+              O Gestor Tintas foi pensado como uma plataforma de integração operacional. Ele conecta
+              dados e processos para que cada venda, movimentação de estoque, produção e pedido de compra
+              tenha impacto direto em controle, rastreabilidade e decisão.
+            </Typography>
+          </Box>
 
           <Grid container spacing={4} alignItems="stretch">
             {modules.map((module) => (
@@ -700,6 +896,7 @@ export default function LandingPage() {
                     justifyContent: "space-between",
                     borderRadius: "24px",
                     minHeight: 320,
+                    height: "100%",
                     backgroundColor: colors.surface,
                     boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
                     border: `1px solid ${colors.border}`,
@@ -727,6 +924,40 @@ export default function LandingPage() {
         </Container>
       </Box>
 
+      <Box id="impacto" sx={{ py: { xs: 10, md: 16 }, backgroundColor: colors.surfaceAlt }}>
+        <Container maxWidth="xl">
+          <SectionTitle
+            eyebrow="Impacto esperado"
+            title="Mais controle, menos perda e uma operação mais madura."
+            description="A proposta do Gestor Tintas é gerar impacto direto no funcionamento da loja, reduzindo falhas operacionais e aumentando a confiabilidade das informações."
+          />
+
+          <Grid container spacing={4}>
+            {impacts.map((item) => (
+              <Grid item xs={12} md={6} key={item.title}>
+                <Card
+                  sx={{
+                    p: 4,
+                    borderRadius: "24px",
+                    border: `1px solid ${colors.border}`,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+                    height: "100%",
+                  }}
+                >
+                  <Box sx={{ color: "black", mb: 2, fontSize: 36 }}>{item.icon}</Box>
+                  <Typography sx={{ fontWeight: 800, color: colors.text, mb: 2, fontSize: 20 }}>
+                    {item.title}
+                  </Typography>
+                  <Typography sx={{ color: colors.textSoft, lineHeight: 1.8 }}>
+                    {item.description}
+                  </Typography>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
       <Box sx={{ py: { xs: 10, md: 16 }, backgroundColor: colors.surfaceAlt }}>
         <Container maxWidth="xl">
           <SectionTitle
@@ -745,6 +976,7 @@ export default function LandingPage() {
                     justifyContent: "space-between",
                     borderRadius: "24px",
                     minHeight: 240,
+                    height: "100%",
                     backgroundColor: colors.surface,
                     border: `1px solid ${colors.border}`,
                     boxShadow: "0 8px 32px rgba(0,0,0,0.05)",
@@ -773,9 +1005,9 @@ export default function LandingPage() {
       <Box id="progresso" sx={{ py: { xs: 8, md: 12 } }}>
         <Container maxWidth="xl">
           <SectionTitle
-            eyebrow="Progresso do projeto"
-            title="Sprints entregues, sistema em consolidação."
-            description="O projeto evoluiu em etapas, com entregas progressivas até a estruturação completa da plataforma."
+            eyebrow="Evolução do projeto"
+            title="Construção progressiva até a consolidação da plataforma."
+            description="A solução evoluiu por etapas, com entregas incrementais que fortaleceram a base técnica e ampliaram o escopo funcional do sistema."
           />
 
           <Stack spacing={2}>
@@ -824,8 +1056,8 @@ export default function LandingPage() {
         <Container maxWidth="xl">
           <SectionTitle
             eyebrow="A equipe"
-            title="Quatro especialistas, um sistema."
-            description="Cada integrante assumiu uma frente crítica para construir uma solução integrada e consistente."
+            title="Quatro especialistas, uma solução integrada."
+            description="Cada integrante assumiu uma frente crítica para construir uma plataforma consistente, conectando backend, frontend, mobile e IoT."
           />
 
           <Grid container spacing={4}>
@@ -912,7 +1144,7 @@ export default function LandingPage() {
             <SectionTitle
               eyebrow="App mobile"
               title="Baixe o app do Gestor Tintas"
-              description="Android nativo em Kotlin com Jetpack Compose para consulta rápida e apoio à operação."
+              description="Android nativo em Kotlin com Jetpack Compose para consulta rápida, apoio à operação e maior praticidade no dia a dia."
               light
             />
 
@@ -932,7 +1164,7 @@ export default function LandingPage() {
             >
               <Box
                 component="img"
-                src="./qrcode-app.a176cb5b.png"
+                src={qrCodeApp}
                 alt="QR Code para baixar o app Gestor Tintas"
                 sx={{
                   width: "100%",
@@ -967,11 +1199,11 @@ export default function LandingPage() {
               lineHeight: 1.05,
               fontWeight: 800,
               color: "#FFFFFF",
-              maxWidth: 900,
+              maxWidth: 980,
               mx: "auto",
             }}
           >
-            "Do balcão à lata, precisão exata."
+            "Da operação diária à decisão estratégica, mais controle para a loja inteira."
           </Typography>
 
           <Typography
@@ -982,7 +1214,7 @@ export default function LandingPage() {
               fontWeight: 700,
             }}
           >
-            Gestor Tintas · TCC SENAI Anchieta · 2025–2026
+            Gestor Tintas · Projeto aplicado SENAI Anchieta · 2025–2026
           </Typography>
         </Container>
       </Box>
@@ -999,10 +1231,10 @@ export default function LandingPage() {
                   </Box>
                 </Typography>
                 <Typography sx={{ color: colors.textSoft, fontSize: 14 }}>
-                  Sistema de gestão inteligente de tintas.
+                  Plataforma para gestão operacional integrada em lojas de tintas.
                 </Typography>
                 <Typography sx={{ color: colors.textSoft, fontSize: 12 }}>
-                  © 2026 Equipe NPSV — TCC SENAI Anchieta
+                  © 2026 Equipe NPSV — Projeto aplicado SENAI Anchieta
                 </Typography>
               </Stack>
             </Grid>
@@ -1013,7 +1245,8 @@ export default function LandingPage() {
                   Equipe
                 </Typography>
                 <Typography sx={{ color: colors.textSoft, fontSize: 14, textAlign: "center" }}>
-                  Victor Mordachini · Samuel Correia<br />
+                  Victor Mordachini · Samuel Correia
+                  <br />
                   Nicolas Moura · Pedro Pina
                 </Typography>
               </Stack>
