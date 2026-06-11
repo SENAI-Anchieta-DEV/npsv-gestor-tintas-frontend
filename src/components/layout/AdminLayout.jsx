@@ -15,7 +15,7 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
-import OpacityOutlinedIcon from "@mui/icons-material/OpacityOutlined";
+import logoGestorTintas from "../../assets/logo.png";
 import { useColorMode } from "../../context/ColorModeContext";
 
 const menuItems = [
@@ -101,15 +101,26 @@ export default function AdminLayout({ children }) {
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Box
                 sx={{
-                  width: 42,
-                  height: 42,
+                  width: 46,
+                  height: 46,
                   borderRadius: "14px",
-                  background: "linear-gradient(135deg, #4F46E5, #2B82FF)",
-                  display: "grid",
-                  placeItems: "center",
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
                 }}
               >
-                <OpacityOutlinedIcon sx={{ color: "#fff" }} />
+                <img
+                  src={logoGestorTintas}
+                  alt="Logo Gestor Tintas"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
               </Box>
 
               <Box>

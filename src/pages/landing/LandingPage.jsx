@@ -872,7 +872,7 @@ export default function LandingPage() {
             >
               <Box
                 component="img"
-                src="dist\qrcode-app.a176cb5b.png"
+                src={qrCodeApp}
                 alt="QR Code para baixar o app Gestor Tintas"
                 sx={{
                   width: "100%",
