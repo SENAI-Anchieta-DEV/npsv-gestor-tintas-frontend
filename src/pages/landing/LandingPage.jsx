@@ -11,7 +11,6 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import qrCodeApp from "../../assets/qrcode-app.png";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
@@ -28,6 +27,9 @@ import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
 import SyncAltOutlinedIcon from "@mui/icons-material/SyncAltOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import { useNavigate } from "react-router-dom";
+
+const qrCodeApp = new URL("../../assets/qrcode-app.png", import.meta.url).href;
+const logoGestorTintas = new URL("../../assets/logo.png", import.meta.url).href;
 
 const colors = {
   bg: "#F7F9FF",
@@ -299,7 +301,17 @@ export default function LandingPage() {
         <Toolbar sx={{ minHeight: 72 }}>
           <Container maxWidth="xl" sx={{ display: "flex", alignItems: "center" }}>
             <Stack direction="row" alignItems="center" spacing={1.2} sx={{ flexGrow: 1 }}>
-              <Typography sx={{ fontSize: 20 }}>🎨</Typography>
+              <Box
+                component="img"
+                src={logoGestorTintas}
+                alt="Logo Gestor Tintas"
+                sx={{
+                  width: 24,
+                  height: 24,
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
               <Typography sx={{ fontWeight: 900, fontSize: 24, color: colors.text }}>
                 Gestor <Box component="span" sx={{ color: colors.primary }}>Tintas</Box>
               </Typography>
@@ -330,31 +342,84 @@ export default function LandingPage() {
         <Grid container spacing={6} alignItems="center">
           <Grid item xs={12} md={6}>
             <Stack spacing={3}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" spacing={1.2} useFlexGap flexWrap="wrap">
                 <Box
                   sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "12px",
-                    backgroundColor: colors.primary,
-                    display: "grid",
-                    placeItems: "center",
-                    color: "#FFF",
-                    fontSize: 20,
+                    px: 1.6,
+                    py: 1,
+                    borderRadius: "999px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 1,
+                    backgroundColor: "#DCFCE7 !important",
+                    border: "1px solid #86EFAC !important",
                   }}
                 >
-                  🎨
+                  <CheckCircleOutlineOutlinedIcon sx={{ fontSize: 18, color: "#16A34A !important" }} />
+                  <Box
+                    component="span"
+                    sx={{
+                      color: "#166534 !important",
+                      fontSize: "13.5px !important",
+                      fontWeight: "800 !important",
+                      lineHeight: 1,
+                    }}
+                  >
+                    Operação centralizada
+                  </Box>
                 </Box>
 
-                <Chip
-                  label="Projeto aplicado de gestão operacional"
+                <Box
                   sx={{
-                    backgroundColor: colors.primarySoft,
-                    color: colors.primary,
-                    fontWeight: 800,
-                    letterSpacing: "0.04em",
+                    px: 1.6,
+                    py: 1,
+                    borderRadius: "999px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 1,
+                    backgroundColor: "#DBEAFE !important",
+                    border: "1px solid #93C5FD !important",
                   }}
-                />
+                >
+                  <CheckCircleOutlineOutlinedIcon sx={{ fontSize: 18, color: "#2563EB !important" }} />
+                  <Box
+                    component="span"
+                    sx={{
+                      color: "#1D4ED8 !important",
+                      fontSize: "13.5px !important",
+                      fontWeight: "800 !important",
+                      lineHeight: 1,
+                    }}
+                  >
+                    Mais rastreabilidade
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{
+                    px: 1.6,
+                    py: 1,
+                    borderRadius: "999px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 1,
+                    backgroundColor: "#FEF3C7 !important",
+                    border: "1px solid #FCD34D !important",
+                  }}
+                >
+                  <CheckCircleOutlineOutlinedIcon sx={{ fontSize: 18, color: "#D97706 !important" }} />
+                  <Box
+                    component="span"
+                    sx={{
+                      color: "#B45309 !important",
+                      fontSize: "13.5px !important",
+                      fontWeight: "800 !important",
+                      lineHeight: 1,
+                    }}
+                  >
+                    Menos desperdício
+                  </Box>
+                </Box>
               </Stack>
 
               <Typography
@@ -422,24 +487,6 @@ export default function LandingPage() {
                 >
                   Entender a solução
                 </Button>
-              </Stack>
-
-              <Stack direction="row" spacing={1.2} useFlexGap flexWrap="wrap">
-                <Chip
-                  icon={<CheckCircleOutlineOutlinedIcon sx={{ color: `${colors.success} !important` }} />}
-                  label="Operação centralizada"
-                  sx={{ backgroundColor: "#ECFDF5", fontWeight: 700 }}
-                />
-                <Chip
-                  icon={<CheckCircleOutlineOutlinedIcon sx={{ color: `${colors.info} !important` }} />}
-                  label="Mais rastreabilidade"
-                  sx={{ backgroundColor: "#EFF6FF", fontWeight: 700 }}
-                />
-                <Chip
-                  icon={<CheckCircleOutlineOutlinedIcon sx={{ color: `${colors.warning} !important` }} />}
-                  label="Menos desperdício"
-                  sx={{ backgroundColor: "#FFFBEB", fontWeight: 700 }}
-                />
               </Stack>
             </Stack>
           </Grid>
@@ -857,38 +904,73 @@ export default function LandingPage() {
           <Box sx={{ textAlign: "center" }}>
             <Box
               sx={{
-                width: 180,
-                height: 180,
-                backgroundColor: "#FFF",
+                width: { xs: 220, md: 260 },
+                height: { xs: 220, md: 260 },
+                backgroundColor: "#FFFFFF",
                 mx: "auto",
                 mb: 3,
+                p: 1.5,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
-                overflow: "hidden",
-                borderRadius: "14px",
+                boxShadow: "0 18px 40px rgba(0,0,0,0.28)",
+                borderRadius: "22px",
+                border: "3px solid rgba(255,255,255,0.12)",
+                outline: "1px solid rgba(79,70,229,0.35)",
               }}
             >
-              <Box
-                component="img"
+              <img
                 src={qrCodeApp}
                 alt="QR Code para baixar o app Gestor Tintas"
-                sx={{
+                style={{
                   width: "100%",
                   height: "100%",
                   objectFit: "contain",
+                  display: "block",
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: "14px",
                 }}
               />
             </Box>
 
-            <Typography sx={{ color: "#FFF", fontWeight: 900, mb: 0.8 }}>
-              📱 Gestor Tintas — Android
+            <Typography
+              sx={{
+                color: "#FFFFFF",
+                fontWeight: 900,
+                fontSize: { xs: 22, md: 26 },
+                mb: 1,
+              }}
+            >
+              Baixe o app agora
             </Typography>
 
-            <Typography sx={{ color: "rgba(255,255,255,0.72)" }}>
-              Aponte a câmera para baixar o APK
+            <Typography
+              sx={{
+                color: "rgba(255,255,255,0.78)",
+                fontSize: { xs: 15, md: 17 },
+                mb: 2.5,
+              }}
+            >
+              Aponte a câmera do celular para instalar o APK do Gestor Tintas.
             </Typography>
+
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 1,
+                px: 2.2,
+                py: 1.2,
+                borderRadius: "999px",
+                background: "linear-gradient(135deg, rgba(79,70,229,0.22), rgba(43,130,255,0.18))",
+                border: "1px solid rgba(255,255,255,0.14)",
+                color: "#FFFFFF",
+                fontWeight: 800,
+                fontSize: 14,
+              }}
+            >
+              📱 Escaneie o QR Code
+            </Box>
           </Box>
         </Container>
       </Box>

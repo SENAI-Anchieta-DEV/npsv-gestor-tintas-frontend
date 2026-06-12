@@ -15,8 +15,9 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
-import logoGestorTintas from "../../assets/logo.png";
 import { useColorMode } from "../../context/ColorModeContext";
+
+const logoGestorTintas = new URL("../../assets/logo.png", import.meta.url).href;
 
 const menuItems = [
   { label: "Dashboard", path: "/dashboard", icon: <DashboardOutlinedIcon /> },
@@ -109,6 +110,10 @@ export default function AdminLayout({ children }) {
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  p: 0.35,
+                  backdropFilter: "blur(6px)",
                 }}
               >
                 <img
@@ -117,7 +122,7 @@ export default function AdminLayout({ children }) {
                   style={{
                     width: "100%",
                     height: "100%",
-                    objectFit: "cover",
+                    objectFit: "contain",
                     display: "block",
                   }}
                 />

@@ -11,12 +11,13 @@ import {
 } from "@mui/material";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
-import OpacityOutlinedIcon from "@mui/icons-material/OpacityOutlined";
 import { useAuth } from "../../context/AuthContext";
 import { useColorMode } from "../../context/ColorModeContext";
 import { useAppSnackbar } from "../../components/feedback/AppSnackbarProvider";
 import AppTextField from "../../components/common/AppTextField";
 import { getProblemDetailMessage } from "../../lib/problemDetail";
+
+const logoGestorTintas = new URL("../../assets/logo.png", import.meta.url).href;
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -79,14 +80,22 @@ export default function LoginPage() {
               sx={{
                 width: 46,
                 height: 46,
-                borderRadius: "16px",
-                background: "linear-gradient(135deg, #4F46E5, #2B82FF)",
-                display: "grid",
-                placeItems: "center",
-                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
               }}
             >
-              <OpacityOutlinedIcon />
+              <img
+                src={logoGestorTintas}
+                alt="Logo Gestor Tintas"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
             </Box>
 
             <Box>
