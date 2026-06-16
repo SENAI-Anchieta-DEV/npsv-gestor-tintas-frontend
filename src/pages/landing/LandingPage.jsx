@@ -26,8 +26,15 @@ import PrecisionManufacturingOutlinedIcon from "@mui/icons-material/PrecisionMan
 import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
 import SyncAltOutlinedIcon from "@mui/icons-material/SyncAltOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import { useNavigate } from "react-router-dom";
 
+const fotoVictor = new URL("../../assets/victor.jpeg", import.meta.url).href;
+const fotoSamuel = new URL("../../assets/samuel.jpeg", import.meta.url).href;
+const fotoNicolas = new URL("../../assets/nicolas.png", import.meta.url).href;
+const fotoPedro = new URL("../../assets/pedro.jpg", import.meta.url).href;
+
+const pitchVideo = new URL("../../assets/pitch-gestor-tintas.mp4", import.meta.url).href;
 const qrCodeApp = new URL("../../assets/qrcode-app.png", import.meta.url).href;
 const logoGestorTintas = new URL("../../assets/logo.png", import.meta.url).href;
 
@@ -51,10 +58,12 @@ const colors = {
 };
 
 const navItems = [
+  { label: "Pitch", href: "#pitch" },
   { label: "Problema", href: "#problema" },
   { label: "Solução", href: "#solucao" },
   { label: "Impacto", href: "#impacto" },
   { label: "Tecnologia", href: "#tecnologia" },
+  { label: "Equipe", href: "#equipe" },
   { label: "App", href: "#app" },
 ];
 
@@ -146,28 +155,28 @@ const techs = [
 
 const team = [
   {
-    initials: "VM",
     name: "Victor Mordachini",
     role: "Scrum Master · Product Owner · IoT",
-    color: "#FFA113",
+    photo: fotoVictor,
+    linkedin: "https://www.linkedin.com/in/victor-mordachini",
   },
   {
-    initials: "SC",
     name: "Samuel Correia",
     role: "Backend",
-    color: "#032055",
+    photo: fotoSamuel,
+    linkedin: "https://www.linkedin.com/in/samuel-c-moreira",
   },
   {
-    initials: "NM",
     name: "Nicolas Moura",
     role: "Frontend Web",
-    color: "#2E33FF",
+    photo: fotoNicolas,
+    linkedin: "https://www.linkedin.com/in/nicolas-luis-moura-de-almeida",
   },
   {
-    initials: "PP",
     name: "Pedro Pina",
     role: "Mobile",
-    color: "#2B82FF",
+    photo: fotoPedro,
+    linkedin: "https://www.linkedin.com/in/pedro-henricky-santos-pina-da-silva-002753399",
   },
 ];
 
@@ -599,6 +608,83 @@ export default function LandingPage() {
         </Grid>
       </Container>
 
+      <Box id="pitch" sx={{ py: { xs: 5, md: 7 } }}>
+        <Container maxWidth="lg">
+          <Box
+            sx={{
+              maxWidth: 1100,
+              mx: "auto",
+              p: { xs: 2, md: 3 },
+              borderRadius: "28px",
+              background: "linear-gradient(135deg, rgba(79,70,229,0.10), rgba(43,130,255,0.08))",
+              border: `1px solid ${colors.border}`,
+              boxShadow: "0 14px 34px rgba(0,0,0,0.06)",
+            }}
+          >
+            <Box sx={{ textAlign: "center", mb: 3 }}>
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: colors.primary,
+                  mb: 1,
+                }}
+              >
+                Pitch do projeto
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: { xs: 24, md: 34 },
+                  fontWeight: 900,
+                  color: colors.text,
+                  lineHeight: 1.2,
+                  mb: 1.2,
+                }}
+              >
+                Conheça o Gestor Tintas em poucos minutos
+              </Typography>
+
+              <Typography
+                sx={{
+                  maxWidth: 760,
+                  mx: "auto",
+                  color: colors.textSoft,
+                  fontSize: { xs: 15, md: 17 },
+                  lineHeight: 1.75,
+                }}
+              >
+                Um sistema pensado para integrar estoque, vendas, fórmulas, produção,
+                clientes, fornecedores e pedidos em uma única plataforma.
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                borderRadius: "24px",
+                overflow: "hidden",
+                backgroundColor: "#000",
+                boxShadow: "0 12px 28px rgba(0,0,0,0.14)",
+              }}
+            >
+              <video
+                controls
+                preload="metadata"
+                style={{
+                  width: "100%",
+                  display: "block",
+                }}
+              >
+                <source src={pitchVideo} type="video/mp4" />
+                Seu navegador não suporta vídeo.
+              </video>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
+
       <Box id="problema" sx={{ py: { xs: 7, md: 9 }, backgroundColor: colors.surfaceAlt }}>
         <Container maxWidth="xl">
           <SectionTitle
@@ -861,25 +947,63 @@ export default function LandingPage() {
                   <StandardCard center>
                     <Box
                       sx={{
-                        width: 78,
-                        height: 78,
+                        width: 82,
+                        height: 82,
                         borderRadius: "999px",
-                        backgroundColor: member.color,
-                        color: "#FFF",
-                        display: "grid",
-                        placeItems: "center",
-                        fontWeight: 900,
-                        fontSize: 26,
+                        overflow: "hidden",
                         mx: "auto",
                         mb: 2,
+                        border: "3px solid #FFFFFF",
+                        boxShadow: "0 10px 24px rgba(0,0,0,0.10)",
+                        backgroundColor: "#E5E7EB",
                       }}
                     >
-                      {member.initials}
+                      <img
+                        src={member.photo}
+                        alt={member.name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
                     </Box>
 
-                    <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 18 }}>
-                      {member.name}
-                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 0.8,
+                      }}
+                    >
+                      <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 18 }}>
+                        {member.name}
+                      </Typography>
+
+                      {member.linkedin ? (
+                        <Box
+                          component="a"
+                          href={member.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#0A66C2",
+                            transition: "transform 0.18s ease, opacity 0.18s ease",
+                            "&:hover": {
+                              transform: "scale(1.08)",
+                              opacity: 0.9,
+                            },
+                          }}
+                        >
+                          <LinkedInIcon sx={{ fontSize: 20 }} />
+                        </Box>
+                      ) : null}
+                    </Box>
 
                     <Typography sx={{ color: colors.textSoft, fontSize: 14, mt: 0.8 }}>
                       {member.role}
@@ -993,7 +1117,7 @@ export default function LandingPage() {
               mx: "auto",
             }}
           >
-            “Da operação diária à decisão estratégica, mais controle para a loja inteira.”
+            “Do balcão à lata, precisão exata.”
           </Typography>
 
           <Typography
@@ -1009,67 +1133,224 @@ export default function LandingPage() {
         </Container>
       </Box>
 
-      <Box sx={{ backgroundColor: colors.surface, py: 7, borderTop: `1px solid ${colors.border}` }}>
+      <Box
+        sx={{
+          background: "linear-gradient(135deg, #0F172A 0%, #1E1B4B 55%, #312E81 100%)",
+          py: { xs: 6, md: 8 },
+          borderTop: "1px solid rgba(255,255,255,0.10)",
+        }}
+      >
         <Container maxWidth="xl">
-          <Grid container spacing={5} justifyContent="space-between" alignItems="flex-start">
-            <Grid item xs={12} sm={6} md={4} sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
-              <Stack spacing={2.5} sx={{ maxWidth: 320 }}>
-                <Typography sx={{ color: colors.text, fontWeight: 900, fontSize: 18 }}>
-                  Gestor <Box component="span" sx={{ color: colors.primary }}>Tintas</Box>
+          <Grid container spacing={5} alignItems="flex-start">
+            <Grid item xs={12} md={4}>
+              <Stack spacing={2.2}>
+                <Stack direction="row" alignItems="center" spacing={1.4}>
+                  <Box
+                    component="img"
+                    src={logoGestorTintas}
+                    alt="Logo Gestor Tintas"
+                    sx={{
+                      width: 38,
+                      height: 38,
+                      objectFit: "contain",
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: "12px",
+                      p: 0.7,
+                    }}
+                  />
+
+                  <Typography sx={{ color: "#FFFFFF", fontWeight: 900, fontSize: 22 }}>
+                    Gestor{" "}
+                    <Box component="span" sx={{ color: "#A5B4FC" }}>
+                      Tintas
+                    </Box>
+                  </Typography>
+                </Stack>
+
+                <Typography
+                  sx={{
+                    color: "rgba(255,255,255,0.72)",
+                    fontSize: 14.5,
+                    lineHeight: 1.7,
+                    maxWidth: 360,
+                  }}
+                >
+                  Plataforma para gestão operacional integrada em lojas de tintas,
+                  conectando estoque, vendas, produção, clientes, fornecedores e pedidos.
                 </Typography>
-                <Typography sx={{ color: colors.textSoft, fontSize: 14 }}>
-                  Plataforma para gestão operacional integrada em lojas de tintas.
-                </Typography>
-                <Typography sx={{ color: colors.textSoft, fontSize: 12 }}>
-                  © 2026 Equipe NPSV — Projeto aplicado SENAI Anchieta
-                </Typography>
+
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    width: "fit-content",
+                    px: 1.6,
+                    py: 0.9,
+                    borderRadius: "999px",
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    color: "#E0E7FF",
+                    fontSize: 12.5,
+                    fontWeight: 800,
+                  }}
+                >
+                  Projeto aplicado SENAI Anchieta · 2025–2026
+                </Box>
               </Stack>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4} sx={{ display: "flex", justifyContent: "center" }}>
-              <Stack spacing={2.5} alignItems="center" sx={{ maxWidth: 320 }}>
-                <Typography sx={{ color: colors.textSoft, fontSize: 14, fontWeight: 800 }}>
-                  Equipe
+            <Grid item xs={12} sm={6} md={4}>
+              <Stack spacing={2.2}>
+                <Typography
+                  sx={{
+                    color: "#FFFFFF",
+                    fontSize: 15,
+                    fontWeight: 900,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Integrantes
                 </Typography>
-                <Typography sx={{ color: colors.textSoft, fontSize: 14, textAlign: "center" }}>
-                  Victor Mordachini · Samuel Correia
-                  <br />
-                  Nicolas Moura · Pedro Pina
-                </Typography>
-              </Stack>
-            </Grid>
 
-            <Grid item xs={12} sm={6} md={4} sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-end" } }}>
-              <Stack spacing={2.5} alignItems={{ xs: "center", md: "flex-end" }} sx={{ maxWidth: 320 }}>
-                <Typography sx={{ color: colors.textSoft, fontSize: 14, fontWeight: 800 }}>
-                  Conecte-se
-                </Typography>
-                <Stack direction="row" spacing={2.2}>
-                  {["📧", "📱", "🌐"].map((item) => (
+                <Stack spacing={1.2}>
+                  {team.map((member) => (
                     <Box
-                      key={item}
+                      key={member.name}
                       sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        backgroundColor: colors.primarySoft,
-                        display: "grid",
-                        placeItems: "center",
-                        color: colors.primary,
-                        cursor: "pointer",
-                        "&:hover": {
-                          backgroundColor: colors.primary,
-                          color: "#FFF",
-                        },
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.2,
+                        color: "rgba(255,255,255,0.76)",
+                        fontSize: 14,
                       }}
                     >
-                      {item}
+                      <Box
+                        component="span"
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          backgroundColor: "#A5B4FC",
+                          flexShrink: 0,
+                        }}
+                      />
+
+                      <Typography sx={{ fontSize: 14, color: "rgba(255,255,255,0.78)" }}>
+                        {member.name} — {member.role}
+                      </Typography>
                     </Box>
                   ))}
                 </Stack>
               </Stack>
             </Grid>
+
+            <Grid item xs={12} sm={6} md={4}>
+              <Stack spacing={2.2}>
+                <Typography
+                  sx={{
+                    color: "#FFFFFF",
+                    fontSize: 15,
+                    fontWeight: 900,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Direitos reservados
+                </Typography>
+
+                <Box
+                  sx={{
+                    p: 2.4,
+                    borderRadius: "20px",
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    boxShadow: "0 14px 32px rgba(0,0,0,0.18)",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      color: "#FFFFFF",
+                      fontSize: 13.5,
+                      lineHeight: 1.75,
+                      fontWeight: 600,
+                    }}
+                  >
+                    © 2026 Equipe NPSV. Todos os direitos relacionados ao projeto
+                    Gestor Tintas são exclusivamente reservados aos integrantes do grupo:
+                    Victor Mordachini, Samuel Correia, Nicolas Moura e Pedro Pina.
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      color: "rgba(255,255,255,0.68)",
+                      fontSize: 12.5,
+                      lineHeight: 1.7,
+                      mt: 1.4,
+                    }}
+                  >
+                    É proibida a cópia, reprodução, distribuição, apresentação ou uso da
+                    ideia, identidade visual, código, funcionalidades, slogan, materiais
+                    e conceito do projeto sem autorização expressa da equipe.
+                  </Typography>
+                </Box>
+              </Stack>
+            </Grid>
           </Grid>
+
+          <Box
+            sx={{
+              mt: 5,
+              pt: 3,
+              borderTop: "1px solid rgba(255,255,255,0.10)",
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+            }}
+          >
+            <Typography
+              sx={{
+                color: "rgba(255,255,255,0.56)",
+                fontSize: 12.5,
+                textAlign: { xs: "center", md: "left" },
+              }}
+            >
+              Gestor Tintas · Do balcão à lata, precisão exata.
+            </Typography>
+
+            <Stack direction="row" spacing={1.4}>
+              {team.map((member) =>
+                member.linkedin ? (
+                  <Box
+                    key={member.name}
+                    component="a"
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={member.name}
+                    sx={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: "50%",
+                      display: "grid",
+                      placeItems: "center",
+                      backgroundColor: "rgba(255,255,255,0.10)",
+                      color: "#FFFFFF",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      transition: "0.18s ease",
+                      "&:hover": {
+                        backgroundColor: "#0A66C2",
+                        transform: "translateY(-2px)",
+                      },
+                    }}
+                  >
+                    <LinkedInIcon sx={{ fontSize: 20 }} />
+                  </Box>
+                ) : null
+              )}
+            </Stack>
+          </Box>
         </Container>
       </Box>
     </Box>
